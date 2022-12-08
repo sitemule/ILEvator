@@ -1,0 +1,5 @@
+.vscode/sftp.json
+.fuse*
+mmap*
+examples/errorlist.txt
+**/node_modules

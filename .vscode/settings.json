@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "*.sqlrpgle": "rpg",
+        "*.dmd": "json",
+        "*.widget": "javascript",
+        "strutil.h": "c",
+        "xlate.h": "c",
+        "sndpgmmsg.h": "c",
+        "ostypes.h": "c",
+        "sysdef.h": "c"
+    },
+    "typescript.tsc.autoDetect": "off"
+}
