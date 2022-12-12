@@ -1,4 +1,4 @@
-﻿/* ------------------------------------------------------------- */
+/* ------------------------------------------------------------- */
 /* Program . . . : ILEVATOR                                      */
 /* Design  . . . : Niels Liisberg                                */
 /* Function  . . : web client SSL/ socket wrapper                */
@@ -21,29 +21,49 @@ typedef struct _ILEVATOR {
     PUCHAR    url; 
     SHORT     timeOut;
     BOOL      retry;
+    BOOL      useProxy;
+    BOOL      responseHeaderHasContentLength;
+    BOOL      responseIsChunked;
+    PSLIST    headerList;
 
     ANYCHAR   requestHeaderBuffer; 
     FILE *    requestHeaderFile;
     ANYCHAR   requestDataBuffer; 
     FILE *    requestDataFile;
+    LONG      requestLength;
 
     ANYCHAR   responseHeaderBuffer; 
     FILE *    responseHeaderFile;
     ANYCHAR   responseDataBuffer; 
     FILE *    responseDataFile;
+    LONG      responseLength;
+
+    // TODO - refactor
+    LONG      HeadLen;
+    PUCHAR    ContentData;
+    LONG      ContentLength;
+    PUCHAR    ResponseString;
+    LONG      Ccsid; 
+    LONG      status;
+    BOOL      AsHttps;
+    PUCHAR    headerPCurEnd;
+    PUCHAR    pCurEnd;
 
     PUCHAR    pResBuffer; 
     ULONG     resBufferSize;
     IVBUFTYPE resBufferType;
     IVXLATE   resBufferXlate;
     FILE *    resFile;
+    FILE *    wstrace;
 
     UCHAR     server    [512];
-    UCHAR     port      [32];
+    UCHAR     port      [7];
     UCHAR     resource  [32766];
     UCHAR     host      [512];
     UCHAR     user      [256];
     UCHAR     password  [256];
+    UCHAR     location  [256];
+    UCHAR     message   [256];
 
 } ILEVATOR, *PILEVATOR;
 
@@ -62,7 +82,8 @@ void iv_setResponseBuffer (
 LGL iv_do (
     PILEVATOR pIv,
     PUCHAR method,
-    PUCHAR url
+    PUCHAR url,
+    ULONG  timeOut
 );
 
 

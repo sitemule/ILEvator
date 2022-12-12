@@ -30,7 +30,7 @@ CCFLAGS2=OPTION(*STDLOGMSG) OUTPUT(*print) $(CCFLAGS)
 
 all:  $(BIN_LIB).lib ilevator.srvpgm  hdr
 
-ilevator.srvpgm: api.c  anychar.c teramem.c  ilevator.bnddir
+ilevator.srvpgm: api.c  chunked.c xlate.c base64.c sockets.c anychar.c teramem.c  ilevator.bnddir
 ilevator.bnddir: ilevator.entry
 
 #-----------------------------------------------------------
@@ -110,13 +110,13 @@ release: clean
 # For vsCode / single file then i.e.: gmake current sqlio.c  
 ifeq "$(suffix $(SRC))" ".c"
 current:
-	system -i "CRTCMOD MODULE($(BIN_LIB)/$(basename $(notdir ($(SRC))))) SRCSTMF('$(SRC)') $(CCFLAGS2) "
+	system -i "CRTCMOD MODULE($(BIN_LIB)/$(basename $(notdir $(SRC)))) SRCSTMF('$(SRC)') $(CCFLAGS2) "
 	system -i "UPDSRVPGM SRVPGM($(BIN_LIB)/ilevator) MODULE($(BIN_LIB)/*ALL)"  
 endif
 
 ifeq "$(suffix $(SRC))" ".cpp"
 current:
-	system "CRTCPPMOD MODULE($(BIN_LIB)/$(basename $(notdir ($(SRC))))) SRCSTMF('$(SRC)') $(CCFLAGS2) "
+	system "CRTCPPMOD MODULE($(BIN_LIB)/$(basename $(notdir $(SRC)))) SRCSTMF('$(SRC)') $(CCFLAGS2) "
 	system "UPDSRVPGM SRVPGM($(BIN_LIB)/ilevator) MODULE($(BIN_LIB)/*ALL)"  
 endif
 

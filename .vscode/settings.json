@@ -9,5 +9,6 @@
         "ostypes.h": "c",
         "sysdef.h": "c"
     },
+    "files.encoding": "windows1252",
     "typescript.tsc.autoDetect": "off"
 }

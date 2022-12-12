@@ -17,3 +17,22 @@ typedef struct _ANYCHAR {
     IVBUFTYPE type;
     IVXLATE   xlate;
 } ANYCHAR , *PANYCHAR;
+
+
+/* --------------------------------------------------------------------------- */
+void anyCharSet (
+    PANYCHAR pAt,
+    PUCHAR pBuffer,
+    LONG  bufferSize,
+    SHORT bufferType,
+    SHORT bufferXlate
+);
+void anyCharAppend (
+    PANYCHAR pAt,
+    PUCHAR   pBuf,
+    LONG     length
+);
+void anyCharFinalize (
+    PANYCHAR pAt
+);
+

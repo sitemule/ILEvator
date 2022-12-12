@@ -7,11 +7,14 @@
     "tasks": [
         {
             "label": "Compile current file (and update ILEvator service program)",
-            "command": "ssh -t my_ibm_i 'PATH=/QOpenSys/pkgs/bin:$PATH;cd /prj/ILEvator/;gmake current SRC=${fileBasenameNoExtension}'",
+            "command": "ssh -t my_ibm_i 'PATH=/QOpenSys/pkgs/bin:$PATH;cd /prj/ILEvator/;gmake current SRC=${relativeFile}'",
             "type": "shell",
             "group": {
                 "kind": "build",
                 "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceRoot}",
             },
             // Use the standard less compilation problem matcher.
             "problemMatcher": {
@@ -21,7 +24,8 @@
                     //"regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
                     // src/ilevator.c, 241.2: CZM0045(30) Undeclared identifier a.
                     
-                    "regexp": "^(.*), (\\d+)\\.(\\d+):\\s+(.*)$",
+                    //"regexp": "ILEvator/(.*), (\\d+)\\.(\\d+):\\s+(.*)$",
+                    "regexp": "(.*), (\\d+)\\.(\\d+):\\s+(.*)$",
                     "file": 1,
                     "line": 2,
                     "column": 3,

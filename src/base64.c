@@ -11,8 +11,7 @@
 #include "base64.h"
 
 /* ------------------------------------------------------------- */
-
-void il_encodeBase64(PLVARCHAR output, PLVARCHAR input )
+LONG  iv_base64EncodeBuf(PUCHAR output , PUCHAR input , LONG inputLength )
 {
 #pragma convert(1252)
     static const UCHAR base64_pad = '=';
@@ -22,9 +21,9 @@ void il_encodeBase64(PLVARCHAR output, PLVARCHAR input )
         "0123456789+/";
 #pragma convert(0)
 
-    PUCHAR current = input->String;
-    ULONG  inlen = input->Length;
-    PUCHAR result = output->String;
+    PUCHAR current = input;
+    LONG   inlen = inputLength;
+    PUCHAR result = output;
 
     while (inlen > 2) {
         *result++ = base64_table[current[0] >> 2];
@@ -50,12 +49,18 @@ void il_encodeBase64(PLVARCHAR output, PLVARCHAR input )
             *result++ = base64_pad;
         }
     }
-    output->Length= result - output->String;
     *result = '\0';
+    return result - output;
 }
+   
 
 /* ------------------------------------------------------------- */
-void il_decodeBase64 (PLVARCHAR output, PLVARCHAR input )
+void iv_base64Encode(PLVARCHAR output, PLVARCHAR input )
+{
+    output->Length = iv_base64EncodeBuf(output->String , input->String , input->Length);
+}
+/* ------------------------------------------------------------- */
+LONG iv_base64DecodeBuf (PUCHAR output, PUCHAR input  , LONG inputLength)
 {
 #pragma convert(1252)
     static const UCHAR base64_pad = '=';
@@ -71,11 +76,12 @@ void il_decodeBase64 (PLVARCHAR output, PLVARCHAR input )
     };
 #pragma convert(0)
 
+    LONG outputLength;
     ULONG  i = 0, j = 0, k;
     UCHAR  ch, c;
-    PUCHAR current = input->String;
-    PUCHAR result = output->String;
-    ULONG  inlength = input->Length;
+    PUCHAR current = input;
+    PUCHAR result = output;
+    ULONG  inlength = inputLength;
 
     // Handle each byte
     while (inlength--) {
@@ -104,7 +110,7 @@ void il_decodeBase64 (PLVARCHAR output, PLVARCHAR input )
         i++;
     }
 
-    output->Length = k = j;
+    outputLength = k = j;
 
     // The final boudary 
     if (c  == base64_pad) {
@@ -112,7 +118,7 @@ void il_decodeBase64 (PLVARCHAR output, PLVARCHAR input )
         case 0:
             return;
         case 1:
-            output->Length = k + 1;
+            outputLength = k + 1;
             return;
         case 2:
             k++;
@@ -122,4 +128,11 @@ void il_decodeBase64 (PLVARCHAR output, PLVARCHAR input )
     }
 
     result[k] = '\0';
+    return outputLength;
+}
+
+/* ------------------------------------------------------------- */
+void iv_base64Decode (PLVARCHAR output, PLVARCHAR input )
+{
+    output->Length = iv_base64DecodeBuf(output->String , input->String , input->Length);
 }

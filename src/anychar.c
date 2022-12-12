@@ -1,7 +1,13 @@
+#include <stdio.h>
+#include <string.h>
+
+#include "ostypes.h"
+#include "anychar.h"
+
 /* --------------------------------------------------------------------------- */
 void anyCharSet (
     PANYCHAR pAt,
-    PUCHAR pBuf,
+    PUCHAR pBuffer,
     LONG  bufferSize,
     SHORT bufferType,
     SHORT bufferXlate

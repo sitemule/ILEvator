@@ -1,9 +1,9 @@
-Ôªø/* ------------------------------------------------------------- */
+/* ------------------------------------------------------------- */
 /* Program . . . : SOCKETS                                       */
 /* Design  . . . : Niels Liisberg                                */
 /* Function  . . : SSL/ socket wrapper                           */
 /*                                                               */
-/*By    Date      Task   Description                        ÔøΩ*/
+/*By    Date      Task   Description                        ù*/
 /* NL     15.05.2005 0000000 New program                         */
 /* NL     25.02.2007     510 Ignore namespace for WS parameters  */
 /* ------------------------------------------------------------- */

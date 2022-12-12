@@ -1,4 +1,4 @@
-﻿/* SYSIFCOPT(*IFSIO) TERASPACE(*YES *NOTSIFC) STGMDL(*SNGLVL)    */
+/* SYSIFCOPT(*IFSIO) TERASPACE(*YES *NOTSIFC) STGMDL(*SNGLVL)    */
 /* ------------------------------------------------------------- */
 /* Program . . . : SOCKETS                                       */
 /* Design  . . . : Niels Liisberg                                */
@@ -29,10 +29,11 @@
 
 /* own standart includes */
 #include "ostypes.h"
+#include "teramem.h"
 #include "apierr.h"
 #include "varchar.h"
-#include "utl100.h"
-#include "MinMax.h"
+//#include "utl100.h"
+//#include "MinMax.h"
 #include "parms.h"
 #include "sockets.h"
 #include "sndpgmmsg.h"
@@ -57,7 +58,7 @@ void  sockets_free(PSOCKETS ps)
 /* --------------------------------------------------------------------------- *\
    Define if SSL is used
 \* --------------------------------------------------------------------------- */
-void sockets_setSSL(PSOCKETS ps,BOOL asSSL, PUCHAR certificateFile , PUCHAR keyringPassword)
+void sockets_setSSL(PSOCKETS ps,USESSL asSSL, PUCHAR certificateFile , PUCHAR keyringPassword)
 {
     strcpy(ps->certificateFile, certificateFile);
     strcpy(ps->keyringPassword, keyringPassword);
@@ -92,30 +93,11 @@ void sockets_putTrace(PSOCKETS ps,PUCHAR Ctlstr, ...)
     va_start(arg_ptr, Ctlstr);
     len = vsprintf( temp , Ctlstr, arg_ptr);
     va_end(arg_ptr);
-    e2aMem(temp2 , temp , len);
+    xlateBuf (temp2 , temp , len , 0 , 1252);
     fputs (temp2 , ps->trace);
 }
 
-/* --------------------------------------------------------------------------- *\
-  wrapper for the message and trace to  the message log
-\* --------------------------------------------------------------------------- */
-static void xsetmsg(PSOCKETS ps,PUCHAR msgid , PUCHAR Ctlstr, ...)
-{
-    va_list arg_ptr;
-    UCHAR   temp[1024];
-    LONG    len;
-    SHORT   l,i;
-    PUCHAR  msgf = BeginsWith(msgid , "CPF") ? QCPFMSG : USRMSG ;
-    va_start(arg_ptr, Ctlstr);
-    len = vsprintf( temp , Ctlstr, arg_ptr);
-    va_end(arg_ptr);
 
-    sockets_putTrace(ps ,"%s" , temp);
-    //strcpy (ps->msgid  , msgid);
-    //strcpy (ps->msgtxt  , temp);
-    sndpgmmsg (msgid, msgf , DIAG  , temp);
-
-}
 /* --------------------------------------------------------------------------- *\
    Clean up
 \* --------------------------------------------------------------------------- */
@@ -149,7 +131,7 @@ static void sockets_close(PSOCKETS ps)
 /* --------------------------------------------------------------------------- */
 static void sockets_setSSLmsg(PSOCKETS ps,int rc, PUCHAR txt)
 {
-    xsetmsg(ps,"CPF9898", "%s: %d: %s, %s", txt, rc, gsk_strerror(rc), strerror(errno));
+    iv_joblog( "%s: %d: %s, %s", txt, rc, gsk_strerror(rc), strerror(errno));
 }
 /* --------------------------------------------------------------------------- */
 static int sockets_sslCallBack(PUCHAR certChain, int valStatus)
@@ -366,7 +348,7 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, SHORT TimeOu
     ps->socket = socket(AF_INET, SOCK_STREAM, 0);
 
     if (ps->socket == JX_INVALID_SOCKET)  {
-        xsetmsg(ps,"CPF9898" ,  "Invalid socket %s" , strerror(errno));
+        iv_joblog(  "Invalid socket %s" , strerror(errno));
         return FALSE;
     }
 
@@ -386,7 +368,7 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, SHORT TimeOu
         hostp = gethostbyname(ServerIP);
         if (hostp == (struct hostent *)NULL) {
             sockets_close(ps);
-            xsetmsg(ps,"CPF9898" ,  "Invalid host <%s> Error: %s", ServerIP , strerror(errno));
+            iv_joblog(  "Invalid host <%s> Error: %s", ServerIP , strerror(errno));
             return FALSE;
         }
         memcpy(&serveraddr.sin_addr,  hostp->h_addr, sizeof(serveraddr.sin_addr));
@@ -394,7 +376,7 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, SHORT TimeOu
 
     rc = connect(ps->socket , (struct sockaddr *)&serveraddr , sizeof(serveraddr));
     if (rc < 0) {
-        xsetmsg(ps,"CPF9898" ,  "Connection failed: %s %s" , ServerIP, strerror(errno));
+        iv_joblog(  "Connection failed: %s %s" , ServerIP, strerror(errno));
         sockets_close(ps);
         return FALSE;
     }
@@ -470,7 +452,7 @@ LONG sockets_send (PSOCKETS ps,PUCHAR Buf, LONG Len)
             if (rc == 0) {
                 errno = error;
             }
-            xsetmsg(ps,"CPF9898" ,"Send failed: %s" , strerror(errno));
+            iv_joblog( "Send failed: %s" , strerror(errno));
             sockets_close(ps);
             return -1 ;
         }
@@ -505,7 +487,7 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, SHORT TimeOut)
         }
         */
         if (rc == GSK_OS400_ERROR_TIMED_OUT) {  // Timeout
-            xsetmsg(ps,"CPF9898" ,  "Timeout");
+            iv_joblog(  "Timeout");
             sockets_close(ps);
             return -2;
         }
@@ -534,22 +516,22 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, SHORT TimeOut)
             if (rc == 0) {
                 errno = error;
             }
-            xsetmsg(ps,"CPF9898" ,  "Socket selcet error : %s" , strerror(errno));
+            iv_joblog(  "Socket selcet error : %s" , strerror(errno));
             sockets_close(ps);
             return(-1);
         } else if (rc == 0) {
-            xsetmsg(ps,"CPF9898" , "Empty data");
+            iv_joblog( "Empty data");
             sockets_close(ps);
             return(-2);
         }
         rc = read(ps->socket, Buf, Len );
         if (rc < 0) {  // error
-            xsetmsg(ps,"CPF9898" ,  "Socket read error: %s" , strerror(errno));
+            iv_joblog(  "Socket read error: %s" , strerror(errno));
             sockets_close(ps);
             return -1;
 
         } else if (rc == 0) {  // Timeout
-            xsetmsg(ps,"CPF9898" ,  "Timeout");
+            iv_joblog(  "Timeout");
             sockets_close(ps);
             return -2;
         }
@@ -564,6 +546,7 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, SHORT TimeOut)
     return (amtRead); // The returned lenght 
 }
 /* -------------------------------------------------------------------------- */
+/* 
 LONG sockets_receiveXlate (PSOCKETS ps, PUCHAR Buf, LONG Len, SHORT TimeOut)
 {
     LONG rc = sockets_receive (ps, Buf, Len, TimeOut);
@@ -572,8 +555,10 @@ LONG sockets_receiveXlate (PSOCKETS ps, PUCHAR Buf, LONG Len, SHORT TimeOut)
     }
     return rc;
 }
+*/ 
 
 /* -------------------------------------------------------------------------- */
+/* *
 LONG sockets_printf (PSOCKETS ps, PUCHAR Ctlstr , ...)
 {
    va_list arg_ptr;
@@ -589,21 +574,27 @@ LONG sockets_printf (PSOCKETS ps, PUCHAR Ctlstr , ...)
    sockets_send (ps, Buf, Len);
    return Len;
 }
+*/
 /* -------------------------------------------------------------------------- */
+/* 
 LONG sockets_sendXlate (PSOCKETS ps, PUCHAR buf , LONG len)
 {
     e2aMem(buf, buf, len);
     sockets_send  (ps, buf, len);
     return len;
 }
+*/ 
 /* -------------------------------------------------------------------------- */
+/* 
 LONG sockets_sendCcsXlate (PSOCKETS ps,  int fromCcsId, int toCcsId,  PUCHAR buf , LONG len)
 {
     XlateBuf(buf , buf , len, fromCcsId , toCcsId);
     sockets_send  (ps, buf, len);
     return len;
 }
+*/ 
 /* -------------------------------------------------------------------------- */
+/* 
 LONG sockets_printfXlate (PSOCKETS ps, PUCHAR Ctlstr , ...)
 {
     va_list arg_ptr;
@@ -620,7 +611,9 @@ LONG sockets_printfXlate (PSOCKETS ps, PUCHAR Ctlstr , ...)
     return Len;
 
 }
+*/ 
 /* -------------------------------------------------------------------------- */
+/* 
 LONG sockets_printfCcsXlate (PSOCKETS ps, int fromCcsId, int toCcsId, PUCHAR Ctlstr , ...)
 {
     va_list arg_ptr;
@@ -637,3 +630,4 @@ LONG sockets_printfCcsXlate (PSOCKETS ps, int fromCcsId, int toCcsId, PUCHAR Ctl
     return Len;
 }
 
+*/
