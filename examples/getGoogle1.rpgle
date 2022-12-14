@@ -31,8 +31,6 @@ dcl-proc example1;
     dcl-s pHttp pointer; 
     dcl-s outbuf varchar(65000:4) ccsid(1208); 
 
-    outbuf = 'John';
-
     pHttp = iv_newHttpClient(); 
     iv_setResponseDataBuffer (pHttp : %addr(outbuf) : %size(outbuf) : IV_VARCHAR4 : IV_XLATE_UTF8);
     iv_execute (pHttp : 'GET' : 'http://google.com' : 3000); 
@@ -56,7 +54,7 @@ dcl-proc example2;
     dcl-s pHttp pointer; 
     dcl-s outbuf varchar(65000:4) ccsid(1208); 
 
-    // Yet top be implemented
+    // Yet to be implemented
     // pHttp = iv_newHttpClient(); 
     // iv_setURL    (pHttp : 'http://google.com'); 
     // iv_setMethod (pHttp : 'GET'); 
