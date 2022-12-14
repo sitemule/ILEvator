@@ -13,6 +13,13 @@
 #include "ostypes.h"
 #include "sockets.h"
 
+#define BUFFER_SIZE 1048576
+
+typedef enum _API_STATUS {
+    API_OK, 
+    API_RETRY,
+    API_ERROR
+} API_STATUS , *PAPI_STATUS;
 
 
 typedef struct _ILEVATOR {
@@ -20,7 +27,7 @@ typedef struct _ILEVATOR {
     PUCHAR    method; 
     PUCHAR    url; 
     SHORT     timeOut;
-    BOOL      retry;
+    SHORT     retryMax;
     BOOL      useProxy;
     BOOL      responseHeaderHasContentLength;
     BOOL      responseIsChunked;
@@ -39,15 +46,15 @@ typedef struct _ILEVATOR {
     LONG      responseLength;
 
     // TODO - refactor
-    LONG      HeadLen;
-    PUCHAR    ContentData;
-    LONG      ContentLength;
+    LONG      headLen;
+    PUCHAR    contentData;
+    LONG      contentLength;
+    LONG      contentLengthCalculated;
+    
     PUCHAR    ResponseString;
     LONG      Ccsid; 
     LONG      status;
     BOOL      AsHttps;
-    PUCHAR    headerPCurEnd;
-    PUCHAR    pCurEnd;
 
     PUCHAR    pResBuffer; 
     ULONG     resBufferSize;
@@ -65,12 +72,18 @@ typedef struct _ILEVATOR {
     UCHAR     location  [256];
     UCHAR     message   [256];
 
+    PUCHAR    buffer; 
+    LONG      bufferSize;  
+    LONG      bufferTotalLength;   
+    PUCHAR    bufferEnd;
+
 } ILEVATOR, *PILEVATOR;
 
 
 // Prototypes
-PILEVATOR il_newClient(void);
-void  il_delete(PILEVATOR ps);
+//void iv_newHttpClient(PILEVATOR * ppIv);
+PILEVATOR iv_newHttpClient(void);
+void  iv_delete(PILEVATOR ps);
 void iv_setResponseBuffer (
     PILEVATOR pIv,
     PUCHAR pBuf,
@@ -79,7 +92,7 @@ void iv_setResponseBuffer (
     SHORT bufferXlate
 );  
 
-LGL iv_do (
+LGL iv_execute (
     PILEVATOR pIv,
     PUCHAR method,
     PUCHAR url,

@@ -30,8 +30,8 @@ CCFLAGS2=OPTION(*STDLOGMSG) OUTPUT(*print) $(CCFLAGS)
 
 all:  $(BIN_LIB).lib ilevator.srvpgm  hdr
 
-ilevator.srvpgm: api.c  chunked.c xlate.c base64.c sockets.c anychar.c teramem.c  ilevator.bnddir
-ilevator.bnddir: ilevator.entry
+ilevator.srvpgm: api.c  chunked.c xlate.c base64.c sockets.c anychar.c teramem.c simpleList.c varchar.c strUtil.c sndpgmmsg.c ilevator.bnddir
+ilevator.bnddir: ilevator.entry ilevator.srvpgm
 
 #-----------------------------------------------------------
 
@@ -39,7 +39,7 @@ ilevator.bnddir: ilevator.entry
 	-system -q "CRTLIB $* TYPE(*TEST)"
 
 
-%.bnddir:
+%.bnddir: 
 	-system -q "DLTBNDDIR BNDDIR($(BIN_LIB)/$*)"
 	-system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/$*)"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$*) OBJ($(patsubst %.entry,(*LIBL/% *SRVPGM *IMMED),$^))"
@@ -63,8 +63,9 @@ ilevator.bnddir: ilevator.entry
 	system "CRTCLMOD MODULE($(BIN_LIB)/$(notdir $*)) SRCFILE($(BIN_LIB)/QCLLESRC) DBGVIEW($(DBGVIEW)) TGTRLS($(TARGET_RLS))"
 
 %.srvpgm:
+
 	-system -q "CRTSRCPF FILE($(BIN_LIB)/QSRVSRC) RCDLEN(200)"
-	system "CPYFRMSTMF FROMSTMF('headers/$*.binder') TOMBR('/QSYS.lib/$(BIN_LIB).lib/QSRVSRC.file/$*.mbr') MBROPT(*replace)"
+	system "CPYFRMSTMF FROMSTMF('headers/$*.bnddir') TOMBR('/QSYS.lib/$(BIN_LIB).lib/QSRVSRC.file/$*.mbr') MBROPT(*replace)"
 	
 	# You may be wondering what this ugly string is. It's a list of objects created from the dep list that end with .c or .clle.
 	$(eval modules := $(patsubst %,$(BIN_LIB)/%,$(basename $(filter %.c %.cpp %.clle,$(notdir $^)))))

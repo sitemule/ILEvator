@@ -101,8 +101,10 @@ void sockets_putTrace(PSOCKETS ps,PUCHAR Ctlstr, ...)
 /* --------------------------------------------------------------------------- *\
    Clean up
 \* --------------------------------------------------------------------------- */
-static void sockets_close(PSOCKETS ps)
+void sockets_close(PSOCKETS ps)
 {
+    if (ps == NULL ) return;
+    
     if (ps->trace) {
         sockets_putTrace(ps, "\r\n---  End of Communcation ---\r\n");
         fclose(ps->trace);
@@ -182,7 +184,7 @@ static BOOL set_attr (PSOCKETS ps, gsk_handle hndl, int attr , int value, PUCHAR
     }
 }
 // ----------------------------------------------------------------------------------------
-BOOL sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, SHORT TimeOut)
+BOOL sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, LONG TimeOut)
 {
     LONG   rc;
     struct sockaddr_in serveraddr;
@@ -266,10 +268,10 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, SHORT TimeOu
             }
 
             // If one fails - then return  !!
-            if (set_attr (ps,ps->my_env_handle, GSK_HANDSHAKE_TIMEOUT , 30             ,"Set GSK_HANDSHAKE_TIMEOUT  error")
-            ||  set_attr (ps,ps->my_env_handle, GSK_OS400_READ_TIMEOUT, TimeOut * 1000L,"Set GSK_OS400_READ_TIMEOUT error")
-            ||  set_attr (ps,ps->my_env_handle, GSK_V2_SESSION_TIMEOUT, 60             ,"Set GSK_V2_SESSION_TIMEOUT error")
-            ||  set_attr (ps,ps->my_env_handle, GSK_V3_SESSION_TIMEOUT, 60             ,"Set GSK_V3_SESSION_TIMEOUT error")){
+            if (set_attr (ps,ps->my_env_handle, GSK_HANDSHAKE_TIMEOUT , 30       ,"Set GSK_HANDSHAKE_TIMEOUT  error")
+            ||  set_attr (ps,ps->my_env_handle, GSK_OS400_READ_TIMEOUT, TimeOut  ,"Set GSK_OS400_READ_TIMEOUT error")
+            ||  set_attr (ps,ps->my_env_handle, GSK_V2_SESSION_TIMEOUT, 60       ,"Set GSK_V2_SESSION_TIMEOUT error")
+            ||  set_attr (ps,ps->my_env_handle, GSK_V3_SESSION_TIMEOUT, 60       ,"Set GSK_V3_SESSION_TIMEOUT error")){
                 return FALSE;
             }
 
@@ -462,7 +464,7 @@ LONG sockets_send (PSOCKETS ps,PUCHAR Buf, LONG Len)
 }
 /* --------------------------------------------------------------------------- *\
 \* --------------------------------------------------------------------------- */
-LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, SHORT TimeOut)
+LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG TimeOut)
 {
     int rc;
     int error;
@@ -472,9 +474,6 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, SHORT TimeOut)
     int amtRead = 0;
 
     Buf[0] = '\0';
-
-    // read() from client
-    // rc = SSL_Read(pSsl, Buf , Len);
 
     // receive a message from the client using the secure session
     if (ps->asSSL) {
@@ -500,8 +499,8 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, SHORT TimeOut)
 
    } else {
         // Set select timeout
-        timeout.tv_sec  = TimeOut;
-        timeout.tv_usec = 0;
+        timeout.tv_sec  = TimeOut / 1000;
+        timeout.tv_usec = (TimeOut % 1000 ) * 1000;
 
         // Wait for up to xx seconds on
         // select() for data to be read.
@@ -509,7 +508,8 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, SHORT TimeOut)
         FD_SET(ps->socket,&read_fd);
 
         rc = select(ps->socket +1, &read_fd ,NULL,NULL,&timeout);
-        if (rc < 0) {
+        if (! (FD_ISSET (ps->socket, &read_fd))) {
+        // if (rc < 0) {
 
             // Get the error number. 
             rc = getsockopt(ps->socket, SOL_SOCKET, SO_ERROR, (PUCHAR) &error, &errlen);
@@ -547,7 +547,7 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, SHORT TimeOut)
 }
 /* -------------------------------------------------------------------------- */
 /* 
-LONG sockets_receiveXlate (PSOCKETS ps, PUCHAR Buf, LONG Len, SHORT TimeOut)
+LONG sockets_receiveXlate (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG TimeOut)
 {
     LONG rc = sockets_receive (ps, Buf, Len, TimeOut);
     if (rc > 0) {

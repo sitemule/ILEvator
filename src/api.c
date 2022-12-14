@@ -53,7 +53,7 @@ BOOL _abeginsWith(PUCHAR a, PUCHAR b , int l)
 /* --------------------------------------------------------------------------- *\
    wrapper for the message and trace to  the message log
 \* --------------------------------------------------------------------------- */
-LONG UrlEncodeBlanks  (PUCHAR OutBuf , PUCHAR InBuf)
+static LONG UrlEncodeBlanks  (PUCHAR OutBuf , PUCHAR InBuf)
 {
   PUCHAR Start = OutBuf;
   UCHAR c;
@@ -213,7 +213,7 @@ static BOOL LookForHeader(PUCHAR Buf, LONG totlen, PUCHAR * ContentData)
 static VOID ParseHttpParm(PILEVATOR pIv, PUCHAR Parm , PUCHAR Value)
 {
    if (abeginsWith (Parm , "Content-Length"))  {
-      pIv->ContentLength = a2i(Value);
+      pIv->contentLength = a2i(Value);
       pIv->responseHeaderHasContentLength = true;
    }
    if (abeginsWith (Parm , "Transfer-Encoding"))  {
@@ -233,18 +233,18 @@ static VOID ParseHttpParm(PILEVATOR pIv, PUCHAR Parm , PUCHAR Value)
 /* -------------------------------------------------------------------------- */
 // All constans is in ascii windows-1252
 #pragma convert(1252)
-static SHORT ParseResponse(PILEVATOR pIv, PUCHAR Buf, PUCHAR ContentData)
+static SHORT ParseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
 {
    PUCHAR Http, start, end, p, s1, s2;
 
    // Only let the out file survive
    // TODO - reset input!!  
 
-   pIv->ContentData = ContentData;
-   pIv->HeadLen = pIv->ContentData - Buf;
+   pIv->contentData = contentData;
+   pIv->headLen = pIv->contentData - buf;
 
    // Retrive the HTTP responce
-   start = strstr(Buf , "HTTP");
+   start = strstr(buf , "HTTP");
    if (start == NULL ) {
       return -2; /* No response */
    }
@@ -275,11 +275,11 @@ static SHORT ParseResponse(PILEVATOR pIv, PUCHAR Buf, PUCHAR ContentData)
       end = findEOL(start);
       p  = strchr(start ,':');
       if (p && end) {
-         UCHAR  ParmName[256];
-         UCHAR  ParmValue[65535];
-         substr(ParmName , start , p - start);
-         substr(ParmValue, p +1  , end - p - 1 );
-         ParseHttpParm(pIv , ParmName, ParmValue);
+         UCHAR  parmName[256];
+         UCHAR  parmValue[65535];
+         substr(parmName , start , p - start);
+         substr(parmValue, p +1  , end - p - 1 );
+         ParseHttpParm(pIv , parmName, parmValue);
       }
    }
    return 0 ; // OK
@@ -383,8 +383,11 @@ static void parseUrl (
    } else {
       pServer = url;
    }
-
-   xlateBuf(&masterspace , "@" , 1  , 277, 0);
+  
+   // TODO !! move to funciton 
+   #pragma convert(1252)
+   xlateBuf(&masterspace , "@" , 1  , 1252, 0);
+   #pragma convert(0)
 
    pTemp = strchr(pServer , masterspace);
    if (pTemp) {
@@ -467,21 +470,36 @@ static void parseUrl (
 
 
 /* --------------------------------------------------------------------------- */
-PILEVATOR iv_newClient()
+PILEVATOR iv_newHttpClient(void)
 {
     // Get mem and set to zero
     PILEVATOR pIv = memCalloc(sizeof(ILEVATOR));
-    pIv -> pSockets = memCalloc(sizeof(SOCKETS));
-    pIv -> headerList = sList_new ();
-
-    return pIv;
+    pIv->buffer = memAlloc(BUFFER_SIZE);
+    pIv->bufferSize = BUFFER_SIZE;
+    pIv->pSockets =  sockets_new();
+    pIv->headerList = sList_new ();
+    return (pIv);
 
 }
+/*
+void  xxx_iv_newHttpClient(PILEVATOR *ppIv)
+{
+    // Get mem and set to zero
+    PILEVATOR pIv = memCalloc(sizeof(ILEVATOR));
+    pIv->buffer = memAlloc(BUFFER_SIZE);
+    pIv->bufferSize = BUFFER_SIZE;
+    pIv->pSockets =  sockets_new();
+    pIv->headerList = sList_new ();
+    ppIv = pIv;
+
+}
+*/ 
 /* --------------------------------------------------------------------------- */
 void iv_delete ( PILEVATOR pIv)
 {
-    sockets_free (pIv -> pSockets);
-    sList_free (pIv -> headerList);
+    sockets_free (pIv->pSockets);
+    sList_free (pIv->headerList);
+    memFree (&pIv->buffer);
     memFree (&pIv);
 }
 /* --------------------------------------------------------------------------- */
@@ -557,7 +575,7 @@ void iv_setResponseDataBuffer (
 
 }
 /* --------------------------------------------------------------------------- */
-static BOOL sendHeader (PILEVATOR pIv) 
+static API_STATUS sendHeader (PILEVATOR pIv) 
 {
 
     UCHAR buffer [65535];
@@ -596,67 +614,67 @@ static BOOL sendHeader (PILEVATOR pIv)
         pReq += sprintf(pReq, "%c%c", 0x0d , 0x0a);
         pReq += sprintf(pReq, "%c%c", 0x0d , 0x0a);
     }
+    len = pReq - buffer;
 
     rc = sockets_send (pIv->pSockets, buffer, len); 
 
-    return (rc == len); 
+    return (rc == len ? API_OK : API_ERROR); 
 
 }
 
 /* --------------------------------------------------------------------------- */
-static BOOL receiveHeader ( PILEVATOR pIv)
+static API_STATUS receiveHeader ( PILEVATOR pIv)
 {
-    UCHAR buffer [65535];
 
-    PUCHAR pBuffer = buffer , contentData; 
     BOOL  headFound = FALSE;
     BOOL  headParsed = FALSE;
-    LONG totlen, len, bufferLength , rcvTotalLen = 0 , curContLen = 0;
+    LONG  len, curContLen = 0;
 
-    pIv->retry = FALSE; 
-
-
+    pIv->bufferEnd =  pIv->buffer;
+    pIv->bufferTotalLength = 0;
+   
     for (;;) { // repeat until a header is received
-        len = sockets_receive (pIv->pSockets, pBuffer, bufferLength - totlen, pIv->timeOut);
+
+        LONG bufferRemain = pIv->bufferSize - pIv->bufferTotalLength;
+         // Protocol error
+        if  (bufferRemain < 0) {  
+            sockets_close(pIv->pSockets);
+            iv_joblog ("Buffer overrun ");
+            return API_ERROR;
+        }
+
+        // Append to the current buffer
+        len = sockets_receive (pIv->pSockets, pIv->bufferEnd, bufferRemain , pIv->timeOut);
         
         // timeout
         if  (len == -2) {  
-            return ( rcvTotalLen > 0 );
+            return ( pIv->bufferTotalLength > 0 ? API_OK: API_ERROR);
         }
 
         // Protocol error
         if  (len < 0) {  
-            pIv->retry = TRUE; 
-            return TRUE;
+            return API_ERROR;
         }
 
         // "Connection close" - end of transmission and no "Content-Length" provided, the we are done
         if (len == 0 && pIv->responseHeaderHasContentLength == false) {
-            return TRUE;
+            return API_OK;
         }
 
-        rcvTotalLen += len;
-        pBuffer += len;
-        *pBuffer = '\0';
+        pIv->bufferTotalLength += len;
+        pIv->bufferEnd  += len;
+        *pIv->bufferEnd  = '\0';
 
         // Header not found yet - Search for it
         if (! headFound ) {
-            headFound = LookForHeader(buffer, rcvTotalLen, &contentData);
+            headFound = LookForHeader(pIv->buffer, pIv->bufferTotalLength, &pIv->contentData);
             if (headFound) {
-                int err;
-
-                err = ParseResponse(pIv , buffer, contentData);
+                int err = ParseResponse(pIv , pIv->buffer, pIv->contentData);
                 if (err) {
-                    xsetmsg(pIv, "CMN2000" ,  "Invalid response header: %d" , err);
-                    return FALSE;
+                    sockets_close(pIv->pSockets);
+                    iv_joblog ("Invalid response header: %d" , err);
+                    return API_ERROR;
                 }
-
-                curContLen = rcvTotalLen - pIv->HeadLen;
-                pIv->headerPCurEnd = pBuffer;
-
-                anyCharAppend ( &pIv->responseHeaderBuffer ,buffer , pIv->HeadLen);
-                anyCharAppend ( &pIv->responseDataBuffer ,contentData , curContLen);
-
 
                 if (pIv->status == 301     // Temporary moved
                 ||  pIv->status == 302) {  // Permanent moved
@@ -670,79 +688,55 @@ static BOOL receiveHeader ( PILEVATOR pIv)
                         pIv->user ,
                         pIv->password
                     ); 
+                    sockets_close(pIv->pSockets);
                     putWsTrace( pIv, "\r\n redirected to %s\r\n",  pIv->location );
-                    pIv->retry = TRUE; 
-                    return TRUE;
+                    return API_RETRY;
                 }
-
+                
                 if (pIv->status == 100) {  // Continue is was a proxy
                     putWsTrace( pIv, "\r\n-- Proxy continue received --\r\n");
-                    headFound = FALSE;
-                    pBuffer = buffer;
-                    rcvTotalLen = 0;
-                    continue;   // Found but start over again - it was a proxy
+                    return API_RETRY; // Found but start over again - it was a proxy
                 }
 
+                pIv->contentLengthCalculated = pIv->bufferTotalLength - pIv->headLen;
+                anyCharAppend ( &pIv->responseHeaderBuffer , pIv->buffer , pIv->headLen);
 
-                if (pIv->responseIsChunked) {
-                    break;  // !! Found
-                }
+                return API_OK; // Got what we came for + perhaps more 
 
-                // For now continue but return er error
-                //   CleanUp();
-                //   if (pOptions  != pOptionsStr  ) jx_Close(&pOptions); // Was parser here  - need to free-up
-                //   return ON;
-
-
-                // Dont try to get data if it was a HEAD request - it is only the header
-                // or status 204 => no content
-                if (beginsWith(pIv->method , "HEAD")
-                ||  pIv->status == 204 )     {  // No Content, dont read any longer
-                    return TRUE;
-                }
-
-                // Received data for "non chunked" !!! TODO Move to reveice data --- this is not the place
-                if (pIv->responseDataFile && pIv->ContentData) {
-                    fwrite (pIv->ContentData , 1, curContLen , pIv->responseDataFile);
-                    while  ( len > 0 && (curContLen < pIv->ContentLength || pIv->responseHeaderHasContentLength == false)) {
-                        len = sockets_receive (pIv->pSockets, buffer, sizeof(buffer), pIv->timeOut);
-                        fwrite (buffer , 1, len , pIv->responseDataFile);
-                        curContLen += len;
-                    }
-                    return TRUE;
-                }
             }
-        }
-        curContLen = rcvTotalLen - pIv->HeadLen;
-        if (pIv->responseHeaderHasContentLength == true
-        &&  curContLen >= pIv->ContentLength) {
-            break;  // !! Found
         }
     }
 }
-
 /* --------------------------------------------------------------------------- */
-static BOOL receiveData ( PILEVATOR pIv)
+static API_STATUS receiveData ( PILEVATOR pIv)
 {
     UCHAR buffer [65535];
     LONG  len;
+
+    // TODO !! Move this together with the file write; 
+    anyCharAppend ( &pIv->responseDataBuffer ,pIv->contentData , pIv->contentLengthCalculated);
+
+    // Received data for "non chunked" !!! TODO Move to reveice data --- this is not the place
+    if (pIv->responseDataFile && pIv->contentLength) {
+        fwrite (pIv->contentData , 1, pIv->contentLengthCalculated , pIv->responseDataFile);
+    }
 
     for (;;) { // repeat until a header is received
         len = sockets_receive (pIv->pSockets, buffer , sizeof(buffer) , pIv->timeOut);
         
         // timeout
         if  (len == -2) {  
-            return FALSE;
+            return API_ERROR;
         }
 
         // Protocol error
         if  (len < 0) {  
-            return FALSE;
+            return API_ERROR;
         }
 
         // "Connection close" - end of transmission and no "Content-Length" provided, the we are done
         if (len == 0 && pIv->responseHeaderHasContentLength == false) {
-            return TRUE;
+            return API_OK;
         }
 
         anyCharAppend ( &pIv->responseDataBuffer, buffer, len);
@@ -753,57 +747,8 @@ static BOOL receiveData ( PILEVATOR pIv)
     }
 }
 
-/*  !!!!!!!!!! MOve this else where ... 
-
-   // When no "contents-length" is given
-   if (pIv->headerHasContentLength == false) {
-      if (respType == R_ILOB) {
-         pRspIlobDta->DataLength = curContLen;
-      } else  if (respType == R_VARCHAR) {
-         rspPayload->Length = curContLen;
-      }
-   } else {
-      // We have a content length: Check it !
-      if (curContLen < pIv->headerContentLength) {
-         xsetmsg(pIv, "CMN2000",  "Invalid length %d receieved compared to header %d", curContLen, pIv->headerContentLength);
-         return false;
-      }
-   }
-) 
-   if (pIv->headerChunked) {
-      pIv->headerOut = outfile; // If any
-      GetChunked(&HttpHeader , maxResponseSize);
-      if (respType == R_ILOB) {
-         pRspIlobDta->DataLength = pIv->headerContentLength;
-      } else  if (respType == R_VARCHAR) {
-         rspPayload->Length = pIv->headerContentLength;
-      }
-   }
-
-
-    exit_with_data:
-    CleanUp();
-    if (outfile) fclose(outfile);
-    if (pOptions  != pOptionsStr) jx_Close(&pOptions); // Was parser here  - need to free-up
-    if (pIv->status >= 200 && pIv->status < 300) {  // Must be OK
-        return (OFF); // OK;
-    } else {
-        xsetmsg(pIv, "CMN2000" ,  "Invalid response status: %d" , pIv->status);
-        return (ON);  // error;
-    }
-
-    exit_error:
-    CleanUp();
-    if (outfile) fclose(outfile);
-    if (pOptions  != pOptionsStr) jx_Close(&pOptions); // Was parser here  - need to free-up
-    return (ON);  // error;
-    }
-*/
-
-
-
 /* --------------------------------------------------------------------------- */
-LGL iv_do (
+LGL iv_execute (
     PILEVATOR pIv,
     PUCHAR method,
     PUCHAR url,
@@ -812,12 +757,13 @@ LGL iv_do (
 {
 
     PNPMPARMLISTADDRP pParms = _NPMPARMLISTADDR();
-    BOOL ok = false; 
+    API_STATUS apiStatus = API_RETRY; 
     SHORT retry;
     
     pIv->method = method; 
     pIv->url = url; 
-    pIv->timeOut = timeOut; // TODO for now
+    pIv->timeOut = timeOut; 
+    pIv->retryMax = 3;  // TOOD for now  
 
     parseUrl (
         pIv,
@@ -830,40 +776,52 @@ LGL iv_do (
         pIv->password
     ); 
 
-    for (retry = 0; retry < pIv->retry ; retry++) {
+    for (retry = 0; retry < pIv->retryMax ; retry++) {
 
-        ok = sockets_connect(
+        BOOL ok = sockets_connect(
             pIv->pSockets, 
             pIv->server ,
             atoi (pIv->port) ,
             pIv->timeOut
         ); 
-        if (!ok) break; 
+        apiStatus = ( ok? API_OK:API_ERROR);
+        if (apiStatus == API_ERROR) break; 
 
-        ok = sendHeader (pIv);
-        if (!ok) break; 
 
-        ok = receiveHeader (pIv);
-        if (!ok) break; 
-        if (pIv->retry) continue; 
+        apiStatus = sendHeader (pIv);
+        if (apiStatus == API_ERROR) break; 
 
-        if (pIv->responseIsChunked) {
-            ok = receiveChunked(pIv);
+        apiStatus = receiveHeader (pIv);
+        if (apiStatus == API_ERROR) break; 
+        if (apiStatus == API_RETRY) continue; 
+
+        // Dont try to get data if it was a HEAD request - it is only the header
+        // or status 204 => no content
+        if (beginsWith(pIv->method , "HEAD")
+        ||  pIv->status == 204 )     {  // No Content, dont read any longer
+            apiStatus = API_OK;
+        }
+        else if (pIv->responseIsChunked) {
+            apiStatus = receiveChunked(pIv);
         }
         else {
-            ok = receiveData (pIv);
+            apiStatus = receiveData (pIv);
         }
 
-        if (!ok) break; 
-        if (pIv->retry) continue; 
-
-        break;
+        if (apiStatus == API_OK   ) break; 
+        if (apiStatus == API_ERROR) break; 
+        if (apiStatus == API_RETRY) continue; 
 
     }
 
+    anyCharFinalize (&pIv->requestHeaderBuffer);
+    anyCharFinalize (&pIv->requestDataBuffer);
+    anyCharFinalize (&pIv->responseHeaderBuffer);
+    anyCharFinalize (&pIv->responseDataBuffer);
+
     iv_delete ( pIv);
 
-    return (ok?ON:OFF);
+    return (apiStatus == API_OK ? ON:OFF);
 
 }
 
@@ -907,7 +865,11 @@ PUCHAR iv_getFileExtension  (PVARCHAR256 extension, PVARCHAR fileName)
     str2vc(extension , ext);
     return extension->String;
 }
-
+/* --------------------------------------------------------------------------- */
+SHORT iv_getStatus ( PILEVATOR pIv)
+{
+   return pIv->status; 
+}
 /* --------------------------------------------------------------------------- *\
     Setup the local top be POSIX i.e. the charset in ccsid(37) 
 \* --------------------------------------------------------------------------- */

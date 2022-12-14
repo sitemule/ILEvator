@@ -26,12 +26,12 @@ void anyCharSet (
 
         }
         case  IV_VARCHAR2 : {
-            pAt->size = bufferSize + 2; 
+            pAt->size = bufferSize - 2; 
             pAt->data = pBuffer + 2;
             break;
         }
         case  IV_VARCHAR4 : {
-            pAt->size = bufferSize +4; 
+            pAt->size = bufferSize - 4; 
             pAt->data = pBuffer + 4;
             break;
         }
@@ -44,7 +44,7 @@ void anyCharAppend (
     LONG     length
 )
 {
-    LONG bytesLeft , bytesToCopy;
+    LONG bytesLeft;
     if (pAt->size == 0 ) return;
 
     bytesLeft = pAt->size - pAt->length; 
@@ -67,7 +67,7 @@ void anyCharFinalize (
             break;
         }
         case  IV_VARCHAR4 : {
-            * (PUSHORT) (pAt->data - 4) = pAt->length;
+            * (PULONG) (pAt->data - 4) = pAt->length;
             break;
         }
     }    

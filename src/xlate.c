@@ -21,7 +21,7 @@
 #include "xlate.h"
 
 /* ------------------------------------------------------------- */
-iconv_t xlateOpen (int fromCCSID, int toCCSID)
+iconv_t xlateOpen ( LONG fromCCSID,  LONG toCCSID)
 {
    QtqCode_T to;
    QtqCode_T from;
@@ -46,7 +46,7 @@ iconv_t xlateOpen (int fromCCSID, int toCCSID)
    return QtqIconvOpen( &to, &from);
 }
 /* ------------------------------------------------------------- */
-ULONG xlateBuf(PUCHAR outBuf, PUCHAR inBuf , ULONG length, int fromCCSID, int toCCSID)
+ULONG xlateBuf(PUCHAR outBuf, PUCHAR inBuf , ULONG length,  LONG fromCCSID,  LONG toCCSID)
 {
    iconv_t cd;
    ULONG outLen;
@@ -74,9 +74,10 @@ ULONG xlateBufCd(iconv_t cd, PUCHAR outBuf, PUCHAR inBuf , ULONG length)
    PUCHAR pInBuf;
    int i;
    size_t outLen, inBytesleft, outBytesleft;
-   size_t before, rc;
+   size_t before; 
+   int rc;
 
-   if (length ==0 ) return 0;
+   if (length == 0 ) return 0;
 
    before = outBytesleft = length * 4; // Max size of UTF8 expand to 4 times bytes
    inBytesleft  = length;
@@ -86,25 +87,28 @@ ULONG xlateBufCd(iconv_t cd, PUCHAR outBuf, PUCHAR inBuf , ULONG length)
 
    // Do Conversion
    rc = iconv (cd, &pInBuf, &inBytesleft, &pOutBuf, &outBytesleft);
-   if (rc == -1) return (-1);
+   if (rc == -1) return (0);
 
    outLen  = before - outBytesleft;
    return (outLen);  // Number of bytes converted
 }
 /* ------------------------------------------------------------- */
-void xlateVc  (PVARCHAR out, PVARCHAR in ,  int fromCCSID, int toCCSID)
-{
-   out->Length = xlateBuf(out->String , in->String , in->Length , fromCCSID, toCCSID);
-}
-/* ------------------------------------------------------------- */
-void xlateLvc  (PLVARCHAR out, PLVARCHAR in ,  int fromCCSID, int toCCSID)
-{
-   out->Length = xlateBuf(out->String , in->String , in->Length , fromCCSID, toCCSID);
-}
-/* ------------------------------------------------------------- */
-PUCHAR xlateStr (PUCHAR out, PUCHAR in, int fromCCSID, int toCCSID)
+PUCHAR xlateStr (PUCHAR out, PUCHAR in,  LONG fromCCSID,  LONG toCCSID)
 {
    int length = xlateBuf(out, in , strlen(in)  , fromCCSID, toCCSID);
-   out[length] = 0;
+   out[length] = '\0';
    return out;
 }
+/* ------------------------------------------------------------- */
+// Export: 
+/* ------------------------------------------------------------- */
+void iv_xlateVc  (PVARCHAR out, PVARCHAR in ,  LONG fromCCSID,  LONG toCCSID)
+{
+   out->Length = xlateBuf(out->String , in->String , in->Length , fromCCSID, toCCSID);
+}
+/* ------------------------------------------------------------- */
+void iv_xlateLvc  (PLVARCHAR out, PLVARCHAR in ,   LONG fromCCSID,  LONG toCCSID)
+{
+   out->Length = xlateBuf(out->String , in->String , in->Length , fromCCSID, toCCSID);
+}
+

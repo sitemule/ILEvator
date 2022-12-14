@@ -26,7 +26,7 @@ typedef struct _SOCKETS {
     BOOL   isInitialized;
     BOOL   hasSocket;
     USESSL asSSL;
-    SHORT  timeOut;
+    LONG   timeOut; // Milisec 
     FILE * trace;
     UCHAR  tracefilename   [128];
     UCHAR  certificateFile [128];
@@ -46,13 +46,13 @@ void  sockets_setSSL(PSOCKETS ps,USESSL asSSL, PUCHAR certificateFile , PUCHAR k
 void  sockets_setTrace(PSOCKETS ps, PUCHAR traceFileName);
 void  sockets_putTrace(PSOCKETS ps, PUCHAR Ctlstr, ...);
 
-BOOL  sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, SHORT TimeOut);
+BOOL  sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, LONG TimeOut);
 BOOL  sockets_handshakeSSL (PSOCKETS ps);
 LONG  sockets_send (PSOCKETS ps, PUCHAR Buf, LONG Len);
 LONG  sockets_sendXlate (PSOCKETS ps, PUCHAR Buf, LONG Len);
 LONG  sockets_sendCssXlate      (PSOCKETS ps, int fromCcsId, int toCcsId, PUCHAR Buf, LONG Len);
-LONG  sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, SHORT TimeOut);
-LONG  sockets_receiveXlate (PSOCKETS ps, PUCHAR Buf, LONG Len, SHORT TimeOut);
+LONG  sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG TimeOut);
+LONG  sockets_receiveXlate (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG TimeOut);
 LONG  sockets_printf (PSOCKETS ps, PUCHAR Ctlstr , ...);
 LONG  sockets_printfXlate (PSOCKETS ps, PUCHAR Ctlstr , ...);
 LONG  sockets_printfCcsXlate   (PSOCKETS ps, int fromCcsId, int toCcsId, PUCHAR Ctlstr , ...);

@@ -348,37 +348,49 @@ dcl-c IV_MEDIA_TYPE_XML 'application/xml';
 // iv_getVarcharValue procedure or by using one of the
 // iv_getRequest... procedures.
 ///
-dcl-ds iv_request qualified template;
-    config           pointer;
-    method           likeds(iv_varchar);
-    url              likeds(iv_varchar);
-    resource         likeds(iv_varchar);
-    queryString      likeds(iv_varchar);
-    protocol         likeds(iv_varchar);
-    headers          likeds(iv_varchar);
-    content          likeds(iv_varchar);
-    contentType      varchar(256);
-    contentLength    uns(20);
-    completeHeader   likeds(iv_varchar);
-    headerList       pointer;
-    parameterList    pointer;
-    resourceSegments pointer;
-    threadLocal      pointer;
-    routing          pointer;
-    routeId          varchar(256);
-end-ds;
-
+// TODO !! dcl-ds iv_request qualified template;
+// TODO !!     config           pointer;
+// TODO !!     method           likeds(iv_varchar);
+// TODO !!     url              likeds(iv_varchar);
+// TODO !!     resource         likeds(iv_varchar);
+// TODO !!     queryString      likeds(iv_varchar);
+// TODO !!     protocol         likeds(iv_varchar);
+// TODO !!     headers          likeds(iv_varchar);
+// TODO !!     content          likeds(iv_varchar);
+// TODO !!     contentType      varchar(256);
+// TODO !!     contentLength    uns(20);
+// TODO !!     completeHeader   likeds(iv_varchar);
+// TODO !!     headerList       pointer;
+// TODO !!     parameterList    pointer;
+// TODO !!     resourceSegments pointer;
+// TODO !!     threadLocal      pointer;
+// TODO !!     routing          pointer;
+// TODO !!     routeId          varchar(256);
+// TODO !! end-ds;
+// TODO !! 
 
 ///
-// create a new client 
+// create a new  http client 
 //
 // Returns pointer to the client
 //
 // @return pointer to the client
 ///
-dcl-pr iv_newClient pointer  extproc(*CWIDEN:'iv_newClient');
+//dcl-pr iv_newHttpClient pointer  extproc(*CWIDEN:'iv_newHttpClient') rtnparm;
+//end-pr;
+dcl-pr iv_newHttpClient pointer  extproc(*CWIDEN:'iv_newHttpClient');
 end-pr;
 
+
+///
+// delete / disconnect and cleanup memry for the client
+//
+// @param pClient pointer to the http client 
+//
+///
+dcl-pr iv_delete  extproc(*CWIDEN:'iv_delete');
+    pClient       pointer value;
+end-pr;
 
 
 ///
@@ -396,7 +408,7 @@ dcl-c IV_XLATE_UTF8   1208;
 dcl-c IV_XLATE_NO     65535;
 
 ///
-// Set the buffer where the result is placed
+// Set the buffer where the header buffer is placed
 //
 //
 // @param pClient pointer to the http client 
@@ -405,23 +417,77 @@ dcl-c IV_XLATE_NO     65535;
 // @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
 // @param xlate   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
 ///
-dcl-pr iv_setResponseBuffer  extproc(*CWIDEN:'iv_setResponseBuffer');
+dcl-pr iv_setRequestHeaderBuffer  extproc(*CWIDEN:'iv_setRequestHeaderBuffer');
     pClient       pointer value;
     pBuffer       pointer value;
-    bufferSize    int(10);
-    bufferType    int(5);
-    bufferXlate   uint(5);
+    bufferSize    int(10) value;
+    bufferType    int(5) value;
+    bufferXlate   int(5) value;
+end-pr;
+
+///
+// Set the buffer where the header data (POST)  is placed
+//
+//
+// @param pClient pointer to the http client 
+// @param pointer to buffer
+// @param size    size of buffer ( bytes in total)
+// @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
+// @param xlate   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
+///
+dcl-pr iv_setRequestDataBuffer  extproc(*CWIDEN:'iv_setRequestDataBuffer');
+    pClient       pointer value;
+    pBuffer       pointer value;
+    bufferSize    int(10) value;
+    bufferType    int(5) value;
+    bufferXlate   int(5) value;
+end-pr;
+
+///
+// Set the buffer where the  response header is received 
+//
+//
+// @param pClient pointer to the http client 
+// @param pointer to buffer
+// @param size    size of buffer ( bytes in total)
+// @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
+// @param xlate   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
+///
+dcl-pr iv_setResponseHeaderBuffer  extproc(*CWIDEN:'iv_setResponseHeaderBuffer');
+    pClient       pointer value;
+    pBuffer       pointer value;
+    bufferSize    int(10) value;
+    bufferType    int(5) value;
+    bufferXlate   int(5) value;
+end-pr;
+
+///
+// Set the buffer where the  response data (payload) is received 
+//
+//
+// @param pClient pointer to the http client 
+// @param pointer to buffer
+// @param size    size of buffer ( bytes in total)
+// @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
+// @param xlate   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
+///
+dcl-pr iv_setResponseDataBuffer  extproc(*CWIDEN:'iv_setResponseDataBuffer');
+    pClient       pointer value;
+    pBuffer       pointer value;
+    bufferSize    int(10) value;
+    bufferType    int(5) value;
+    bufferXlate   int(5) value;
 end-pr;
 
 ///
 // run the request 
 // @return *ON if ok 
 ///
-dcl-pr iv_do ind   extproc(*CWIDEN:'iv_do');
+dcl-pr iv_execute ind   extproc(*CWIDEN:'iv_execute');
     pClient     pointer value;
     method      pointer options(*string:*nopass) value;
     url         pointer options(*string:*nopass) value;
-    timeOut     int(10) options(*nopass) value;
+    timeOut     int(10) options(*nopass) value; // In milisec
 end-pr;
 
 ///
@@ -490,3 +556,26 @@ dcl-pr iv_joblog extproc(*CWIDEN : 'iv_joblog') ;
   string9       pointer  options(*string:*nopass) value;
 end-pr;
 
+
+///
+//
+// Convenience function: conver varchar ccsid
+//
+///
+dcl-pr iv_xlateVc varchar(32768:2) ccsid(65535) extproc(*CWIDEN : 'iv_xlateVc') rtnparm;
+  inpoutString varchar(32768:2) ccsid(65535) options(*varsize) const;
+  fromCCSID int(10) value;
+  toCCSID   int(10) value;
+end-pr;
+
+
+///
+//
+// Convenience function: conver long varchar ccsid
+//
+///
+dcl-pr iv_xlateLvc varchar(2097152:4) ccsid(65535) extproc(*CWIDEN : 'iv_xlateLvc') rtnparm;
+  inoutString varchar(2097152:4) ccsid(65535) options(*varsize) const;
+  fromCCSID int(10) value;
+  toCCSID   int(10) value;
+end-pr;

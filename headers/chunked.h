@@ -1,1 +1,1 @@
-BOOL receiveChunked(PILEVATOR pIv);
+API_STATUS receiveChunked(PILEVATOR pIv);

@@ -1,4 +1,4 @@
-﻿/* SYSIFCOPT(*IFSIO) TERASPACE(*YES *TSIFC) STGMDL(*INHERIT) */
+/* SYSIFCOPT(*IFSIO) TERASPACE(*YES *TSIFC) STGMDL(*INHERIT) */
 /* ------------------------------------------------------------- */
 /* Program . . . : varchar                                       */
 /* Design  . . . : Niels Liisberg                                */
