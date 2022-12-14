@@ -41,7 +41,7 @@ dcl-proc example1;
         iv_joblog (%subst ( iv_xlateLvc(outbuf: 1252: 0): 1: 256));
     endif;
 
-    return; // Rember to use return - otherwise the on-exit will not be called
+    return; // Remember to use return - otherwise the on-exit will not be called
 
 on-exit;
     iv_delete(pHttp); 
@@ -72,7 +72,7 @@ dcl-proc example2;
     //     iv_log (pHttp : 'My request failed ' + text);
     // endif;
 
-    return; // Rember to use return - otherwise the on-exit will not be called
+    return; // Remember to use return - otherwise the on-exit will not be called
 
 on-exit;
     // iv_delete(pHttp); 
