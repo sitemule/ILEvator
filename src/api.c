@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <unistd.h>
 #include <decimal.h>
 #include <errno.h>
 #include <locale.h>
@@ -144,15 +145,21 @@ LGL iv_setCertificate  (
     PUCHAR certificatePassword
 )
 {
+    int res;
     strcpy  (pIv->pSockets->certificateFile, certificateFile);
     strcpy  (pIv->pSockets->keyringPassword, certificatePassword);
 
-    // TODO check if the file exsists
-    // lstast ()
-    // return OFF
-    return ON;
+    res = access ( pIv->pSockets->certificateFile ,  R_OK); 
+    if (res == 0) {
+        return ON;
+    } else {
+        iv_joblog( "Certificate error: %s File: %s:", 
+            strerror(errno),
+            pIv->pSockets->certificateFile
+        );
+        return OFF;
+    }
 }
-
 /* --------------------------------------------------------------------------- */
 LGL iv_execute (
     PILEVATOR pIv,
