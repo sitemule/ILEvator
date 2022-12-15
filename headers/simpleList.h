@@ -9,10 +9,8 @@
 /* ------------------------------------------------------------- */
 #ifndef SIMPLELIST_H
 #define  SIMPLELIST_H
-
 #define _MULTI_THREADED
 
-/* in qsysinc library */
 #include "ostypes.h"
 #include "varchar.h"
 

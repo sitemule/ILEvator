@@ -1,8 +1,10 @@
-#ifndef STRUTIL_H
-#define STRUTIL_H
+#ifndef strutil_H
+#define strutil_H
 
-int     strIcmp (PUCHAR s1, PUCHAR s2);
-int     memIcmp (PUCHAR s1, PUCHAR s2 , int len);
+BOOL   beginsWithAscii(PUCHAR a, PUCHAR b);
+BOOL   beginsWith(PUCHAR a, PUCHAR b);
+SHORT  strIcmp (PUCHAR s1, PUCHAR s2);
+SHORT  memIcmp (PUCHAR s1, PUCHAR s2 , LONG len);
 SHORT  memicmpascii(PUCHAR m1  , PUCHAR m2 , LONG len );
 UCHAR  toLower(UCHAR c);
 UCHAR  toUpper(UCHAR c);
@@ -29,7 +31,9 @@ PUCHAR strtrimcpy(PUCHAR out , PUCHAR in);
 PUCHAR strrighttrimcpy(PUCHAR dst, PUCHAR src);
 PUCHAR strrighttrimncpy(PUCHAR dst, PUCHAR src, LONG len);
 
-int cpy  (PUCHAR out , PUCHAR in);
+LONG cpystr (PUCHAR out , PUCHAR in);
+LONG cpymem (PUCHAR out , PUCHAR in, LONG len);
+
 PUCHAR trim(PUCHAR in);
 PUCHAR firstnonblank(PUCHAR in);
 PUCHAR lastnonblank(PUCHAR in);
@@ -38,7 +42,6 @@ PUCHAR righttrimlen(PUCHAR in , LONG size);
 LONG   lenrighttrimlen(PUCHAR in , LONG size);
 PUCHAR substr(PUCHAR out , PUCHAR in , LONG len);
 PUCHAR padncpy(PUCHAR dst, PUCHAR src, SHORT dstlen);
-#define padcpy(a,b) padncpy(a,b,sizeof(a))
 PUCHAR pad(PUCHAR s , LONG l);
 PUCHAR blob2str   (PBLOB blob);
 ULONG hexstr2int (PUCHAR s);
@@ -50,6 +53,5 @@ LONG packedMem2Int(PUCHAR buf, SHORT bytes);
 PUCHAR memmem  (PUCHAR heystack , ULONG haystackLen, 
                 PUCHAR needle , ULONG needleLen);
 LONG a2i (PUCHAR s);
-
 
 #endif

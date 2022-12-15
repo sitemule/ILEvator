@@ -13,7 +13,7 @@
 #include <stdarg.h>
 #include "ostypes.h"
 #include "teramem.h"
-#include "strUtil.h"
+#include "strutil.h"
 #include "varchar.h"
 
 

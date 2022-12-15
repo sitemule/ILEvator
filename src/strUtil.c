@@ -20,23 +20,52 @@
 
 #include "ostypes.h"
 #include "teramem.h"
-#include "strUtil.h"
+#include "strutil.h"
 
+// ------------------------------------------------------------- 
+// does a begins with string sequence of b
+// -------------------------------------------------------------
+BOOL beginsWith(PUCHAR a, PUCHAR b)
+{
+    return memicmp(a, b, strlen(b)) == 0;
+}
+// ------------------------------------------------------------- 
+// Q&D ASCII version of: does a begins with string sequence of b
+// -------------------------------------------------------------
+BOOL beginsWithAscii(PUCHAR a, PUCHAR b)
+{
+    LONG i;
+    LONG l = strlen(b);
+    for (i=0; i < l; i ++) {
+        if ((a[i] & 0xdf) != (b[i] & 0xdf)) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
 /* ------------------------------------------------------------- *\
-   copy a string and return number of bytes copied
+   copy a string and returns number of bytes copied
 \* ------------------------------------------------------------- */
-int cpy  (PUCHAR out , PUCHAR in)
+LONG cpystr  (PUCHAR out , PUCHAR in)
 {
    int l = strlen(in);
    memcpy (out , in , l+1);
    return (l);
 }
 /* ------------------------------------------------------------- *\
+   copy memroy and returns number of bytes copied
+\* ------------------------------------------------------------- */
+LONG cpymem (PUCHAR out , PUCHAR in, LONG len)
+{
+   memcpy (out , in , len);
+   return (len);
+}
+/* ------------------------------------------------------------- *\
    strIcmp  is stricmp in ccsid 277
 \* ------------------------------------------------------------- */
-int strIcmp (PUCHAR s1, PUCHAR s2)
+SHORT strIcmp (PUCHAR s1, PUCHAR s2)
 {
-    int c =0;
+    SHORT c =0;
     do {
       c = toUpper(*(s1++)) - toUpper(*(s2++));
     } while (c == 0 && *s1 && *s2);
@@ -46,15 +75,14 @@ int strIcmp (PUCHAR s1, PUCHAR s2)
 /* ------------------------------------------------------------- *\
    memIcmp  is memicmp in ccsid 277
 \* ------------------------------------------------------------- */
-int memIcmp (PUCHAR s1, PUCHAR s2 , int len)
+SHORT memIcmp (PUCHAR s1, PUCHAR s2 , LONG len)
 {
-    int c =0;
+    SHORT c =0;
     while (len-- > 0 && c==0) {
       c = toUpper(*(s1++)) - toUpper(*(s2++));
     }
     return c;
 }
-#include "ostypes.h"
 /* ------------------------------------------------------------- *\
    memmem 
 \* ------------------------------------------------------------- */
@@ -788,18 +816,23 @@ LONG strTrimLen(PUCHAR str)
     }
     return len;
 }
-/* ---------------------------------------------------------------------------------------- */
-// atoi - real ascii version - the stdlib is running in EBCDIC
-/* ---------------------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------- *\
+   ASCII - atoi
+\* --------------------------------------------------------------------------- */
+#pragma convert(1252)
 LONG a2i (PUCHAR s)
 {
-    LONG res = 0;
-    for (;*s;s++) {
-        // Is real ascii number?
-        if (*s >= 0x30 && *s <= 0x39) {
-            res = 10*res + (*s - 0x30);
+    int i;
+    int ret=0;
+    for (i=0;i<15;i++) {
+        if (s[i] == ' ') {
+        } else if (s[i] >= '0' && s[i] <= '9') {
+            ret = ret * 10 + (s[i] - '0');
+        } else {
+            break;
         }
-    }
-    return res;
+   }
+   return ret;
 }
+#pragma convert(0)
 

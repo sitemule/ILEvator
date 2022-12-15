@@ -490,6 +490,17 @@ dcl-pr iv_execute ind   extproc(*CWIDEN:'iv_execute');
     timeOut     int(10) options(*nopass) value; // In milisec
 end-pr;
 
+
+///
+// Set the certificate for HTTPS 
+// @return *ON if ok 
+///
+dcl-pr iv_setCertificate ind   extproc(*CWIDEN:'iv_setCertificate');
+    pClient             pointer value;
+    certificateFile     pointer options(*string) value;
+    certificatePassword pointer options(*string:*nopass) value;
+end-pr;
+
 ///
 // returns the http status code 
 //

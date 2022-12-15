@@ -54,7 +54,6 @@ typedef struct _ILEVATOR {
     PUCHAR    ResponseString;
     LONG      Ccsid; 
     LONG      status;
-    BOOL      AsHttps;
 
     PUCHAR    pResBuffer; 
     ULONG     resBufferSize;
