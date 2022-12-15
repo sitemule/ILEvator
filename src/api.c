@@ -139,18 +139,20 @@ void iv_setResponseDataBuffer (
     );
 }
 /* --------------------------------------------------------------------------- */
+// sets and validates the usages of the certificate file 
+/* --------------------------------------------------------------------------- */
 LGL iv_setCertificate  (
     PILEVATOR pIv,
     PUCHAR certificateFile,
     PUCHAR certificatePassword
 )
 {
-    int res;
-    strcpy  (pIv->pSockets->certificateFile, certificateFile);
-    strcpy  (pIv->pSockets->keyringPassword, certificatePassword);
+    int parms = _NPMPARMLISTADDR()->OpDescList->NbrOfParms;
 
-    res = access ( pIv->pSockets->certificateFile ,  R_OK); 
-    if (res == 0) {
+    strcpy  (pIv->pSockets->certificateFile, certificateFile);
+    strcpy  (pIv->pSockets->keyringPassword , (parms >=3) ? certificatePassword: "");
+
+    if (0 == access ( pIv->pSockets->certificateFile ,  R_OK)) {
         return ON;
     } else {
         iv_joblog( "Certificate error: %s File: %s:", 
@@ -165,19 +167,19 @@ LGL iv_execute (
     PILEVATOR pIv,
     PUCHAR method,
     PUCHAR url,
-    ULONG  timeOut
+    ULONG  timeOut,
+    ULONG  retries   
 )
 {
-
-    PNPMPARMLISTADDRP pParms = _NPMPARMLISTADDR();
+    int parms = _NPMPARMLISTADDR()->OpDescList->NbrOfParms;
     API_STATUS apiStatus = API_RETRY; 
     SHORT retry;
     
     pIv->method = method; 
     pIv->url = url; 
-    pIv->timeOut = timeOut; 
-    pIv->retryMax = 3;  // TOOD for now  
-
+    pIv->timeOut = (parms >= 4) ? timeOut : 30000; 
+    pIv->retries = (parms >= 5) ? retries : 3;
+    
     parseUrl (
         pIv,
         url,
@@ -189,7 +191,7 @@ LGL iv_execute (
         pIv->password
     ); 
 
-    for (retry = 0; retry < pIv->retryMax ; retry++) {
+    for (retry = 0; retry < pIv->retries ; retry++) {
 
         BOOL ok = sockets_connect(
             pIv->pSockets, 

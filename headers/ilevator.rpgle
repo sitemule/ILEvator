@@ -18,10 +18,10 @@
 // the need of any third party web client products.
 //
 // @author Niels Liisberg
-// @date 27.08.2018
+// @date 15.12.2022
 // @project ILEvator
 // @link https://github.com/sitemule/ILEvator Project page
-// @version 1.1.3
+// @version 1.0.0
 //
 // @info Source for HTTP status documentation is the Mozilla developer website
 //       at https://developer.mozilla.org/en-US/docs/Web/HTTP/Status .
@@ -29,9 +29,9 @@
 
 
 ///
-// Template for UTF8 varchars.
+// Template for UTF8 varchars. default to 2M 
 ///
-dcl-s IV_LONGUTF8VARCHAR varchar(524284:4) ccsid(*utf8) template;
+dcl-s IV_LONGUTF8VARCHAR varchar(2097152:4) ccsid(*utf8) template;
 
 
 
@@ -487,7 +487,8 @@ dcl-pr iv_execute ind   extproc(*CWIDEN:'iv_execute');
     pClient     pointer value;
     method      pointer options(*string:*nopass) value;
     url         pointer options(*string:*nopass) value;
-    timeOut     int(10) options(*nopass) value; // In milisec
+    timeOut     int(10) options(*nopass) value; // In milisec. 30000 is default
+    retries     int(10) options(*nopass) value; // retry n times. 3 is default
 end-pr;
 
 
@@ -523,8 +524,8 @@ end-pr;
 //
 // @info The character encoding for the original value is expected to be UTF-8.
 ///
-dcl-pr iv_decodeBase64 varchar(524284:4) ccsid(*utf8) extproc(*CWIDEN : 'iv_decodeBase64') rtnparm;
-  string varchar(524284:4) ccsid(*utf8) options(*varsize) const;
+dcl-pr iv_decodeBase64 varchar(2097152:4) ccsid(*utf8) extproc(*CWIDEN : 'iv_decodeBase64') rtnparm;
+  string varchar(2097152:4) ccsid(*utf8) options(*varsize) const;
 end-pr;
 
 ///
@@ -537,8 +538,8 @@ end-pr;
 //
 // @info The character encoding for the original value is expected to be UTF-8.
 ///
-dcl-pr iv_encodeBase64 varchar(524284:4) ccsid(*utf8) extproc(*CWIDEN : 'iv_encodeBase64') rtnparm;
-  string varchar(524284:4) ccsid(*utf8) options(*varsize) const;
+dcl-pr iv_encodeBase64 varchar(2097152:4) ccsid(*utf8) extproc(*CWIDEN : 'iv_encodeBase64') rtnparm;
+  string varchar(2097152:4) ccsid(*utf8) options(*varsize) const;
 end-pr;
 
 ///

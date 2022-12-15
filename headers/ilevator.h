@@ -27,7 +27,7 @@ typedef struct _ILEVATOR {
     PUCHAR    method; 
     PUCHAR    url; 
     SHORT     timeOut;
-    SHORT     retryMax;
+    SHORT     retries;
     BOOL      useProxy;
     BOOL      responseHeaderHasContentLength;
     BOOL      responseIsChunked;
@@ -95,7 +95,8 @@ LGL iv_execute (
     PILEVATOR pIv,
     PUCHAR method,
     PUCHAR url,
-    ULONG  timeOut
+    ULONG  timeOut,
+    ULONG  retries
 );
 
 
