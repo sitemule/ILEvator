@@ -606,6 +606,7 @@ UCHAR hexchar2int (UCHAR c)
      return (c - 'a' + 10);
    }
 }
+/* --------------------------------------------------------------------------- */
 PUCHAR binMem2Hex (PUCHAR out , PUCHAR in , LONG len)
 {
    PUCHAR  res = out;
@@ -621,6 +622,7 @@ PUCHAR binMem2Hex (PUCHAR out , PUCHAR in , LONG len)
     *(res++) = '\0';   // Can be a string
    return out;
 }
+/* --------------------------------------------------------------------------- */
 PUCHAR hex2BinMem (PUCHAR out , PUCHAR in , LONG len)
 {
    PUCHAR  res = out;

@@ -76,7 +76,7 @@ void iv_setRequestHeaderBuffer (
     PUCHAR pBuf,
     LONG  bufferSize,
     SHORT bufferType,
-    SHORT bufferXlate
+    LONG  bufferCcsid
 )
 {
     anyCharSet ( 
@@ -84,7 +84,7 @@ void iv_setRequestHeaderBuffer (
         pBuf,
         bufferSize,
         bufferType,
-        bufferXlate
+        bufferCcsid
     );
 }
 /* --------------------------------------------------------------------------- */
@@ -93,7 +93,7 @@ void iv_setRequestDataBuffer (
     PUCHAR pBuf,
     LONG  bufferSize,
     SHORT bufferType,
-    SHORT bufferXlate
+    LONG  bufferCcsid
 )
 {
     anyCharSet ( 
@@ -101,7 +101,7 @@ void iv_setRequestDataBuffer (
         pBuf,
         bufferSize,
         bufferType,
-        bufferXlate
+        bufferCcsid
     );
 }
 /* --------------------------------------------------------------------------- */
@@ -110,7 +110,7 @@ void iv_setResponseHeaderBuffer (
     PUCHAR pBuf,
     LONG  bufferSize,
     SHORT bufferType,
-    SHORT bufferXlate
+    LONG  bufferCcsid
 )
 {
     anyCharSet ( 
@@ -118,7 +118,7 @@ void iv_setResponseHeaderBuffer (
         pBuf,
         bufferSize,
         bufferType,
-        bufferXlate
+        bufferCcsid
     );
 }
 /* --------------------------------------------------------------------------- */
@@ -127,7 +127,7 @@ void iv_setResponseDataBuffer (
     PUCHAR pBuf,
     LONG  bufferSize,
     SHORT bufferType,
-    SHORT bufferXlate
+    LONG  bufferCcsid
 )
 {
     anyCharSet ( 
@@ -135,8 +135,27 @@ void iv_setResponseDataBuffer (
         pBuf,
         bufferSize,
         bufferType,
-        bufferXlate
+        bufferCcsid
     );
+}
+/* --------------------------------------------------------------------------- */
+void iv_setResponseFile (
+    PILEVATOR pIv ,
+    PUCHAR fileName,
+    LONG   ccsid
+)
+{
+    int parms = _NPMPARMLISTADDR()->OpDescList->NbrOfParms;
+    UCHAR   mode[32];
+
+    ccsid = (parms >=3) ? parms : 1252;   
+
+    sprintf(mode , "wb,o_ccsid=%d", ccsid);
+	unlink  ( righttrim(fileName)); // Just to reset the CCSID which will not change if file exists
+	pIv->responseDataFile  = fopen ( righttrim(fileName) , mode );
+	if (pIv->responseDataFile == NULL) {
+        iv_joblog( "Response output open failed: %s" , strerror(errno));
+	}
 }
 /* --------------------------------------------------------------------------- */
 // sets and validates the usages of the certificate file 
@@ -233,6 +252,10 @@ LGL iv_execute (
     anyCharFinalize (&pIv->requestDataBuffer);
     anyCharFinalize (&pIv->responseHeaderBuffer);
     anyCharFinalize (&pIv->responseDataBuffer);
+
+    if (pIv->responseDataFile) {
+        fclose(pIv->responseDataFile);
+    }
 
     iv_delete ( pIv);
 

@@ -403,9 +403,10 @@ dcl-c IV_VARCHAR4 2;
 ///
 // Conversion - named values; more exists
 ///
-dcl-c IV_XLATE_EBCDIC 0;
-dcl-c IV_XLATE_UTF8   1208;
-dcl-c IV_XLATE_NO     65535;
+dcl-c IV_CCSID_JOB     0;
+dcl-c IV_CCSID_UTF8    1208;
+dcl-c IV_CCSID_WIN1252 1252;
+dcl-c IV_CCSID_BINARY  65535;
 
 ///
 // Set the buffer where the header buffer is placed
@@ -415,14 +416,14 @@ dcl-c IV_XLATE_NO     65535;
 // @param pointer to buffer
 // @param size    size of buffer ( bytes in total)
 // @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
-// @param xlate   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
+// @param ccsid   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
 ///
 dcl-pr iv_setRequestHeaderBuffer  extproc(*CWIDEN:'iv_setRequestHeaderBuffer');
     pClient       pointer value;
     pBuffer       pointer value;
     bufferSize    int(10) value;
     bufferType    int(5) value;
-    bufferXlate   int(5) value;
+    bufferCcsid   int(10) value;
 end-pr;
 
 ///
@@ -433,14 +434,14 @@ end-pr;
 // @param pointer to buffer
 // @param size    size of buffer ( bytes in total)
 // @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
-// @param xlate   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
+// @param ccsid   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
 ///
 dcl-pr iv_setRequestDataBuffer  extproc(*CWIDEN:'iv_setRequestDataBuffer');
     pClient       pointer value;
     pBuffer       pointer value;
     bufferSize    int(10) value;
     bufferType    int(5) value;
-    bufferXlate   int(5) value;
+    bufferCcsid   int(10) value;
 end-pr;
 
 ///
@@ -451,14 +452,14 @@ end-pr;
 // @param pointer to buffer
 // @param size    size of buffer ( bytes in total)
 // @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
-// @param xlate   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
+// @param ccsid   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
 ///
 dcl-pr iv_setResponseHeaderBuffer  extproc(*CWIDEN:'iv_setResponseHeaderBuffer');
     pClient       pointer value;
     pBuffer       pointer value;
     bufferSize    int(10) value;
     bufferType    int(5) value;
-    bufferXlate   int(5) value;
+    bufferCcsid   int(10) value;
 end-pr;
 
 ///
@@ -469,14 +470,28 @@ end-pr;
 // @param pointer to buffer
 // @param size    size of buffer ( bytes in total)
 // @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
-// @param xlate   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
+// @param ccsid   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
 ///
 dcl-pr iv_setResponseDataBuffer  extproc(*CWIDEN:'iv_setResponseDataBuffer');
     pClient       pointer value;
     pBuffer       pointer value;
     bufferSize    int(10) value;
     bufferType    int(5) value;
-    bufferXlate   int(5) value;
+    bufferCcsid   int(10) value;
+end-pr;
+
+///
+// Set the output files for the response 
+//
+//
+// @param pClient  pointer to the http client 
+// @param fileName pointer to name of IFS file
+// @param ccsid    optional: file ccsid 
+///
+dcl-pr iv_setResponseFile  extproc(*CWIDEN:'iv_setResponseFile');
+    pClient       pointer value;
+    fileName      pointer options(*string) value;
+    fileCcsid     int(10)  options(*nopass) value;
 end-pr;
 
 ///
