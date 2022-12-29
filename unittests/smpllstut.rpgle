@@ -185,6 +185,3 @@ on-exit;
    sList_free(hKeyedList);
 
 end-proc;
-
-
-

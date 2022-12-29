@@ -21,7 +21,7 @@
 #include "xlate.h"
 
 /* ------------------------------------------------------------- */
-iconv_t xlateOpen ( LONG fromCCSID,  LONG toCCSID)
+iconv_t xlate_open ( LONG fromCCSID,  LONG toCCSID)
 {
    QtqCode_T to;
    QtqCode_T from;
@@ -46,7 +46,7 @@ iconv_t xlateOpen ( LONG fromCCSID,  LONG toCCSID)
    return QtqIconvOpen( &to, &from);
 }
 /* ------------------------------------------------------------- */
-ULONG xlateBuf(PUCHAR outBuf, PUCHAR inBuf , ULONG length,  LONG fromCCSID,  LONG toCCSID)
+ULONG xlate_translateBuffer(PUCHAR outBuf, PUCHAR inBuf , ULONG length,  LONG fromCCSID,  LONG toCCSID)
 {
    iconv_t cd;
    ULONG outLen;
@@ -58,17 +58,17 @@ ULONG xlateBuf(PUCHAR outBuf, PUCHAR inBuf , ULONG length,  LONG fromCCSID,  LON
       return length;
    }
 
-   cd = xlateOpen  (fromCCSID, toCCSID);
+   cd = xlate_open(fromCCSID, toCCSID);
    if  (cd.return_value == -1) return -1;
 
-   outLen = xlateBufCd(cd, outBuf, inBuf , length);
+   outLen = xlate_translateDescriptor(cd, outBuf, inBuf , length);
    iconv_close (cd);
 
    return (outLen);  // Number of bytes converted
 }
 
 /* ------------------------------------------------------------- */
-ULONG xlateBufCd(iconv_t cd, PUCHAR outBuf, PUCHAR inBuf , ULONG length)
+ULONG xlate_translateDescriptor(iconv_t cd, PUCHAR outBuf, PUCHAR inBuf , ULONG length)
 {
    PUCHAR pOutBuf;
    PUCHAR pInBuf;
@@ -93,22 +93,21 @@ ULONG xlateBufCd(iconv_t cd, PUCHAR outBuf, PUCHAR inBuf , ULONG length)
    return (outLen);  // Number of bytes converted
 }
 /* ------------------------------------------------------------- */
-PUCHAR xlateStr (PUCHAR out, PUCHAR in,  LONG fromCCSID,  LONG toCCSID)
+PUCHAR xlate_translateString (PUCHAR out, PUCHAR in,  LONG fromCCSID,  LONG toCCSID)
 {
-   int length = xlateBuf(out, in , strlen(in)  , fromCCSID, toCCSID);
+   int length = xlate_translateBuffer(out, in , strlen(in)  , fromCCSID, toCCSID);
    out[length] = '\0';
    return out;
 }
 /* ------------------------------------------------------------- */
 // Export: 
 /* ------------------------------------------------------------- */
-void iv_xlateVc  (PVARCHAR out, PVARCHAR in ,  LONG fromCCSID,  LONG toCCSID)
+void xlate_translateVarchar (PVARCHAR out, PVARCHAR in ,  LONG fromCCSID,  LONG toCCSID)
 {
-   out->Length = xlateBuf(out->String , in->String , in->Length , fromCCSID, toCCSID);
+   out->Length = xlate_translateBuffer(out->String , in->String , in->Length , fromCCSID, toCCSID);
 }
 /* ------------------------------------------------------------- */
-void iv_xlateLvc  (PLVARCHAR out, PLVARCHAR in ,   LONG fromCCSID,  LONG toCCSID)
+void xlate_translateLongVarchar (PLVARCHAR out, PLVARCHAR in ,   LONG fromCCSID,  LONG toCCSID)
 {
-   out->Length = xlateBuf(out->String , in->String , in->Length , fromCCSID, toCCSID);
+   out->Length = xlate_translateBuffer(out->String , in->String , in->Length , fromCCSID, toCCSID);
 }
-

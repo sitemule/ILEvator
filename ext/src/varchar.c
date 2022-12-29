@@ -12,8 +12,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include "ostypes.h"
-#include "teramem.h"
 #include "strutil.h"
+#include "teraspace.h"
 #include "varchar.h"
 
 
@@ -193,7 +193,7 @@ void vccatf (PVOID VarChar, PUCHAR Ctlstr , ...)
 /* --------------------------------------------------------------------------- */
 PVARCHARLIST  vcListNew (void)
 {
-   PVARCHARLIST pVcl = memAlloc(sizeof(VARCHARLIST));
+   PVARCHARLIST pVcl = teraspace_alloc(sizeof(VARCHARLIST));
    memset(pVcl , 0 , sizeof(VARCHARLIST));
    return pVcl;
 }
@@ -217,7 +217,7 @@ void vcListAdd (PVARCHARLIST pVcl ,PVARCHAR str)
 void vcListFree(PVARCHARLIST pVcl)
 {
    if (pVcl == NULL) return;
-   memFree(&pVcl->list);
+   teraspace_free(&pVcl->list);
    memset(pVcl , 0 , sizeof(VARCHARLIST));
 }
 /* --------------------------------------------------------------------------- */

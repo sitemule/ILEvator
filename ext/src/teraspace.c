@@ -1,4 +1,3 @@
-/* SYSIFCOPT(*IFSIO) TERASPACE(*YES *TSIFC) STGMDL(*INHERIT) */
 /* ------------------------------------------------------------- */
 /* Date  . . . . : 14.09.2014                                    */
 /* Design  . . . : Niels Liisberg                                */
@@ -9,7 +8,7 @@
 /*   QIBM_MALLOC_TYPE=DEBUG                                      */
 /*                                                               */
 /* See more at:                                                  */
-/*   https://www.ibm.com/support/knowledgecenter/en/ssw_ibm_i_71/rtref/debug_memory_manager.htm  */
+/*  https://www.ibm.com/docs/en/i/7.4?topic=memory-debug-manager */
 /*                                                               */
 /* By     Date       PTF     Description                         */
 /* NL     14.09.2014         New program                         */
@@ -24,7 +23,7 @@
 #include <sys/mman.h>
 
 #include "ostypes.h"
-#include "teramem.h"
+#include "teraspace.h"
 
 static INT64 used = 0;
 static INT64 allocated = 0;
@@ -33,8 +32,14 @@ static INT64 balance = 0;
 static INT64 limit   = (5.0 * 1000.0 * 1000.0);
 static BOOL  debug   = true;
 
+typedef _Packed struct _MEMHDR {
+      USHORT  signature;    //  2 the "<>" signature
+      UCHAR   filler [6];   // 10 Pad up to 16 bytes total
+      UINT64  size;         //  4
+} MEMHDR, * PMEMHDR;        // 16 -> Total of 16 to let it allign for pointers
+
 // -------------------------------------------------------------
-PVOID memAlloc (UINT64 len)
+PVOID teraspace_alloc (UINT64 len)
 {
     UINT64 totlen = len + sizeof(MEMHDR);
     UINT64 used;
@@ -75,14 +80,14 @@ PVOID memAlloc (UINT64 len)
 
 }
 // -------------------------------------------------------------
-PVOID memCalloc (UINT64 len) 
+PVOID teraspace_calloc (UINT64 len) 
 {
-   PVOID mem= memAlloc (len);
+   PVOID mem= teraspace_alloc(len);
    memset( mem , '\0', len);
    return mem;
 }
 // -------------------------------------------------------------
-void memFree (PVOID * pp)
+void teraspace_free (PVOID * pp)
 {
    PUCHAR p;
    PMEMHDR mem;
@@ -106,28 +111,27 @@ void memFree (PVOID * pp)
       #endif
       return;
    }
-   mem->signature = 0; // Enusre that we release the signature
+   mem->signature = 0; // Ensure that we release the signature
    totlen = mem->size + sizeof(MEMHDR);
    deallocated += totlen;
    balance     -= totlen;
-   // memFree (mem);
    _C_TS_free(mem);
    *pp = NULL;
 }
 // -------------------------------------------------------------
-PUCHAR memStrDup(PUCHAR s)
+PUCHAR teraspace_strdup(PUCHAR s)
 {
     PUCHAR p;
     UINT64 len;
 
     if (s == NULL) return NULL;
     len = strlen(s) + 1;  // Len including the zero term.
-    p = memAlloc (len);
+    p = teraspace_alloc (len);
     memcpy (p , s , len); // Copy the string including the zerotermination
     return p;
 }
 // -------------------------------------------------------------
-PUCHAR memStrTrimDup(PUCHAR s)
+PUCHAR teraspace_strTrimDup(PUCHAR s)
 {
     PUCHAR p;
     PUCHAR t;
@@ -138,13 +142,13 @@ PUCHAR memStrTrimDup(PUCHAR s)
     for (t=s; *t ; t++) {
        if (*t > ' ') len = (t - s) + 1;
     }
-    p = memAlloc (len+1);
+    p = teraspace_alloc (len+1);
     memcpy (p , s , len); // Copy the string including the zerotermination
     *(p+len) = 0;
     return p;
 }
 // -------------------------------------------------------------
-PVOID memRealloc (PVOID * p, UINT64 len)
+PVOID teraspace_realloc (PVOID * p, UINT64 len)
 {
     PUCHAR oldMem = *p;
     if (oldMem)  {
@@ -157,12 +161,12 @@ PVOID memRealloc (PVOID * p, UINT64 len)
        newMem->size = newSize;
        *p = (PUCHAR)newMem + sizeof(MEMHDR);      // Return the pointer after the header
     } else {
-       *p = memAlloc(len);
+       *p = teraspace_alloc(len);
     }
     return *p;
 }
 // -------------------------------------------------------------
-UINT64 memSize (PVOID p)
+UINT64 teraspace_size (PVOID p)
 {
    PMEMHDR mem;
 
@@ -179,7 +183,7 @@ UINT64 memSize (PVOID p)
    return mem->size;
 }
 // -------------------------------------------------------------
-PVOID memShare (PUCHAR path, UINT64 len)
+PVOID teraspace_share (PUCHAR path, UINT64 len)
 {
    LONG     fd;
    LONG     result;
@@ -187,7 +191,7 @@ PVOID memShare (PUCHAR path, UINT64 len)
 
    fd = open(path  , O_RDWR);
 
-   // Does not exists - creat it
+   // Does not exists - create it
    if (fd == -1) {
 
       fd = open(path  , O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600);
@@ -226,13 +230,13 @@ PVOID memShare (PUCHAR path, UINT64 len)
    map = mmap(0, len , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
    if (map == MAP_FAILED) {
       close(fd);
-      perror("Error mmapping the file");
+      perror("Error memory mapping the file");
       return NULL;
    }
    return map;
 }
 // -------------------------------------------------------------
-void memStat (void)
+void teraspace_stat (void)
 {
    printf("\n");
    printf("Allocated: %-16.16lld " , allocated);
@@ -240,32 +244,12 @@ void memStat (void)
    printf("Balance: %-16.16lld\n" , balance);
 }
 // -------------------------------------------------------------
-BOOL memLeak (void)
+BOOL teraspace_leak (void)
 {
    return (balance != 0) ;
 }
 // -------------------------------------------------------------
-UINT64 memUse (void)
+UINT64 teraspace_use (void)
 {
    return balance;
 }
-// -------------------------------------------------------------
-// Test case:
-// -------------------------------------------------------------
-/*********************
-void main()
-{
-   PUCHAR p [1000];
-   int i ;
-   INT64  b1,  b2, b3;
-   b1 = memUse();
-   for(i=0;i<20  ;i++) {
-      p[i] = memAlloc(MEMMAX);
-   }
-   b2 = memUse();
-   for(i=0;i<20  ;i++) {
-      memFree (&p[i]);
-   }
-   b3 = memUse();
-}
-*/

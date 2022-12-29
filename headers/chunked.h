@@ -1,1 +1,4 @@
+#ifndef ILEVATIR_CHUNKED_H
+#define ILEVATIR_CHUNKED_H
 API_STATUS receiveChunked(PILEVATOR pIv);
+#endif

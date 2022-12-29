@@ -19,20 +19,20 @@
 #include <mih/setsppfp.h>
 
 #include "ostypes.h"
-#include "teramem.h"
+#include "teraspace.h"
 #include "strutil.h"
 
 // ------------------------------------------------------------- 
 // does a begins with string sequence of b
 // -------------------------------------------------------------
-BOOL beginsWith(PUCHAR a, PUCHAR b)
+BOOL strutil_beginsWith(PUCHAR a, PUCHAR b)
 {
     return memicmp(a, b, strlen(b)) == 0;
 }
 // ------------------------------------------------------------- 
 // Q&D ASCII version of: does a begins with string sequence of b
 // -------------------------------------------------------------
-BOOL beginsWithAscii(PUCHAR a, PUCHAR b)
+BOOL strutil_beginsWithAscii(PUCHAR a, PUCHAR b)
 {
     LONG i;
     LONG l = strlen(b);
@@ -46,7 +46,7 @@ BOOL beginsWithAscii(PUCHAR a, PUCHAR b)
 /* ------------------------------------------------------------- *\
    copy a string and returns number of bytes copied
 \* ------------------------------------------------------------- */
-LONG cpystr  (PUCHAR out , PUCHAR in)
+LONG strutil_cpystr  (PUCHAR out , PUCHAR in)
 {
    int l = strlen(in);
    memcpy (out , in , l+1);
@@ -55,7 +55,7 @@ LONG cpystr  (PUCHAR out , PUCHAR in)
 /* ------------------------------------------------------------- *\
    copy memroy and returns number of bytes copied
 \* ------------------------------------------------------------- */
-LONG cpymem (PUCHAR out , PUCHAR in, LONG len)
+LONG strutil_cpymem (PUCHAR out , PUCHAR in, LONG len)
 {
    memcpy (out , in , len);
    return (len);
@@ -63,11 +63,11 @@ LONG cpymem (PUCHAR out , PUCHAR in, LONG len)
 /* ------------------------------------------------------------- *\
    strIcmp  is stricmp in ccsid 277
 \* ------------------------------------------------------------- */
-SHORT strIcmp (PUCHAR s1, PUCHAR s2)
+SHORT strutil_strIcmp (PUCHAR s1, PUCHAR s2)
 {
     SHORT c =0;
     do {
-      c = toUpper(*(s1++)) - toUpper(*(s2++));
+      c = strutil_toUpper(*(s1++)) - strutil_toUpper(*(s2++));
     } while (c == 0 && *s1 && *s2);
 
     return c;
@@ -75,18 +75,18 @@ SHORT strIcmp (PUCHAR s1, PUCHAR s2)
 /* ------------------------------------------------------------- *\
    memIcmp  is memicmp in ccsid 277
 \* ------------------------------------------------------------- */
-SHORT memIcmp (PUCHAR s1, PUCHAR s2 , LONG len)
+SHORT strutil_memIcmp (PUCHAR s1, PUCHAR s2 , LONG len)
 {
     SHORT c =0;
     while (len-- > 0 && c==0) {
-      c = toUpper(*(s1++)) - toUpper(*(s2++));
+      c = strutil_toUpper(*(s1++)) - strutil_toUpper(*(s2++));
     }
     return c;
 }
 /* ------------------------------------------------------------- *\
    memmem 
 \* ------------------------------------------------------------- */
-PUCHAR memmem  (PUCHAR heystack , ULONG haystackLen, 
+PUCHAR strutil_memmem  (PUCHAR heystack , ULONG haystackLen, 
                        PUCHAR needle , ULONG needleLen)
 {
     PUCHAR p = heystack;
@@ -103,7 +103,7 @@ PUCHAR memmem  (PUCHAR heystack , ULONG haystackLen,
 /* ------------------------------------------------------------- *\
    toUpper and toLower in ccsid 277
 \* ------------------------------------------------------------- */
-UCHAR toUpper(UCHAR c)
+UCHAR strutil_toUpper(UCHAR c)
 {
    switch(c) {
       case 'æ' : return 'Æ';
@@ -112,7 +112,7 @@ UCHAR toUpper(UCHAR c)
       default  : return toupper(c);
    }
 }
-UCHAR toLower(UCHAR c)
+UCHAR strutil_toLower(UCHAR c)
 {
    switch(c) {
       case 'Æ' : return 'æ';
@@ -122,7 +122,7 @@ UCHAR toLower(UCHAR c)
    }
 }
 /* ------------------------------------------------------------- */
-UCHAR toupperascii (UCHAR c)
+UCHAR strutil_toupperascii (UCHAR c)
 {
 #pragma convert(1252)
    if (c >= 'a' && c <= 'z') return c - ( 'a' - 'A');
@@ -131,7 +131,7 @@ UCHAR toupperascii (UCHAR c)
 }
 /* ------------------------------------------------------------- *\
 \* ------------------------------------------------------------- */
-UCHAR tolowerascii (UCHAR c)
+UCHAR strutil_tolowerascii (UCHAR c)
 {
 #pragma convert(1252)
    if (c >= 'A' && c <= 'Z') return c + ( 'a' - 'A');
@@ -142,14 +142,14 @@ UCHAR tolowerascii (UCHAR c)
    stristr is strstr that ignores the case
    is trturns the pointer to "key" with in base
 \* ------------------------------------------------------------- */
-PUCHAR stristr(PUCHAR base, PUCHAR key )
+PUCHAR strutil_stristr(PUCHAR base, PUCHAR key )
 {
-   UCHAR k = toUpper(key[0]) ;
+   UCHAR k = strutil_toUpper(key[0]) ;
    SHORT keylen = strlen (key);
 
    while (*base) {
-     if  (toUpper(*base) == k) {
-        if (memIcmp (base , key , keylen) == 0) {  /* Found !! */
+     if  (strutil_toUpper(*base) == k) {
+        if (strutil_memIcmp (base , key , keylen) == 0) {  /* Found !! */
            return base;
         }
      }
@@ -160,7 +160,7 @@ PUCHAR stristr(PUCHAR base, PUCHAR key )
 /* ------------------------------------------------------------- *\
    strchrreplace returns a string, where chars are replaced one by one if byte match
 \* ------------------------------------------------------------- */
-PUCHAR strchrreplace(PUCHAR out , PUCHAR in , PUCHAR from , PUCHAR to )
+PUCHAR strutil_strchrreplace(PUCHAR out , PUCHAR in , PUCHAR from , PUCHAR to )
 {
    PUCHAR pf, pt, res = out;
 
@@ -179,12 +179,12 @@ PUCHAR strchrreplace(PUCHAR out , PUCHAR in , PUCHAR from , PUCHAR to )
 /* ------------------------------------------------------------- *\
    memstrreplace returns new lengt of the buffer where replaced with a string
 \* ------------------------------------------------------------- */
-LONG  memstrreplace(PUCHAR buf , LONG len , PUCHAR from , PUCHAR to )
+LONG  strutil_bufferReplace(PUCHAR buf , LONG len , PUCHAR from , PUCHAR to )
 {
    PUCHAR in , out = buf, inbuf, end;
    int lFrom = strlen(from), lTo = strlen(to);
 
-   in = inbuf = memAlloc(len);
+   in = inbuf = teraspace_alloc(len);
    memcpy(in, buf, len);
    end = in + len;
 
@@ -198,7 +198,7 @@ LONG  memstrreplace(PUCHAR buf , LONG len , PUCHAR from , PUCHAR to )
        *(out++) = *(in++);
      }
    }
-   memFree(&inbuf);
+   teraspace_free(&inbuf);
    return out - buf;
 }
 /* ------------------------------------------------------------- *\
@@ -211,7 +211,7 @@ LONG  memstrreplace(PUCHAR buf , LONG len , PUCHAR from , PUCHAR to )
    points to the first occurrence of the substring in the given string. If the substring is not found, this will be a nu
    ll pointer.
 \* ------------------------------------------------------------- */
-PUCHAR memstr(PUCHAR base, PUCHAR key, LONG len )
+PUCHAR strutil_memstr(PUCHAR base, PUCHAR key, LONG len )
 {
    UCHAR k = key[0] ;
    SHORT keylen = strlen (key);
@@ -227,14 +227,14 @@ PUCHAR memstr(PUCHAR base, PUCHAR key, LONG len )
    }
    return NULL;
 }
-PUCHAR memIstr(PUCHAR base, PUCHAR key, LONG len )
+PUCHAR strutil_memIstr(PUCHAR base, PUCHAR key, LONG len )
 {
-   UCHAR k = toUpper(key[0]) ;
+   UCHAR k = strutil_toUpper(key[0]) ;
    SHORT keylen = strlen (key);
 
    while (len>0) {
-     if  (toUpper(*base) == k) {
-        if (memIcmp (base , key , keylen) == 0) {  /* Found !! */
+     if  (strutil_toUpper(*base) == k) {
+        if (strutil_memIcmp (base , key , keylen) == 0) {  /* Found !! */
            return base;
         }
      }
@@ -243,11 +243,11 @@ PUCHAR memIstr(PUCHAR base, PUCHAR key, LONG len )
    }
    return NULL;
 }
-SHORT memicmpascii (PUCHAR m1 , PUCHAR m2 , LONG len)
+SHORT strutil_memicmpascii (PUCHAR m1 , PUCHAR m2 , LONG len)
 {
    while (len) {
-     UCHAR c1 = toupperascii(*m1);
-     UCHAR c2 = toupperascii(*m2);
+     UCHAR c1 = strutil_toupperascii(*m1);
+     UCHAR c2 = strutil_toupperascii(*m2);
      if (c1 > c2) return 1;
      if (c1 < c2) return -1;
      len --;
@@ -255,14 +255,14 @@ SHORT memicmpascii (PUCHAR m1 , PUCHAR m2 , LONG len)
    }
    return 0;
 }
-PUCHAR memistrascii(PUCHAR base, PUCHAR key, LONG len )
+PUCHAR strutil_memistrascii(PUCHAR base, PUCHAR key, LONG len )
 {
    SHORT keylen = strlen (key);
-   UCHAR k = toupperascii(key[0]);
+   UCHAR k = strutil_toupperascii(key[0]);
 
    while (len>0) {
-     if  (toupperascii(*base) == k) {
-       if (memicmpascii (base , key , keylen) == 0) {  /* Found !! */
+     if  (strutil_toupperascii(*base) == k) {
+       if (strutil_memicmpascii (base , key , keylen) == 0) {  /* Found !! */
           return base;
        }
      }
@@ -274,7 +274,7 @@ PUCHAR memistrascii(PUCHAR base, PUCHAR key, LONG len )
 /* ------------------------------------------------------------- *\
    firstnonblank returns pointer to the string > ' '
 \* ------------------------------------------------------------- */
-PUCHAR firstnonblank(PUCHAR in)
+PUCHAR strutil_firstnonblank(PUCHAR in)
 {
 // Find first non blank
    for (;;){
@@ -286,7 +286,7 @@ PUCHAR firstnonblank(PUCHAR in)
 /* ------------------------------------------------------------- *\
    lastnonblank returns pointer to the last char > ' '
 \* ------------------------------------------------------------- */
-PUCHAR lastnonblank(PUCHAR in)
+PUCHAR strutil_lastnonblank(PUCHAR in)
 {
    LONG   len;
    PUCHAR end = in + strlen(in);
@@ -301,16 +301,16 @@ PUCHAR lastnonblank(PUCHAR in)
 /* ------------------------------------------------------------- *\
    righttrim - just set string termination after the last non blank
 \* ------------------------------------------------------------- */
-PUCHAR righttrim(PUCHAR in)
+PUCHAR strutil_righttrim(PUCHAR in)
 {
-  PUCHAR p = lastnonblank(in);
+  PUCHAR p = strutil_lastnonblank(in);
   * (p+1) = '\0';
   return in;
 }
 /* ------------------------------------------------------------- *\
    trim both
 \* ------------------------------------------------------------- */
-PUCHAR trim(PUCHAR in)
+PUCHAR strutil_trim(PUCHAR in)
 {
   PUCHAR out, end, begin, ret;
   BOOL   docopy = false;
@@ -331,7 +331,7 @@ PUCHAR trim(PUCHAR in)
 /* ------------------------------------------------------------- *\
    righttrimlen - start from length
 \* ------------------------------------------------------------- */
-PUCHAR righttrimlen(PUCHAR in , LONG size)
+PUCHAR strutil_righttrimlen(PUCHAR in , LONG size)
 {
   PUCHAR p = in + size -1 ;
   for   (;p >= in && * p <= ' ' ; p--);
@@ -341,7 +341,7 @@ PUCHAR righttrimlen(PUCHAR in , LONG size)
 /* ------------------------------------------------------------- *\
    righttrimlen - start from length
 \* ------------------------------------------------------------- */
-LONG lenrighttrimlen(PUCHAR in , LONG size)
+LONG strutil_lenrighttrimlen(PUCHAR in , LONG size)
 {
   PUCHAR p = in + size -1 ;
   if (size <= 0) return 0;
@@ -351,7 +351,7 @@ LONG lenrighttrimlen(PUCHAR in , LONG size)
 /* ------------------------------------------------------------- *\
    lastnonblank returns pointer to the last char > ' '
 \* ------------------------------------------------------------- */
-PUCHAR lastnonblankfrom(PUCHAR in, LONG from)
+PUCHAR strutil_lastnonblankfrom(PUCHAR in, LONG from)
 {
    PUCHAR end = in;
    PUCHAR p = in;
@@ -368,7 +368,7 @@ PUCHAR lastnonblankfrom(PUCHAR in, LONG from)
 /* ------------------------------------------------------------- *\
    strtrimcpy copys and remows blanks before and after
 \* ------------------------------------------------------------- */
-PUCHAR strtrimncpy(PUCHAR out , PUCHAR in , LONG maxlen)
+PUCHAR strutil_strtrimncpy(PUCHAR out , PUCHAR in , LONG maxlen)
 {
    PUCHAR end = out;
    PUCHAR ret = out;
@@ -395,7 +395,7 @@ PUCHAR strtrimncpy(PUCHAR out , PUCHAR in , LONG maxlen)
 /* ------------------------------------------------------------- *\
    strtrimcpy copys and remows blanks before and after
 \* ------------------------------------------------------------- */
-PUCHAR strtrimcpy(PUCHAR out , PUCHAR in)
+PUCHAR strutil_strtrimcpy(PUCHAR out , PUCHAR in)
 {
    PUCHAR end = out;
    PUCHAR ret = out;
@@ -444,7 +444,7 @@ PUCHAR substr(PUCHAR out , PUCHAR in , LONG len)
    copys a subword from at list seperated by the delimiter list
    wordindex start at 0
 \* ------------------------------------------------------------- */
-PUCHAR subword (PUCHAR out , PUCHAR in , LONG ix, PUCHAR delimiters)
+PUCHAR strutil_subword (PUCHAR out , PUCHAR in , LONG ix, PUCHAR delimiters)
 {
    PUCHAR res = out;
    PUCHAR pi  = in;
@@ -472,7 +472,7 @@ PUCHAR subword (PUCHAR out , PUCHAR in , LONG ix, PUCHAR delimiters)
    return res;
 }
 /* ------------------------------------------------------------- */
-LONG subwords (PUCHAR in , PUCHAR  delimiters)
+LONG strutil_subwords (PUCHAR in , PUCHAR  delimiters)
 {
    LONG res =1;
    PUCHAR p;
@@ -490,7 +490,7 @@ LONG subwords (PUCHAR in , PUCHAR  delimiters)
    Copy a C-string to fixed char according to its length
    padding it right with blanks
    ----------------------------------------------------------------- */
-PUCHAR padncpy(PUCHAR dst, PUCHAR src, SHORT dstlen)
+PUCHAR strutil_padncpy(PUCHAR dst, PUCHAR src, SHORT dstlen)
 {
    PUCHAR ret = dst;
    SHORT i;
@@ -507,7 +507,7 @@ PUCHAR padncpy(PUCHAR dst, PUCHAR src, SHORT dstlen)
 }
 /* -----------------------------------------------------------------
    ----------------------------------------------------------------- */
-PUCHAR pad(PUCHAR s , LONG l)
+PUCHAR strutil_pad(PUCHAR s , LONG l)
 {
   BOOL   dopad = FALSE;
   PUCHAR r = s;
@@ -521,7 +521,7 @@ PUCHAR pad(PUCHAR s , LONG l)
 }
 /* -----------------------------------------------------------------
    ----------------------------------------------------------------- */
-PUCHAR strrighttrimcpy(PUCHAR dst, PUCHAR src)
+PUCHAR strutil_righttrimcpy(PUCHAR dst, PUCHAR src)
 {
    PUCHAR end = dst;
    PUCHAR ret = dst;
@@ -557,24 +557,24 @@ PUCHAR strrighttrimncpy(PUCHAR dst, PUCHAR src, LONG len)
 }
 /* -----------------------------------------------------------------
    ----------------------------------------------------------------- */
-PUCHAR UpperString(PUCHAR str)
+PUCHAR strutil_UpperString(PUCHAR str)
 {
    PUCHAR r = str;
    if (str == NULL) return NULL;
    while (*str) {
-      *str = toUpper(*str);
+      *str = strutil_toUpper(*str);
       str++;
    }
    return r;
 }
 /* -----------------------------------------------------------------
    ----------------------------------------------------------------- */
-PUCHAR str2upper (PUCHAR out, PUCHAR in )
+PUCHAR strutil_str2upper (PUCHAR out, PUCHAR in )
 {
    PUCHAR r = out;
    if (in) {
      while (*in ) {
-        *(r++)   = toUpper(*(in++));
+        *(r++)   = strutil_toUpper(*(in++));
      }
    }
    *r= '\0';
@@ -582,19 +582,19 @@ PUCHAR str2upper (PUCHAR out, PUCHAR in )
 }
 /* -----------------------------------------------------------------
    ----------------------------------------------------------------- */
-PUCHAR str2lower (PUCHAR out, PUCHAR in )
+PUCHAR strutil_str2lower (PUCHAR out, PUCHAR in )
 {
    PUCHAR r = out;
    if (in) {
      while (*in ) {
-        *(r++)   = toLower(*(in++));
+        *(r++)   = strutil_toLower(*(in++));
      }
    }
    *r= '\0';
    return out;
 }
 /* --------------------------------------------------------------------------- */
-UCHAR hexchar2int (UCHAR c)
+UCHAR strutil_hexchar2int (UCHAR c)
 {
    if (c >= '0' && c <= '9') {
      return (c - '0');
@@ -607,7 +607,7 @@ UCHAR hexchar2int (UCHAR c)
    }
 }
 /* --------------------------------------------------------------------------- */
-PUCHAR binMem2Hex (PUCHAR out , PUCHAR in , LONG len)
+PUCHAR strutil_binMem2Hex (PUCHAR out , PUCHAR in , LONG len)
 {
    PUCHAR  res = out;
    PUCHAR h = "0123456789ABCDEF";
@@ -623,26 +623,26 @@ PUCHAR binMem2Hex (PUCHAR out , PUCHAR in , LONG len)
    return out;
 }
 /* --------------------------------------------------------------------------- */
-PUCHAR hex2BinMem (PUCHAR out , PUCHAR in , LONG len)
+PUCHAR strutil_hex2BinMem (PUCHAR out , PUCHAR in , LONG len)
 {
    PUCHAR  res = out;
 
    while (len-- > 0) {
-     *(out++) = (16 * hexchar2int(*(in++)) + hexchar2int(*(in++)));
+     *(out++) = (16 * strutil_hexchar2int(*(in++)) + strutil_hexchar2int(*(in++)));
    }
    return res;
 }
 /* --------------------------------------------------------------------------- */
-ULONG hexstr2int (PUCHAR s)
+ULONG strutil_hexstr2int (PUCHAR s)
 {
    LONG res = 0;
    while (*s) {
-      res = (res * 256) + (16 * hexchar2int(*(s++)) + hexchar2int(*(s++)));
+      res = (res * 256) + (16 * strutil_hexchar2int(*(s++)) + strutil_hexchar2int(*(s++)));
    }
    return res;
 }
 /* ------------------------------------------------------------- */
-FIXEDDEC str2dec(PUCHAR str , UCHAR decPoint)
+FIXEDDEC strutil_str2dec(PUCHAR str , UCHAR decPoint)
 {
    PUCHAR p;
    FIXEDDEC        Res   = 0D;
@@ -683,7 +683,7 @@ FIXEDDEC str2dec(PUCHAR str , UCHAR decPoint)
    return (Res );
 }
 /* ------------------------------------------------------------- */
-LONG packedMem2Int(PUCHAR buf, SHORT bytes)
+LONG strutil_packedMem2Int(PUCHAR buf, SHORT bytes)
 {
     SHORT i;
     LONG  res  = 0;
@@ -698,7 +698,7 @@ LONG packedMem2Int(PUCHAR buf, SHORT bytes)
     return res;
 }
 /* ------------------------------------------------------------- */
-PUCHAR stripLeadingZeros(PUCHAR out, PUCHAR s)
+PUCHAR strutil_stripLeadingZeros(PUCHAR out, PUCHAR s)
 {
    PUCHAR p = s;
    BOOL   Neg = FALSE;
@@ -727,7 +727,7 @@ PUCHAR stripLeadingZeros(PUCHAR out, PUCHAR s)
    return (out);
 }
 /* ------------------------------------------------------------- */
-PUCHAR fmtPacked(PUCHAR out , PUCHAR in , SHORT len , SHORT prec, UCHAR decPoint)
+PUCHAR strutil_formatPacked(PUCHAR out , PUCHAR in , SHORT len , SHORT prec, UCHAR decPoint)
 {
    UCHAR  temp [64];
    PUCHAR pOut = temp;
@@ -752,9 +752,9 @@ PUCHAR fmtPacked(PUCHAR out , PUCHAR in , SHORT len , SHORT prec, UCHAR decPoint
       }
    }
    *pOut = '\0';
-   return(stripLeadingZeros(out, temp));
+   return(strutil_stripLeadingZeros(out, temp));
 }
-PUCHAR fmtZoned(PUCHAR out , PUCHAR in , SHORT len , SHORT prec, UCHAR decPoint)
+PUCHAR strutil_formatZoned(PUCHAR out , PUCHAR in , SHORT len , SHORT prec, UCHAR decPoint)
 {
    UCHAR  temp [64];
    PUCHAR pOut = temp;
@@ -772,15 +772,15 @@ PUCHAR fmtZoned(PUCHAR out , PUCHAR in , SHORT len , SHORT prec, UCHAR decPoint)
       *pOut++ = '0' + (*in++ & 0x0f);
    }
    *pOut = '\0';
-   return(stripLeadingZeros(out , temp));
+   return(strutil_stripLeadingZeros(out , temp));
 }
 // -------------------------------------------------------------
 /*
-PUCHAR strDup(PUCHAR s)
+PUCHAR strutil_strDup(PUCHAR s)
 {
     PUCHAR p;
     LONG len = strlen(s);
-    p = memAlloc (len);
+    p = teraspace_alloc (len);
     return p;
 }
 */
@@ -790,7 +790,7 @@ LGL isOn (int boolExpr)
     return ( boolExpr ? ON : OFF);
 }
 /* ------------------------------------------------------------- */
-PUCHAR strlastchr(PUCHAR str , UCHAR c)
+PUCHAR strutil_strlastchr(PUCHAR str , UCHAR c)
 {
      PUCHAR p, found = NULL;
      while ( p = strchr(str , c )) {
@@ -799,13 +799,13 @@ PUCHAR strlastchr(PUCHAR str , UCHAR c)
      }
      return found;
 }
-PUCHAR blob2str  (PBLOB pb)
+PUCHAR strutil_blob2str  (PBLOB pb)
 {
     pb->String[pb->Length] = '\0';
     return  pb->String;
 }
 /* ---------------------------------------------------------------------------------------- */
-LONG strTrimLen(PUCHAR str)
+LONG strutil_strTrimLen(PUCHAR str)
 {
     PUCHAR end = str;
     LONG l=0,len=0;
@@ -822,7 +822,7 @@ LONG strTrimLen(PUCHAR str)
    ASCII - atoi
 \* --------------------------------------------------------------------------- */
 #pragma convert(1252)
-LONG a2i (PUCHAR s)
+LONG strutil_a2i (PUCHAR s)
 {
     int i;
     int ret=0;

@@ -29,15 +29,15 @@
 
 /* own standart includes */
 #include "ostypes.h"
-#include "teramem.h"
+#include "teraspace.h"
 #include "apierr.h"
 #include "varchar.h"
 //#include "utl100.h"
 //#include "MinMax.h"
 #include "parms.h"
 #include "sockets.h"
-#include "sndpgmmsg.h"
-#include "e2aa2e.h"
+#include "message.h"
+// TODO needed ? #include "e2aa2e.h"
 #include "xlate.h"
 
 
@@ -45,7 +45,7 @@
 PSOCKETS sockets_new(void)
 {   
     // Get mem and set to zero
-    PSOCKETS ps = memCalloc(sizeof(SOCKETS));
+    PSOCKETS ps = teraspace_calloc(sizeof(SOCKETS));
     return ps;
 }
 
@@ -53,7 +53,7 @@ PSOCKETS sockets_new(void)
 void  sockets_free(PSOCKETS ps)
 {
     sockets_close(ps);
-    memFree(&ps);
+    teraspace_free(&ps);
 }
 /* --------------------------------------------------------------------------- *\
    Define if SSL is used
@@ -93,7 +93,7 @@ void sockets_putTrace(PSOCKETS ps,PUCHAR Ctlstr, ...)
     va_start(arg_ptr, Ctlstr);
     len = vsprintf( temp , Ctlstr, arg_ptr);
     va_end(arg_ptr);
-    xlateBuf (temp2 , temp , len , 0 , 1252);
+    xlate_translateBuffer (temp2 , temp , len , 0 , 1252);
     fputs (temp2 , ps->trace);
 }
 
@@ -133,7 +133,7 @@ void sockets_close(PSOCKETS ps)
 /* --------------------------------------------------------------------------- */
 static void sockets_setSSLmsg(PSOCKETS ps,int rc, PUCHAR txt)
 {
-    iv_joblog( "%s: %d: %s, %s", txt, rc, gsk_strerror(rc), strerror(errno));
+    message_info( "%s: %d: %s, %s", txt, rc, gsk_strerror(rc), strerror(errno));
 }
 /* --------------------------------------------------------------------------- */
 static int sockets_sslCallBack(PUCHAR certChain, int valStatus)
@@ -350,7 +350,7 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, LONG TimeOut
     ps->socket = socket(AF_INET, SOCK_STREAM, 0);
 
     if (ps->socket == JX_INVALID_SOCKET)  {
-        iv_joblog(  "Invalid socket %s" , strerror(errno));
+        message_info(  "Invalid socket %s" , strerror(errno));
         return FALSE;
     }
 
@@ -370,7 +370,7 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, LONG TimeOut
         hostp = gethostbyname(ServerIP);
         if (hostp == (struct hostent *)NULL) {
             sockets_close(ps);
-            iv_joblog(  "Invalid host <%s> Error: %s", ServerIP , strerror(errno));
+            message_info(  "Invalid host <%s> Error: %s", ServerIP , strerror(errno));
             return FALSE;
         }
         memcpy(&serveraddr.sin_addr,  hostp->h_addr, sizeof(serveraddr.sin_addr));
@@ -378,7 +378,7 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, LONG TimeOut
 
     rc = connect(ps->socket , (struct sockaddr *)&serveraddr , sizeof(serveraddr));
     if (rc < 0) {
-        iv_joblog(  "Connection failed: %s %s" , ServerIP, strerror(errno));
+        message_info("Connection failed: %s %s" , ServerIP, strerror(errno));
         sockets_close(ps);
         return FALSE;
     }
@@ -411,7 +411,7 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, LONG TimeOut
     /*
     rc = getpeername (ps->socket , &peeraddr , &peeraddrlen) ;
     if (rc < 0) {
-      sndpgmmsg ("CPF9898" ,INFO , "get peer name failed: %s" , strerror(errno));
+      message_info("get peer name failed: %s" , strerror(errno));
     }
     */
     return TRUE;
@@ -454,7 +454,7 @@ LONG sockets_send (PSOCKETS ps,PUCHAR Buf, LONG Len)
             if (rc == 0) {
                 errno = error;
             }
-            iv_joblog( "Send failed: %s" , strerror(errno));
+            message_info( "Send failed: %s" , strerror(errno));
             sockets_close(ps);
             return -1 ;
         }
@@ -486,7 +486,7 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG TimeOut)
         }
         */
         if (rc == GSK_OS400_ERROR_TIMED_OUT) {  // Timeout
-            iv_joblog(  "Timeout");
+            message_info("Timeout");
             sockets_close(ps);
             return -2;
         }
@@ -516,22 +516,22 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG TimeOut)
             if (rc == 0) {
                 errno = error;
             }
-            iv_joblog(  "Socket selcet error : %s" , strerror(errno));
+            message_info("Socket selcet error : %s" , strerror(errno));
             sockets_close(ps);
             return(-1);
         } else if (rc == 0) {
-            iv_joblog( "Empty data");
+            message_info("Empty data");
             sockets_close(ps);
             return(-2);
         }
         rc = read(ps->socket, Buf, Len );
         if (rc < 0) {  // error
-            iv_joblog(  "Socket read error: %s" , strerror(errno));
+            message_info("Socket read error: %s" , strerror(errno));
             sockets_close(ps);
             return -1;
 
         } else if (rc == 0) {  // Timeout
-            iv_joblog(  "Timeout");
+            message_info("Timeout");
             sockets_close(ps);
             return -2;
         }

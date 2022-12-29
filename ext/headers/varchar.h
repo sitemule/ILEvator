@@ -20,7 +20,6 @@ typedef _Packed struct _LVARPUCHAR {
    PUCHAR String;                      
 } LVARPUCHAR, * PLVARPUCHAR;             
 
-
 typedef _Packed struct _LVARCHAR {
    LONG  Length;
    UCHAR String[1048576];
@@ -121,8 +120,5 @@ BOOL vpcIsEqual(PVARPUCHAR p1, PVARPUCHAR p2);
 BOOL lvpcIsEqual(PLVARPUCHAR p1, PLVARPUCHAR p2);
 BOOL lvpcIsEqualStr(PLVARPUCHAR p1, PUCHAR s);
 void lvpcSetFromStr (PLVARPUCHAR out, PUCHAR in);
-
-
-
 
 #endif

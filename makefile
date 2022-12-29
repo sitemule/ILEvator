@@ -1,4 +1,3 @@
-
 #-----------------------------------------------------------
 # User-defined part start
 #
@@ -9,29 +8,40 @@
 # the rpg modules and the binder source file are also created in BIN_LIB.
 # binder source file and rpg module can be remove with the clean step (make clean)
 BIN_LIB=ILEVATOR
+
 DBGVIEW=*ALL
+
 TARGET_CCSID=*JOB
-TARGET_RLS=*PRV
 
-
-# Do not touch below
-INCLUDE='/QIBM/include' 'headers/'  
-
-CCFLAGS=OPTIMIZE(10) ENUM(*INT) TERASPACE(*YES) STGMDL(*INHERIT) SYSIFCOPT(*IFSIO) INCDIR($(INCLUDE)) DBGVIEW($(DBGVIEW)) DEFINE($(DEFINE)) TGTCCSID($(TARGET_CCSID)) TGTRLS($(TARGET_RLS))
-
-# For current compile:
-CCFLAGS2=OPTION(*STDLOGMSG) OUTPUT(*print) $(CCFLAGS)
+TARGET_RLS=*CURRENT
 
 #
 # User-defined part end
 #-----------------------------------------------------------
 
+
+# Do not touch below
+INCLUDE='/QIBM/include' 'headers/' 'ext/headers'  
+
+CCFLAGS=OUTPUT(*print) OPTIMIZE(10) ENUM(*INT) TERASPACE(*YES) STGMDL(*INHERIT) SYSIFCOPT(*IFSIO) INCDIR($(INCLUDE)) DBGVIEW($(DBGVIEW)) DEFINE($(DEFINE)) TGTCCSID($(TARGET_CCSID)) TGTRLS($(TARGET_RLS))
+
+# For current compile:
+CCFLAGS2=OPTION(*STDLOGMSG) OUTPUT(*print) $(CCFLAGS)
+
+# remove all default suffix rules
+.SUFFIXES:
+
+
 # Dependency list
 
 all:  $(BIN_LIB).lib ilevator.srvpgm  hdr
 
-ilevator.srvpgm: api.c  httpclient.c chunked.c xlate.c base64.c sockets.c anychar.c teramem.c simplelist.c varchar.c strutil.c sndpgmmsg.c ilevator.bnd
-#ilevator.bnd: ilevator.entry ilevator.srvpgm
+ext:
+	$(MAKE) -C ext/ $*
+
+ilevator.srvpgm: ext modules ilevator.bnd
+
+modules: api.c httpclient.c chunked.c sockets.c anychar.c
 
 #-----------------------------------------------------------
 
@@ -63,7 +73,6 @@ ilevator.srvpgm: api.c  httpclient.c chunked.c xlate.c base64.c sockets.c anycha
 	system "CRTCLMOD MODULE($(BIN_LIB)/$(notdir $*)) SRCFILE($(BIN_LIB)/QCLLESRC) DBGVIEW($(DBGVIEW)) TGTRLS($(TARGET_RLS))"
 
 %.srvpgm:
-
 	-system -q "CRTSRCPF FILE($(BIN_LIB)/QSRVSRC) RCDLEN(200)"
 	system "CPYFRMSTMF FROMSTMF('headers/$*.bnd') TOMBR('/QSYS.lib/$(BIN_LIB).lib/QSRVSRC.file/$*.mbr') MBROPT(*replace)"
 	

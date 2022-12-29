@@ -15,7 +15,7 @@
 #include <stdlib.h>
 
 #include "ostypes.h" 
-#include "teramem.h"
+#include "teraspace.h"
 #include "varchar.h" 
 #include "simpleList.h"
 
@@ -56,7 +56,7 @@ LGL sList_foreach ( PSLISTITERATOR pIterator)
 \* --------------------------------------------------------------------------- */
 PSLIST sList_new ()
 {
-    return  memCalloc (sizeof(SLIST));
+    return  teraspace_calloc (sizeof(SLIST));
 }
 /* --------------------------------------------------------------------------- *\
     This copies the data into a new node: If 'head' is ON it will be 
@@ -64,9 +64,9 @@ PSLIST sList_new ()
 \* --------------------------------------------------------------------------- */
 PSLISTNODE sList_push (PSLIST pSlist , LONG len , PVOID data, LGL head)
 {
-    PSLISTNODE pNode = memCalloc (sizeof(SLISTNODE));
+    PSLISTNODE pNode = teraspace_calloc (sizeof(SLISTNODE));
     pNode->payLoadLength = len;
-    pNode->payloadData = memAlloc(len);
+    pNode->payloadData = teraspace_alloc(len);
     memcpy(pNode->payloadData , data ,len);
     pSlist->length ++;
     if (head == ON) {
@@ -92,10 +92,10 @@ VOID sList_free (PSLIST pSlist)
     if (pSlist == null) return;
     for (pNode = pSlist->pHead; pNode; pNode = pNextNode) {
         pNextNode = pNode->pNext;
-        memFree ( &pNode->payloadData);
-        memFree ( &pNode);
+        teraspace_free ( &pNode->payloadData);
+        teraspace_free ( &pNode);
     }
-    memFree (&pSlist);
+    teraspace_free (&pSlist);
 }
 /* --------------------------------------------------------------------------- *\
     Keyed list of immutable LONGVARCHAR 

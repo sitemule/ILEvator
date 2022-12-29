@@ -11,7 +11,7 @@
 #include "base64.h"
 
 /* ------------------------------------------------------------- */
-LONG  iv_base64EncodeBuf(PUCHAR output , PUCHAR input , LONG inputLength )
+LONG  base64_encodeBuffer(PUCHAR output , PUCHAR input , LONG inputLength )
 {
 #pragma convert(1252)
     static const UCHAR base64_pad = '=';
@@ -55,12 +55,12 @@ LONG  iv_base64EncodeBuf(PUCHAR output , PUCHAR input , LONG inputLength )
    
 
 /* ------------------------------------------------------------- */
-void iv_base64Encode(PLVARCHAR output, PLVARCHAR input )
+void base64_encode(PLVARCHAR output, PLVARCHAR input )
 {
-    output->Length = iv_base64EncodeBuf(output->String , input->String , input->Length);
+    output->Length = base64_encodeBuffer(output->String , input->String , input->Length);
 }
 /* ------------------------------------------------------------- */
-LONG iv_base64DecodeBuf (PUCHAR output, PUCHAR input  , LONG inputLength)
+LONG base64_decodeBuffer (PUCHAR output, PUCHAR input  , LONG inputLength)
 {
 #pragma convert(1252)
     static const UCHAR base64_pad = '=';
@@ -132,7 +132,7 @@ LONG iv_base64DecodeBuf (PUCHAR output, PUCHAR input  , LONG inputLength)
 }
 
 /* ------------------------------------------------------------- */
-void iv_base64Decode (PLVARCHAR output, PLVARCHAR input )
+void base64_decode (PLVARCHAR output, PLVARCHAR input )
 {
-    output->Length = iv_base64DecodeBuf(output->String , input->String , input->Length);
+    output->Length = base64_decodeBuffer(output->String , input->String , input->Length);
 }

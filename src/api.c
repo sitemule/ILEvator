@@ -20,18 +20,16 @@
 #include "ostypes.h"
 #include "anychar.h"
 #include "simpleList.h"
+#include "sockets.h"
 #include "ilevator.h"
 #include "chunked.h"
 #include "xlate.h"
 #include "base64.h"
-
-
-#include "teramem.h"
+#include "teraspace.h"
 #include "varchar.h"
 #include "strutil.h"
-#include "streamer.h"
 #include "simpleList.h"
-#include "sndpgmmsg.h"
+#include "message.h"
 #include "parms.h"
 #include "httpclient.h"
 
@@ -41,34 +39,21 @@ static UCHAR EOL [] = {CR, LF , 0};
 PILEVATOR iv_newHttpClient(void)
 {
     // Get mem and set to zero
-    PILEVATOR pIv = memCalloc(sizeof(ILEVATOR));
-    pIv->buffer = memAlloc(BUFFER_SIZE);
+    PILEVATOR pIv = teraspace_calloc(sizeof(ILEVATOR));
+    pIv->buffer = teraspace_alloc(BUFFER_SIZE);
     pIv->bufferSize = BUFFER_SIZE;
     pIv->pSockets =  sockets_new();
     pIv->headerList = sList_new ();
     return (pIv);
 }
-/*
-void  xxx_iv_newHttpClient(PILEVATOR *ppIv)
-{
-    // Get mem and set to zero
-    PILEVATOR pIv = memCalloc(sizeof(ILEVATOR));
-    pIv->buffer = memAlloc(BUFFER_SIZE);
-    pIv->bufferSize = BUFFER_SIZE;
-    pIv->pSockets =  sockets_new();
-    pIv->headerList = sList_new ();
-    ppIv = pIv;
-
-}
-*/ 
 /* --------------------------------------------------------------------------- */
 void iv_delete ( PILEVATOR pIv)
 {
     if (pIv == NULL) return;
     sockets_free (pIv->pSockets);
     sList_free (pIv->headerList);
-    memFree (&pIv->buffer);
-    memFree (&pIv);
+    teraspace_free (&pIv->buffer);
+    teraspace_free (&pIv);
 }
 /* --------------------------------------------------------------------------- */
 void iv_setRequestHeaderBuffer (
@@ -151,10 +136,10 @@ void iv_setResponseFile (
     ccsid = (parms >=3) ? parms : 1252;   
 
     sprintf(mode , "wb,o_ccsid=%d", ccsid);
-	unlink  ( righttrim(fileName)); // Just to reset the CCSID which will not change if file exists
-	pIv->responseDataFile  = fopen ( righttrim(fileName) , mode );
+	unlink  ( strutil_righttrim(fileName)); // Just to reset the CCSID which will not change if file exists
+	pIv->responseDataFile  = fopen ( strutil_righttrim(fileName) , mode );
 	if (pIv->responseDataFile == NULL) {
-        iv_joblog( "Response output open failed: %s" , strerror(errno));
+        message_info("Response output open failed: %s" , strerror(errno));
 	}
 }
 /* --------------------------------------------------------------------------- */
@@ -174,7 +159,7 @@ LGL iv_setCertificate  (
     if (0 == access ( pIv->pSockets->certificateFile ,  R_OK)) {
         return ON;
     } else {
-        iv_joblog( "Certificate error: %s File: %s:", 
+        message_info( "Certificate error: %s File: %s:", 
             strerror(errno),
             pIv->pSockets->certificateFile
         );
@@ -231,7 +216,7 @@ LGL iv_execute (
 
         // Dont try to get data if it was a HEAD request - it is only the header
         // or status 204 => no content
-        if (beginsWith(pIv->method , "HEAD")
+        if (strutil_beginsWith(pIv->method , "HEAD")
         ||  pIv->status == 204 )     {  // No Content, dont read any longer
             apiStatus = API_OK;
         }
@@ -270,9 +255,9 @@ void iv_addHeader ( PILEVATOR pIv, PVARCHAR headerName, PVARCHAR headerValue)
     PUCHAR p = header;
     LONG len;
 
-    p += cpymem (p, headerName->String, headerName->Length);
-    p += cpystr (p , ": ");
-    p += cpymem (p, headerValue->String, headerValue->Length);
+    p += strutil_cpymem (p, headerName->String, headerName->Length);
+    p += strutil_cpystr (p , ": ");
+    p += strutil_cpymem (p, headerValue->String, headerValue->Length);
 
     *p = '\0';
     p++;

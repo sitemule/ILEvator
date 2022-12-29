@@ -25,12 +25,11 @@
 #include "base64.h"
 
 
-#include "teramem.h"
+#include "teraspace.h"
 #include "varchar.h"
 #include "strutil.h"
-#include "streamer.h"
 #include "simpleList.h"
-#include "sndpgmmsg.h"
+#include "message.h"
 #include "parms.h"
 #include "httpclient.h"
 
@@ -43,7 +42,7 @@ LONG urlEncodeBlanks  (PUCHAR outBuf , PUCHAR inBuf)
 {
     PUCHAR start = outBuf;
     UCHAR c;
-    LONG len = strTrimLen(inBuf);
+    LONG len = strutil_trimLen(inBuf);
 
     while (len--) {
         c = *inBuf;
@@ -73,7 +72,7 @@ void putWsTrace(PILEVATOR pIv, PUCHAR ctlStr, ...)
     va_start(arg_ptr, ctlStr);
     len = vsprintf( temp , ctlStr, arg_ptr);
     va_end(arg_ptr);
-    xlateBuf (temp2 , temp , len+1, 0 , 1252); // Incl the null termination
+    xlate_translateBuffer (temp2 , temp , len+1, 0 , 1252); // Incl the null termination
     fputs (temp2 , pIv->wstrace);
 }
 /* --------------------------------------------------------------------------- *\
@@ -109,18 +108,18 @@ int charset2ccsid(PUCHAR charset)
 
     int ccsid;
     if (charset == NULL
-    ||  beginsWith(charset, "*NONE")
-    ||  beginsWith(charset, "0")) {
+    ||  strutil_beginsWith(charset, "*NONE")
+    ||  strutil_beginsWith(charset, "0")) {
         ccsid     = 0;
-    } else if (beginsWith(charset, "*UTF8")
-    ||         beginsWith(charset, "UTF-8")) {
+    } else if (strutil_beginsWith(charset, "*UTF8")
+    ||         strutil_beginsWith(charset, "UTF-8")) {
         ccsid     = 1208;
-    } else if (beginsWith(charset, "*ISO8859")
-    ||         beginsWith(charset, "ISO8859")
-    ||         beginsWith(charset, "ISO-8859")) {
+    } else if (strutil_beginsWith(charset, "*ISO8859")
+    ||         strutil_beginsWith(charset, "ISO8859")
+    ||         strutil_beginsWith(charset, "ISO-8859")) {
         ccsid   = 819;
-    } else if (beginsWith(charset , "*WIN1252")
-    ||         beginsWith(charset , "WINDOWS-1252")) {
+    } else if (strutil_beginsWith(charset , "*WIN1252")
+    ||         strutil_beginsWith(charset , "WINDOWS-1252")) {
         ccsid   = 1252;
     } else {
         ccsid   = 1252;
@@ -131,13 +130,13 @@ int charset2ccsid(PUCHAR charset)
 /* --------------------------------------------------------------------------- */
 int getCcsid(PUCHAR base , PUCHAR charsetStr, BOOL isASCII)
 {
-    PUCHAR charset  = stristr(base, charsetStr);
+    PUCHAR charset  = strutil_stristr(base, charsetStr);
 
     if (charset) {
         charset += strlen(charsetStr);  // Length of "charset=" without zeroterm
         if (isASCII) {
             UCHAR tempcharSet[32];
-            xlateStr (tempcharSet , charset  , 1252 , 0);
+            xlate_translateString(tempcharSet , charset  , 1252 , 0);
             return charset2ccsid(tempcharSet);
         } else {
             return charset2ccsid(charset);
@@ -180,19 +179,19 @@ BOOL lookForHeader(PUCHAR Buf, LONG totlen, PUCHAR * contentData)
 #pragma convert(1252)
 VOID parseHttpParm(PILEVATOR pIv, PUCHAR Parm , PUCHAR Value)
 {
-    if (beginsWithAscii (Parm , "Content-Length"))  {
-        pIv->contentLength = a2i(Value);
+    if (strutil_beginsWithAscii (Parm , "Content-Length"))  {
+        pIv->contentLength = strutil_a2i(Value);
         pIv->responseHeaderHasContentLength = true;
     }
-    if (beginsWithAscii (Parm , "Transfer-Encoding"))  {
+    if (strutil_beginsWithAscii (Parm , "Transfer-Encoding"))  {
         pIv->responseIsChunked = strstr (Value, "chunked") > NULL; //!! TODO striastr 
     }
-    if (beginsWithAscii (Parm , "location"))  {
-        xlateStr(pIv->location , Value , 1252 , 0);
+    if (strutil_beginsWithAscii (Parm , "location"))  {
+        xlate_translateString(pIv->location , Value , 1252 , 0);
     }
     // Unpack: "Content-Type: text/html; charset=windows-1252"
 
-    if (beginsWithAscii (Parm , "Content-Type"))  {
+    if (strutil_beginsWithAscii (Parm , "Content-Type"))  {
         pIv->Ccsid = getCcsid(Value, "charset=", /*IsASCII=*/ TRUE);
     }
 }
@@ -225,7 +224,7 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
         if (s2) {
             UCHAR temp [26];
             strncpy(temp , s1  , s2-s1);
-            pIv->status = a2i(temp);
+            pIv->status = strutil_a2i(temp);
         }
     }
 
@@ -245,8 +244,8 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
         if (p && end) {
             UCHAR  parmName[256];
             UCHAR  parmValue[65535];
-            substr(parmName , start , p - start);
-            substr(parmValue, p +1  , end - p - 1 );
+            strutil_substr(parmName , start , p - start);
+            strutil_substr(parmValue, p +1  , end - p - 1 );
             parseHttpParm(pIv , parmName, parmValue);
         }
     }
@@ -267,10 +266,10 @@ LONG addRealmLogin (PUCHAR pReq, PUCHAR user , PUCHAR password)
    if (*user == '\0' ||  *password == '\0') return 0;
 
    sprintf(userAndPasseord , "%s:%s" , user , password);
-   pw1Len  = xlateBuf(pw1 , userAndPasseord , strlen(userAndPasseord) , 0 , 1252);
-   pw2Len = iv_base64EncodeBuf(pw2 , pw1, pw1Len);
+   pw1Len  = xlate_translateBuffer(pw1 , userAndPasseord , strlen(userAndPasseord) , 0 , 1252);
+   pw2Len = base64_encodeBuffer(pw2 , pw1, pw1Len);
    pw2[pw2Len] = '\0';
-   pw3Len = xlateBuf(pw3 , pw2 , strlen(pw2) , 1252, 0);
+   pw3Len = xlate_translateBuffer(pw3 , pw2 , strlen(pw2) , 1252, 0);
    pw3[pw3Len] = '\0';
 
    len = sprintf(pReq, "Authorization: Basic %s%s" , pw3, EOL);
@@ -285,7 +284,7 @@ UCHAR masterspace ()
     UCHAR  masterspace;
 
     #pragma convert(1252)
-    xlateBuf(&masterspace , "@" , 1  , 1252, 0);
+    xlate_translateBuffer(&masterspace , "@" , 1  , 1252, 0);
     #pragma convert(0)
     return masterspace;
 }
@@ -353,7 +352,7 @@ void parseUrl (
 
     pProtocol = strstr(url , "://");
     if (pProtocol) {
-        pIv->pSockets->asSSL = ( beginsWith(url , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
+        pIv->pSockets->asSSL = ( strutil_beginsWith(url , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
         pServer = pProtocol + 3;
     } else {
         pServer = url;
@@ -364,10 +363,10 @@ void parseUrl (
     if (pTemp) {
         UCHAR userPassword [256];
         PUCHAR pPassword;
-        substr(userPassword , pServer , pTemp - pServer);
+        strutil_substr(userPassword , pServer , pTemp - pServer);
         pPassword  = strchr(userPassword  , ':');
         if (pPassword) {
-            substr(user, userPassword ,  pPassword - userPassword );
+            strutil_substr(user, userPassword ,  pPassword - userPassword );
             strcpy (password, pPassword+1);
         }
         pServer = pTemp +1;
@@ -390,7 +389,7 @@ void parseUrl (
     // Pick up the port
     if (pPort) {
         if (pResource) {
-            substr (port, pPort + 1, pResource - pPort -1);
+            strutil_substr (port, pPort + 1, pResource - pPort -1);
         } else {
             strcpy (port, pPort + 1);
         }
@@ -404,13 +403,13 @@ void parseUrl (
 
     // Pick up the server
     if (pPort) {
-        substr ( server , pServer , pPort - pServer);
+        strutil_substr ( server , pServer , pPort - pServer);
     } else if (pResource) {
-        substr ( server , pServer , pResource - pServer);
+        strutil_substr ( server , pServer , pResource - pServer);
     } else if (pUrlParm) {
-        substr ( server , pServer , pUrlParm - pServer);
+        strutil_substr ( server , pServer , pUrlParm - pServer);
     } else {
-        strrighttrimcpy(server , pServer);
+        strutil_righttrimcpy(server , pServer);
     }
 
     // Pick up host (server + port)
@@ -425,11 +424,11 @@ void parseUrl (
         UCHAR  proxy [256];
         pIv->useProxy = TRUE;
         pIv->pSockets->asSSL = PLAIN_SOCKET;
-        substr(proxy, pProxy , pProxyEnd - pProxy);
+        strutil_substr(proxy, pProxy , pProxyEnd - pProxy);
         pPort  = strstr(proxy , ":");
         if (pPort) {
             strcpy ( port , pPort + 1);
-            substr ( server , proxy , pPort - proxy);
+            strutil_substr ( server , proxy , pPort - proxy);
         } else {
             strcpy ( port   , "8080");
             strcpy ( server , proxy);
@@ -468,7 +467,7 @@ API_STATUS sendHeader (PILEVATOR pIv)
 
 
     len = pReq - buffer;
-    len = xlateBuf(buffer , buffer , len , 0 , 1252); // simple SBCS conversion !! Perhaps UTF-8
+    len = xlate_translateBuffer(buffer , buffer , len , 0 , 1252); // simple SBCS conversion !! Perhaps UTF-8
 
 
     if (isNewLineAscii( * (pReq -1))) {
@@ -502,7 +501,7 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
          // Protocol error
         if  (bufferRemain < 0) {  
             sockets_close(pIv->pSockets);
-            iv_joblog ("Buffer overrun ");
+            message_info("Buffer overrun ");
             return API_ERROR;
         }
 
@@ -535,7 +534,7 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
                 int err = parseResponse(pIv , pIv->buffer, pIv->contentData);
                 if (err) {
                     sockets_close(pIv->pSockets);
-                    iv_joblog ("Invalid response header: %d" , err);
+                    message_info("Invalid response header: %d" , err);
                     return API_ERROR;
                 }
 
