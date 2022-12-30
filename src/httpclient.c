@@ -561,7 +561,7 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
                 }
 
                 pIv->contentLengthCalculated = pIv->bufferTotalLength - pIv->headLen;
-                anyCharAppend ( &pIv->responseHeaderBuffer , pIv->buffer , pIv->headLen);
+                iv_anychar_append ( &pIv->responseHeaderBuffer , pIv->buffer , pIv->headLen);
 
                 return API_OK; // Got what we came for + perhaps more 
 
@@ -576,7 +576,7 @@ API_STATUS receiveData ( PILEVATOR pIv)
     LONG  len;
 
     // TODO !! Move this together with the file write; 
-    anyCharAppend ( &pIv->responseDataBuffer ,pIv->contentData , pIv->contentLengthCalculated);
+    iv_anychar_append ( &pIv->responseDataBuffer ,pIv->contentData , pIv->contentLengthCalculated);
 
     // Received data for "non chunked" !!! TODO Move to reveice data --- this is not the place
     if (pIv->responseDataFile && pIv->contentLength) {
@@ -601,7 +601,7 @@ API_STATUS receiveData ( PILEVATOR pIv)
             return API_OK;
         }
 
-        anyCharAppend ( &pIv->responseDataBuffer, buffer, len);
+        iv_anychar_append ( &pIv->responseDataBuffer, buffer, len);
 
         if (pIv->responseDataFile) {
             fwrite (buffer  , 1, len , pIv->responseDataFile);

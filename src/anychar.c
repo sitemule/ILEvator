@@ -5,7 +5,7 @@
 #include "anychar.h"
 
 /* --------------------------------------------------------------------------- */
-void anyCharSet (
+void iv_anychar_set (
     PANYCHAR pAt,
     PUCHAR pBuffer,
     LONG  bufferSize,
@@ -19,18 +19,18 @@ void anyCharSet (
     pAt->type = bufferType;
     
     switch (pAt->type) {
-        case  IV_BYTES    :  {
+        case  IV_ANYCHAR_BYTES    :  {
             pAt->size = bufferSize ; 
             pAt->data = pBuffer;
             break;
 
         }
-        case  IV_VARCHAR2 : {
+        case  IV_ANYCHAR_VARCHAR2 : {
             pAt->size = bufferSize - 2; 
             pAt->data = pBuffer + 2;
             break;
         }
-        case  IV_VARCHAR4 : {
+        case  IV_ANYCHAR_VARCHAR4 : {
             pAt->size = bufferSize - 4; 
             pAt->data = pBuffer + 4;
             break;
@@ -38,11 +38,7 @@ void anyCharSet (
     }    
 }
 /* --------------------------------------------------------------------------- */
-void anyCharAppend (
-    PANYCHAR pAt,
-    PUCHAR   pBuf,
-    LONG     length
-)
+void iv_anychar_append ( PANYCHAR pAt, PUCHAR pBuf, LONG length )
 {
     LONG bytesLeft;
     if (pAt->size == 0 ) return;
@@ -51,22 +47,19 @@ void anyCharAppend (
     if (length > bytesLeft) length = bytesLeft;
     memcpy ( pAt->data + pAt->length , pBuf , length);
     pAt->length += length;
-
 }
 
 /* --------------------------------------------------------------------------- */
-void anyCharFinalize (
-    PANYCHAR pAt
-)
+void iv_anychar_finalize ( PANYCHAR pAt )
 {
     if (pAt->size == 0 ) return;
 
     switch (pAt->type) {
-        case  IV_VARCHAR2 : {
+        case  IV_ANYCHAR_VARCHAR2 : {
             * (PUSHORT) (pAt->data - 2) = pAt->length;
             break;
         }
-        case  IV_VARCHAR4 : {
+        case  IV_ANYCHAR_VARCHAR4 : {
             * (PULONG) (pAt->data - 4) = pAt->length;
             break;
         }

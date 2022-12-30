@@ -12,6 +12,7 @@
 
 #include "ostypes.h"
 #include "sockets.h"
+#include "anychar.h"
 
 #define BUFFER_SIZE 1048576
 
@@ -57,8 +58,8 @@ typedef struct _ILEVATOR {
 
     PUCHAR    pResBuffer; 
     ULONG     resBufferSize;
-    IVBUFTYPE resBufferType;
-    IVXLATE   resBufferXlate;
+    IV_ANYCHAR_BUFTYPE resBufferType;
+    IV_ANYCHAR_XLATE   resBufferXlate;
     FILE *    resFile;
     FILE *    wstrace;
 

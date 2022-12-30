@@ -1,5 +1,5 @@
-#ifndef HTTPCLIENT_H
-#define HTTPCLIENT_H
+#ifndef ILEVATOR_HTTPCLIENT_H
+#define ILEVATOR_HTTPCLIENT_H
 #define CR 0x0D
 #define LF 0x25
 
