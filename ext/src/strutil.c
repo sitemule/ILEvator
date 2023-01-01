@@ -423,7 +423,7 @@ PUCHAR strutil_strtrimcpy(PUCHAR out , PUCHAR in)
 /* ------------------------------------------------------------- *\
    substr  copys and from and up to len
 \* ------------------------------------------------------------- */
-PUCHAR substr(PUCHAR out , PUCHAR in , LONG len)
+PUCHAR strutil_substr(PUCHAR out , PUCHAR in , LONG len)
 {
    if (len < 0) len =0;
 

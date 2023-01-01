@@ -5,7 +5,6 @@
 #include <decimal.h>
 #include <errno.h>
 
-
 #include "ostypes.h"
 #include "anychar.h"
 #include "simpleList.h"
@@ -14,7 +13,7 @@
 
 /* -------------------------------------------------------------------------- */
 // Nore - this starts with the buffer already received 
-// and continues with it own bufer
+// and continues with its own buffer
 /* -------------------------------------------------------------------------- */
 API_STATUS receiveChunked(PILEVATOR pIv)
 {
@@ -87,7 +86,7 @@ API_STATUS receiveChunked(PILEVATOR pIv)
                 if (pIv->responseDataFile) {
                     fputc (*pInBuf , pIv->responseDataFile);
                 } 
-                anyCharAppend ( &pIv->responseDataBuffer ,pInBuf , 1);
+                iv_anychar_append ( &pIv->responseDataBuffer ,pInBuf , 1);
 
                 pIv->contentLength++;
                 chunkedlen --;

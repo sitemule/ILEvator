@@ -42,7 +42,7 @@ LONG urlEncodeBlanks  (PUCHAR outBuf , PUCHAR inBuf)
 {
     PUCHAR start = outBuf;
     UCHAR c;
-    LONG len = strutil_trimLen(inBuf);
+    LONG len = strutil_strTrimLen(inBuf);
 
     while (len--) {
         c = *inBuf;

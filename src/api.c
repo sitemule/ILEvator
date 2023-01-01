@@ -64,7 +64,7 @@ void iv_setRequestHeaderBuffer (
     LONG  bufferCcsid
 )
 {
-    anyCharSet ( 
+    iv_anychar_set ( 
         &pIv->requestHeaderBuffer,
         pBuf,
         bufferSize,
@@ -81,7 +81,7 @@ void iv_setRequestDataBuffer (
     LONG  bufferCcsid
 )
 {
-    anyCharSet ( 
+    iv_anychar_set ( 
         &pIv->requestDataBuffer,
         pBuf,
         bufferSize,
@@ -98,7 +98,7 @@ void iv_setResponseHeaderBuffer (
     LONG  bufferCcsid
 )
 {
-    anyCharSet ( 
+    iv_anychar_set ( 
         &pIv->responseHeaderBuffer,
         pBuf,
         bufferSize,
@@ -115,7 +115,7 @@ void iv_setResponseDataBuffer (
     LONG  bufferCcsid
 )
 {
-    anyCharSet ( 
+    iv_anychar_set ( 
         &pIv->responseDataBuffer,
         pBuf,
         bufferSize,
@@ -233,10 +233,10 @@ LGL iv_execute (
 
     }
 
-    anyCharFinalize (&pIv->requestHeaderBuffer);
-    anyCharFinalize (&pIv->requestDataBuffer);
-    anyCharFinalize (&pIv->responseHeaderBuffer);
-    anyCharFinalize (&pIv->responseDataBuffer);
+    iv_anychar_finalize (&pIv->requestHeaderBuffer);
+    iv_anychar_finalize (&pIv->requestDataBuffer);
+    iv_anychar_finalize (&pIv->responseHeaderBuffer);
+    iv_anychar_finalize (&pIv->responseDataBuffer);
 
     if (pIv->responseDataFile) {
         fclose(pIv->responseDataFile);

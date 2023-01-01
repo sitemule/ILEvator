@@ -243,7 +243,7 @@ PUCHAR  vpc2string(PUCHAR res, PVARPUCHAR pvpc )
   if (pvpc == NULL || pvpc->String == NULL) {
     *res = '\0';
   } else {
-    substr(res , pvpc->String  , pvpc->Length);
+    strutil_substr(res , pvpc->String  , pvpc->Length);
   }
   return res;
 }

@@ -8,8 +8,5 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_setResponseFile")
     EXPORT SYMBOL("iv_execute")
     EXPORT SYMBOL("iv_getStatus")
-    EXPORT SYMBOL("iv_joblog")
-    EXPORT SYMBOL("iv_xlateVc")
-    EXPORT SYMBOL("iv_xlateLvc")
     EXPORT SYMBOL("iv_setCertificate")
 ENDPGMEXP

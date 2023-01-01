@@ -15,6 +15,8 @@ TARGET_CCSID=*JOB
 
 TARGET_RLS=*CURRENT
 
+OUTPUT=*NONE
+
 #
 # User-defined part end
 #-----------------------------------------------------------
@@ -23,7 +25,7 @@ TARGET_RLS=*CURRENT
 # Do not touch below
 INCLUDE='/QIBM/include' 'headers/' 'ext/headers'  
 
-CCFLAGS= OUTPUT(*NONE) OPTIMIZE(10) ENUM(*INT) TERASPACE(*YES) STGMDL(*INHERIT) SYSIFCOPT(*IFSIO) INCDIR($(INCLUDE)) DBGVIEW($(DBGVIEW)) DEFINE($(DEFINE)) TGTCCSID($(TARGET_CCSID)) TGTRLS($(TARGET_RLS))
+CCFLAGS=OUTPUT($(OUTPUT)) OPTIMIZE(10) ENUM(*INT) TERASPACE(*YES) STGMDL(*INHERIT) SYSIFCOPT(*IFSIO) INCDIR($(INCLUDE)) DBGVIEW($(DBGVIEW)) DEFINE($(DEFINE)) TGTCCSID($(TARGET_CCSID)) TGTRLS($(TARGET_RLS))
 
 # For current compile:
 CCFLAGS2=OPTION(*STDLOGMSG) OUTPUT(*print) $(CCFLAGS)
@@ -31,12 +33,14 @@ CCFLAGS2=OPTION(*STDLOGMSG) OUTPUT(*print) $(CCFLAGS)
 # remove all default suffix rules
 .SUFFIXES:
 
+MODULES=$(BIN_LIB)/ANYCHAR $(BIN_LIB)/API $(BIN_LIB)/BASE64 $(BIN_LIB)/CHUNKED $(BIN_LIB)/HTTPCLIENT $(BIN_LIB)/MESSAGE $(BIN_LIB)/SIMPLELIST $(BIN_LIB)/SOCKETS $(BIN_LIB)/STRUTIL $(BIN_LIB)/TERASPACE $(BIN_LIB)/VARCHAR  $(BIN_LIB)/XLATE
+
 
 # Dependency list
 
 all:  $(BIN_LIB).lib ilevator.srvpgm  hdr
 
-ext:
+ext: .PHONY
 	$(MAKE) -C ext/ $*
 
 ilevator.srvpgm: ext modules ilevator.bnd
@@ -47,7 +51,6 @@ modules: api.c httpclient.c chunked.c sockets.c anychar.c
 
 %.lib:
 	-system -q "CRTLIB $* TYPE(*TEST)"
-
 
 %.bnd: 
 	-system -q "DLTBNDDIR BNDDIR($(BIN_LIB)/$*)"
@@ -77,18 +80,17 @@ modules: api.c httpclient.c chunked.c sockets.c anychar.c
 	system "CPYFRMSTMF FROMSTMF('headers/$*.bnd') TOMBR('/QSYS.lib/$(BIN_LIB).lib/QSRVSRC.file/$*.mbr') MBROPT(*replace)"
 	
 	# You may be wondering what this ugly string is. It's a list of objects created from the dep list that end with .c, .cpp or .clle.
-	$(eval modules := $(patsubst %,$(BIN_LIB)/%,$(basename $(filter %.c %.cpp %.clle,$(notdir $^)))))
+	# $(eval modules := $(patsubst %,$(BIN_LIB)/%,$(basename $(filter %.c %.cpp %.clle,$(notdir $^)))))
 	
-	system -q -kpieb "CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE($(modules)) SRCFILE($(BIN_LIB)/QSRVSRC) ACTGRP(QILE) ALWLIBUPD(*YES) DETAIL(*BASIC) TGTRLS($(TARGET_RLS))"
+	system -q -kpieb "CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE($(MODULES)) SRCFILE($(BIN_LIB)/QSRVSRC) ACTGRP(QILE) ALWLIBUPD(*YES) DETAIL(*BASIC) TGTRLS($(TARGET_RLS))"
 
 
 hdr:
-
 	-system -q "CRTSRCPF FILE($(BIN_LIB)/QRPGLEREF) RCDLEN(200)"
 	-system -q "CRTSRCPF FILE($(BIN_LIB)/H) RCDLEN(200)"
   
-	system "CPYFRMSTMF FROMSTMF('headers/ILEVATOR.rpgle') TOMBR('/QSYS.lib/$(BIN_LIB).lib/QRPGLEREF.file/ILEVATOR.mbr') MBROPT(*REPLACE)"
-	system "CPYFRMSTMF FROMSTMF('headers/ilevator.h') TOMBR('/QSYS.lib/$(BIN_LIB).lib/H.file/ilevator.mbr') MBROPT(*REPLACE)"
+	system "CPYFRMSTMF FROMSTMF('headers/ilevator.rpgle') TOMBR('/QSYS.LIB/$(BIN_LIB).LIB/QRPGLEREF.FILE/ILEVATOR.MBR') MBROPT(*REPLACE)"
+	system "CPYFRMSTMF FROMSTMF('headers/ilevator.h') TOMBR('/QSYS.LIB/$(BIN_LIB).LIB/H.FILE/ILEVATOR.MBR') MBROPT(*REPLACE)"
 
 all:
 	@echo Build success!
@@ -137,3 +139,5 @@ example:
 
 test: 
 	system -i "CRTBNDRPG PGM($(BIN_LIB)/$(SRC)) SRCSTMF('test/$(SRC).rpgle') DBGVIEW(*ALL)" > error.txt
+	
+.PHONY:
