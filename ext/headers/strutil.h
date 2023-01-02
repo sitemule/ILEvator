@@ -10,7 +10,7 @@ UCHAR  strutil_toLower(UCHAR c);
 UCHAR  strutil_toUpper(UCHAR c);
 UCHAR  strutil_toupperascii(UCHAR c);
 UCHAR  strutil_tolowerascii(UCHAR c);
-LONG   strutil_trimLen(PUCHAR str);
+LONG   strutil_strTrimLen(PUCHAR str);
 LONG   strutil_strtrim(PUCHAR str);
 PUCHAR strutil_charReplace(PUCHAR out , PUCHAR in , PUCHAR from , PUCHAR to );
 LONG   strutil_bufferReplace(PUCHAR buffer , LONG len , PUCHAR from , PUCHAR to );

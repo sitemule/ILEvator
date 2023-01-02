@@ -221,7 +221,7 @@ LGL iv_execute (
             apiStatus = API_OK;
         }
         else if (pIv->responseIsChunked) {
-            apiStatus = receiveChunked(pIv);
+            apiStatus = iv_chunked_receive(pIv);
         }
         else {
             apiStatus = receiveData (pIv);

@@ -15,7 +15,7 @@
 // Nore - this starts with the buffer already received 
 // and continues with its own buffer
 /* -------------------------------------------------------------------------- */
-API_STATUS receiveChunked(PILEVATOR pIv)
+API_STATUS iv_chunked_receive(PILEVATOR pIv)
 {
     enum {
         GET_LEN,
