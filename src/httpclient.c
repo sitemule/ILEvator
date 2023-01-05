@@ -22,8 +22,7 @@
 #include "ilevator.h"
 #include "xlate.h"
 #include "base64.h"
-
-
+#include "mime.h"
 #include "teraspace.h"
 #include "varchar.h"
 #include "strutil.h"
@@ -101,47 +100,21 @@ PUCHAR findEOL(PUCHAR p)
         p ++;
    }
 }
-/* -------------------------------------------------------------------------- */
-int charset2ccsid(PUCHAR charset)
-{
-
-    int ccsid;
-    if (charset == NULL
-    ||  strutil_beginsWith(charset, "*NONE")
-    ||  strutil_beginsWith(charset, "0")) {
-        ccsid     = 0;
-    } else if (strutil_beginsWith(charset, "*UTF8")
-    ||         strutil_beginsWith(charset, "UTF-8")) {
-        ccsid     = 1208;
-    } else if (strutil_beginsWith(charset, "*ISO8859")
-    ||         strutil_beginsWith(charset, "ISO8859")
-    ||         strutil_beginsWith(charset, "ISO-8859")) {
-        ccsid   = 819;
-    } else if (strutil_beginsWith(charset , "*WIN1252")
-    ||         strutil_beginsWith(charset , "WINDOWS-1252")) {
-        ccsid   = 1252;
-    } else {
-        ccsid   = 1252;
-    }
-    return ccsid;
-}
 
 /* --------------------------------------------------------------------------- */
-int getCcsid(PUCHAR base , PUCHAR charsetStr, BOOL isASCII)
+int getCcsid(PUCHAR mimeType)
 {
-    PUCHAR charset  = strutil_stristr(base, charsetStr);
+    int ccsid;
+    
+    UCHAR valueXlated[100];
+    xlate_translateString(valueXlated, mimeType, 1252, 0);
+    
+    PVARCHAR contentType = teraspace_calloc(sizeof(VARCHAR));
+    str2vc(contentType, valueXlated);
+    ccsid = iv_mime_getCcsid(contentType);
+    teraspace_free(&contentType);
 
-    if (charset) {
-        charset += strlen(charsetStr);  // Length of "charset=" without zeroterm
-        if (isASCII) {
-            UCHAR tempcharSet[32];
-            xlate_translateString(tempcharSet , charset  , 1252 , 0);
-            return charset2ccsid(tempcharSet);
-        } else {
-            return charset2ccsid(charset);
-        }
-    }
-    return 0;
+    return ccsid;
 }
 
 /* --------------------------------------------------------------------------- */
@@ -182,16 +155,18 @@ VOID parseHttpParm(PILEVATOR pIv, PUCHAR Parm , PUCHAR Value)
         pIv->contentLength = strutil_a2i(Value);
         pIv->responseHeaderHasContentLength = true;
     }
+    
     if (strutil_beginsWithAscii (Parm , "Transfer-Encoding"))  {
         pIv->responseIsChunked = strstr (Value, "chunked") > NULL; //!! TODO striastr 
     }
+    
     if (strutil_beginsWithAscii (Parm , "location"))  {
         xlate_translateString(pIv->location , Value , 1252 , 0);
     }
+    
     // Unpack: "Content-Type: text/html; charset=windows-1252"
-
     if (strutil_beginsWithAscii (Parm , "Content-Type"))  {
-        pIv->Ccsid = getCcsid(Value, "charset=", /*IsASCII=*/ TRUE);
+        pIv->Ccsid = getCcsid(Value);
     }
 }
 #pragma convert(0)

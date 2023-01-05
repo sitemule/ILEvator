@@ -1,0 +1,18 @@
+**FREE
+
+/if not defined (ILEVATOR_MIME)
+/define ILEVATOR_MIME
+
+///
+// Get CCSID for MIME charset
+//
+// Returns the corresponding CCSID to the passed MIME charset value.
+//
+// @param MIME type (f. e. text/plain;charset=utf-8)
+// @return corresponding CCSID or 0 if there is no matching value
+///
+dcl-pr iv_mime_getCcsid uns(10) extproc(*dclcase);
+  mimeType varchar(1000) const;
+end-pr;
+
+/endif

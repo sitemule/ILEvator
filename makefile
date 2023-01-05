@@ -25,7 +25,10 @@ OUTPUT=*NONE
 # Do not touch below
 INCLUDE='/QIBM/include' 'headers/' 'ext/headers'  
 
+# C compile flags
 CCFLAGS=OUTPUT($(OUTPUT)) OPTIMIZE(10) ENUM(*INT) TERASPACE(*YES) STGMDL(*INHERIT) SYSIFCOPT(*IFSIO) INCDIR($(INCLUDE)) DBGVIEW($(DBGVIEW)) DEFINE($(DEFINE)) TGTCCSID($(TARGET_CCSID)) TGTRLS($(TARGET_RLS))
+# RPG compile flags
+RCFLAGS=OUTPUT($(OUTPUT)) OPTION(*NOUNREF *SRCSTMT) STGMDL(*INHERIT) INCDIR('headers') DBGVIEW(*LIST) TGTRLS($(TARGET_RLS)) TGTCCSID($(TARGET_CCSID))
 
 # For current compile:
 CCFLAGS2=OPTION(*STDLOGMSG) OUTPUT(*print) $(CCFLAGS)
@@ -33,7 +36,7 @@ CCFLAGS2=OPTION(*STDLOGMSG) OUTPUT(*print) $(CCFLAGS)
 # remove all default suffix rules
 .SUFFIXES:
 
-MODULES=$(BIN_LIB)/ANYCHAR $(BIN_LIB)/API $(BIN_LIB)/BASE64 $(BIN_LIB)/CHUNKED $(BIN_LIB)/HTTPCLIENT $(BIN_LIB)/MESSAGE $(BIN_LIB)/SIMPLELIST $(BIN_LIB)/SOCKETS $(BIN_LIB)/STRUTIL $(BIN_LIB)/TERASPACE $(BIN_LIB)/VARCHAR  $(BIN_LIB)/XLATE
+MODULES=$(BIN_LIB)/ANYCHAR $(BIN_LIB)/API $(BIN_LIB)/BASE64 $(BIN_LIB)/CHUNKED $(BIN_LIB)/HTTPCLIENT $(BIN_LIB)/MESSAGE $(BIN_LIB)/MIME $(BIN_LIB)/SIMPLELIST $(BIN_LIB)/SOCKETS $(BIN_LIB)/STRUTIL $(BIN_LIB)/TERASPACE $(BIN_LIB)/VARCHAR  $(BIN_LIB)/XLATE
 
 
 # Dependency list
@@ -45,7 +48,7 @@ ext: .PHONY
 
 ilevator.srvpgm: ext modules ilevator.bnd
 
-modules: api.c httpclient.c chunked.c sockets.c anychar.c
+modules: api.c httpclient.c chunked.c sockets.c anychar.c mime.rpgmod
 
 #-----------------------------------------------------------
 
@@ -74,6 +77,10 @@ modules: api.c httpclient.c chunked.c sockets.c anychar.c
 	-system -q "CRTSRCPF FILE($(BIN_LIB)/QCLLESRC) RCDLEN(200)"
 	system "CPYFRMSTMF FROMSTMF('src/$*.clle') TOMBR('/QSYS.lib/$(BIN_LIB).lib/QCLLESRC.file/$(notdir $*).mbr') MBROPT(*ADD)"
 	system "CRTCLMOD MODULE($(BIN_LIB)/$(notdir $*)) SRCFILE($(BIN_LIB)/QCLLESRC) DBGVIEW($(DBGVIEW)) TGTRLS($(TARGET_RLS))"
+
+%.rpgmod:
+	system -q "CHGATR OBJ('src/$*.rpgmod') ATR(*CCSID) VALUE(1252)"
+	system -i "CRTRPGMOD MODULE($(BIN_LIB)/$*) SRCSTMF('src/$*.rpgmod') $(RCFLAGS)"
 
 %.srvpgm:
 	-system -q "CRTSRCPF FILE($(BIN_LIB)/QSRVSRC) RCDLEN(200)"
