@@ -36,19 +36,17 @@ CCFLAGS2=OPTION(*STDLOGMSG) OUTPUT(*print) $(CCFLAGS)
 # remove all default suffix rules
 .SUFFIXES:
 
-MODULES=$(BIN_LIB)/ANYCHAR $(BIN_LIB)/API $(BIN_LIB)/BASE64 $(BIN_LIB)/CHUNKED $(BIN_LIB)/HTTPCLIENT $(BIN_LIB)/MESSAGE $(BIN_LIB)/MIME $(BIN_LIB)/SIMPLELIST $(BIN_LIB)/SOCKETS $(BIN_LIB)/STRUTIL $(BIN_LIB)/TERASPACE $(BIN_LIB)/VARCHAR  $(BIN_LIB)/XLATE
+MODULES=$(BIN_LIB)/ANYCHAR $(BIN_LIB)/API $(BIN_LIB)/BASE64 $(BIN_LIB)/CHUNKED $(BIN_LIB)/HTTPCLIENT $(BIN_LIB)/MESSAGE $(BIN_LIB)/MIME $(BIN_LIB)/SIMPLELIST $(BIN_LIB)/SOCKETS $(BIN_LIB)/STREAM $(BIN_LIB)/STREAMMEM $(BIN_LIB)/STRUTIL $(BIN_LIB)/TERASPACE $(BIN_LIB)/VARCHAR  $(BIN_LIB)/XLATE
 
 
 # Dependency list
 
-all:  $(BIN_LIB).lib ilevator.srvpgm  hdr
+all:  $(BIN_LIB).lib ext modules ilevator.srvpgm hdr ilevator.bnd
 
 ext: .PHONY
 	$(MAKE) -C ext/ $*
 
-ilevator.srvpgm: ext modules ilevator.bnd
-
-modules: api.c httpclient.c chunked.c sockets.c anychar.c mime.rpgmod
+modules: api.c httpclient.c chunked.c sockets.c anychar.c mime.rpgmod stream.rpgmod streammem.rpgmod
 
 #-----------------------------------------------------------
 
@@ -85,12 +83,7 @@ modules: api.c httpclient.c chunked.c sockets.c anychar.c mime.rpgmod
 %.srvpgm:
 	-system -q "CRTSRCPF FILE($(BIN_LIB)/QSRVSRC) RCDLEN(200)"
 	system "CPYFRMSTMF FROMSTMF('headers/$*.bnd') TOMBR('/QSYS.lib/$(BIN_LIB).lib/QSRVSRC.file/$*.mbr') MBROPT(*replace)"
-	
-	# You may be wondering what this ugly string is. It's a list of objects created from the dep list that end with .c, .cpp or .clle.
-	# $(eval modules := $(patsubst %,$(BIN_LIB)/%,$(basename $(filter %.c %.cpp %.clle,$(notdir $^)))))
-	
 	system -q -kpieb "CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE($(MODULES)) SRCFILE($(BIN_LIB)/QSRVSRC) ACTGRP(QILE) ALWLIBUPD(*YES) DETAIL(*BASIC) TGTRLS($(TARGET_RLS))"
-
 
 hdr:
 	-system -q "CRTSRCPF FILE($(BIN_LIB)/QRPGLEREF) RCDLEN(200)"

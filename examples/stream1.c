@@ -40,7 +40,7 @@ void writeToStream(PVOID stream, PVOID streamData) {
     printf("Writing to stream ...\n");
     
     LGL rc = iv_stream_write(&stream, &streamData, strlen(streamData));
-    if (rc = OFF) {
+    if (OFF == rc) {
       printf("Not successfully written all data to the stream\n");
     }
 }

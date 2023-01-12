@@ -1,5 +1,5 @@
 #
-# Build examples for ILEastic
+# Build examples for ILEvator
 #
 # This works for:
 #  make              compiles all demo programs
