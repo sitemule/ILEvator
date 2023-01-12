@@ -1,0 +1,17 @@
+**FREE
+
+/if not defined (ILEVATOR_STREAM_INTERNAL)
+/define ILEVATOR_STREAM_INTERNAL
+
+dcl-c IV_STREAM_BLOCK_SIZE 65000;
+
+dcl-ds iv_stream_t qualified template;
+  hasMore pointer(*proc);
+  dcl-subf read pointer(*proc);
+  dcl-subf write pointer(*proc);
+  finalize pointer(*proc);
+  blockSize uns(10);
+  data pointer;
+end-ds;
+
+/endif
