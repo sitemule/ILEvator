@@ -1,0 +1,155 @@
+**FREE
+
+/if not defined (ILEVATOR_REQUEST_BUILDER)
+
+/define ILEVATOR_REQUEST_BUILDER
+
+
+/include 'common.rpginc'
+/include 'string.rpginc'
+/include 'url.rpginc'
+
+
+///
+// Template for the next block of streamed data
+///
+dcl-ds httpclient_stream_result qualified template;
+  more ind;
+  content pointer;
+  size uns(10);
+end-ds;
+
+///
+// Create new HTTP request
+//
+// Creates a new URL request with the
+//
+///
+dcl-pr httpclient_request_new pointer extproc(*dclcase);
+  method varchar(10) ccsid(HTTPCLIENT_ASCII) const;
+  url varchar(HTTPCLIENT_URL_SIZE) ccsid(*utf8) const;
+  contentType varchar(1000) ccsid(HTTPCLIENT_ASCII) const options(*nopass);
+end-pr;
+
+///
+// Dispose HTTP request
+//
+// Frees the memory used by this HTTP request.
+//
+// @param HTTP request
+///
+dcl-pr httpclient_request_dispose extproc(*dclcase);
+  request pointer;
+end-pr;
+
+///
+// Set HTTP request header
+//
+// Sets the passed HTTP header in the request. Any previously added header with
+// the same name will be overwritten.
+//
+// @param HTTP request
+// @param HTTP header name
+// @param HTTP header value
+//
+// @info The HTTP header need to be in ASCII.
+// @info The HTTP header will always be converted to lowercase.
+///
+dcl-pr httpclient_request_setHeader extproc(*dclcase);
+  request pointer const;
+  name varchar(100) ccsid(HTTPCLIENT_ASCII) const;
+  value varchar(8000) ccsid(HTTPCLIENT_ASCII) const;
+end-pr;
+
+///
+// Set HTTP request content type
+//
+// Sets the content type HTTP header for the passed request. Any previously set
+// content type will be overwritten.
+//
+// @param HTTP request
+// @param Content type
+///
+dcl-pr httpclient_request_setContentType extproc(*dclcase);
+  request pointer const;
+  contentType varchar(1000) ccsid(HTTPCLIENT_ASCII) const;
+end-pr;
+
+///
+// Set Form Data
+//
+// Adds all graph entries at the root level to the request body form urlencoded
+// and sets application/x-form-www-urlencoded as content-type.
+//
+// @param Request
+// @param Form data (noxDB2)
+///
+dcl-pr httpclient_request_setFormBody extproc(*dclcase);
+  request pointer const;
+  formData pointer const;
+end-pr;
+
+///
+// Set the HTTP request body (text)
+//
+// Sets the passed string data as the message body. The data will be converted
+// into the corresponding CCSID. The CCSID of the request body is specified
+// with the <em>charset</em> attribute of the Content-Type HTTP header.
+//
+// <br><br>
+// <code>text/plain;charset=cp1252</code>
+// <br><br>
+//
+// Some content types have an implicit CCSID, f. e. application/json is always
+// UTF-8 encoded.
+//
+// <br><br>
+//
+// If any data should be sent as is (without CCSID conversion) the procedure
+// <tt>httpclient_request_setBinaryBody</tt> can be used to set the data.
+//
+// @param HTTP request
+// @param Message body
+///
+dcl-pr httpclient_request_setTextBody extproc(*dclcase);
+  request pointer const;
+  content varchar(100000) value; // TODO check for ccsid problem
+end-pr;
+
+dcl-pr httpclient_request_setBinaryBody extproc(*dclcase);
+  request pointer const;
+  content pointer const;
+  size uns(10) const;
+end-pr;
+
+dcl-pr httpclient_request_setBody overload(
+  httpclient_request_setTextBody :
+  httpclient_request_setBinaryBody
+);
+
+dcl-pr httpclient_request_setStream extproc(*dclcase);
+  request pointer const;
+  stream pointer const;
+end-pr;
+
+dcl-pr httpclient_request_toString likeds(httpclient_string_t) extproc(*dclcase);
+  request pointer const;
+end-pr;
+
+dcl-pr httpclient_request_stream likeds(httpclient_stream_result) extproc(*dclcase);
+  request pointer const;
+end-pr;
+
+dcl-pr httpclient_request_hasStream ind extproc(*dclcase);
+  request pointer const;
+end-pr;
+
+dcl-pr httpclient_request_hasTextBody ind extproc(*dclcase);
+  request pointer const;
+end-pr;
+
+dcl-pr httpclient_request_hasBody ind extproc(*dclcase);
+  request pointer const;
+end-pr;
+
+/endif

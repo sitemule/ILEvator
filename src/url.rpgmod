@@ -1,0 +1,336 @@
+**FREE
+
+ctl-opt nomain thread(*concurrent);
+
+// Reference: https://url.spec.whatwg.org/
+// TODO IPv6 support
+// TODO punycode support
+// TODO <www.extraprivacy.com:8080>http://www.google.com
+
+/include 'url.rpginc'
+
+dcl-pr memcmp int(10)  extproc('memcmp');
+  buffer1 pointer value;
+  buffer2 pointer value;
+  count uns(10) value;
+end-pr;
+
+dcl-s UTF8_SCHEME_SEPARATOR char(3) inz('://') ccsid(*utf8);
+dcl-s UTF8_COLON char(1) inz(':') ccsid(*utf8);
+dcl-s UTF8_SLASH char(1) inz('/') ccsid(*utf8);
+dcl-s UTF8_QUESTION_MARK char(1) inz('?') ccsid(*utf8);
+dcl-s UTF8_HASH char(1) inz('#') ccsid(*utf8);
+dcl-s UTF8_AT char(1) inz('@') ccsid(*utf8);
+dcl-s UTF8_BRACKET_OPEN char(1) inz('[') ccsid(*utf8);
+dcl-s UTF8_BRACKET_CLOSE char(1) inz(']') ccsid(*utf8);
+
+
+dcl-proc iv_url_parse export;
+  dcl-pi *n likeds(iv_url_t);
+    pUrl varchar(100000) ccsid(*utf8) value;
+  end-pi;
+
+  dcl-ds url likeds(iv_url_t) inz(*likeds);
+  dcl-s c char(1) ccsid(*utf8) based(ptr);
+  dcl-s state uns(3);
+  dcl-s i uns(10) inz(1);
+  dcl-s partStart uns(10);
+  dcl-s lastMarkerChar char(1) ccsid(*utf8);
+  dcl-s tmp char(10);
+  dcl-s inIpv6 ind inz(*off);
+  
+  dcl-c STATE_START 1;
+  dcl-c STATE_PROTOCOL 2;
+  dcl-c STATE_AUTH 3;
+  dcl-c STATE_HOST 4;
+  dcl-c STATE_PORT 5;
+  dcl-c STATE_PATH 6;
+  dcl-c STATE_QUERY 7;
+
+  if (%len(pUrl) = 0);
+    return *allx'00';
+  endif;
+
+  state = STATE_START;
+  partStart = 1;
+
+  ptr = %addr(pUrl : *data);
+
+  // support relative paths without protocol, host or port
+  if (c = UTF8_SLASH);
+    state = STATE_PORT;
+  endif;
+
+  dou (i > %len(pUrl));
+    select;
+
+      when (state = STATE_START);
+        select;
+          when (c = UTF8_BRACKET_OPEN);
+            inIpv6 = *on;
+          when (c = UTF8_BRACKET_CLOSE and inIpv6);
+            if (partStart + 1 <> i);
+              url.host = %subst(pUrl : partStart + 1 : i - partStart - 1);
+              url.ipv6 = *on;
+            else;
+              url.host = *blank;
+            endif;
+            inIpv6 = *off;
+            partStart = i+1;
+            state = STATE_HOST;
+            lastMarkerChar = UTF8_BRACKET_CLOSE;
+          when (c = UTF8_COLON);
+            lastMarkerChar = c;
+            if (memcmp(ptr : %addr(UTF8_SCHEME_SEPARATOR) : 3) = 0);
+              url.protocol = %subst(pUrl : partStart : i - partStart);
+              partStart = i+3; // :// => 3 chars  TODO support mailto: (without //)
+              state = STATE_PROTOCOL;
+              if (%len(pUrl) >= i+3);
+                ptr += 2;
+                i += 2;
+              endif;
+            else; // may be port
+              url.host = %subst(pUrl : partStart : i - partStart);
+              partStart = i+1;
+              state = STATE_PORT;
+            endif;
+          when (c = UTF8_SLASH);
+            lastMarkerChar = c;
+            url.host = %subst(pUrl : partStart : i - partStart);
+            partStart = i;
+            state = STATE_PORT;
+        endsl;
+
+      when (state = STATE_PROTOCOL);
+        select;
+          when (c = UTF8_BRACKET_OPEN);
+            inIpv6 = *on;
+          when (c = UTF8_BRACKET_CLOSE and inIpv6);
+            if (partStart + 1 <> i);
+              url.host = %subst(pUrl : partStart + 1 : i - partStart - 1);
+              url.ipv6 = *on;
+            else;
+              url.host = *blank;
+            endif;
+            inIpv6 = *off;
+            partStart = i+1;
+            state = STATE_HOST;
+            lastMarkerChar = UTF8_BRACKET_CLOSE;
+          when (c = UTF8_COLON and not inIpv6);
+            lastMarkerChar = c;
+            url.host = %subst(pUrl : partStart : i - partStart);
+            partStart = i+1;
+            state = STATE_HOST;
+          when (c = UTF8_SLASH);
+            lastMarkerChar = c;
+            url.host = %subst(pUrl : partStart : i - partStart);
+            partStart = i;
+            state = STATE_PORT;
+          when (c = UTF8_QUESTION_MARK);
+            lastMarkerChar = c;
+            url.host = %subst(pUrl : partStart : i - partStart);
+            partStart = i+1;
+            state = STATE_PATH;
+          when (c = UTF8_HASH);
+            lastMarkerChar = c;
+            url.host = %subst(pUrl : partStart : i - partStart);
+            partStart = i+1;
+            state = STATE_QUERY;
+            leave;
+        endsl;
+
+      when (state = STATE_AUTH);
+        select;
+          when (c = UTF8_BRACKET_OPEN);
+            inIpv6 = *on;
+          when (c = UTF8_BRACKET_CLOSE and inIpv6);
+            if (partStart + 1 <> i);
+              url.host = %subst(pUrl : partStart + 1 : i - partStart - 1);
+              url.ipv6 = *on;
+            else;
+              url.host = *blank;
+            endif;
+            inIpv6 = *off;
+            partStart = i+1;
+            state = STATE_HOST;
+            lastMarkerChar = UTF8_BRACKET_CLOSE;
+          when (c = UTF8_COLON and not inIpv6);
+            lastMarkerChar = c;
+            url.host = %subst(pUrl : partStart : i - partStart);
+            partStart = i+1;
+            state = STATE_HOST;
+          when (c = UTF8_SLASH);
+            lastMarkerChar = c;
+            url.host = %subst(pUrl : partStart : i - partStart);
+            partStart = i;
+            state = STATE_PORT;
+        endsl;
+
+      when (state = STATE_HOST);
+        select;
+          when (c = UTF8_SLASH);
+            lastMarkerChar = c;
+            tmp = %subst(pUrl : partStart : i - partStart);
+            url.port = %uns(tmp);
+            partStart = i;
+            state = STATE_PORT;
+          when (c = UTF8_QUESTION_MARK);
+            if (lastMarkerChar = UTF8_COLON);
+              lastMarkerChar = c;
+              tmp = %subst(pUrl : partStart : i - partStart);
+              url.port = %uns(tmp);
+              partStart = i+1;
+              state = STATE_PATH;
+            endif;
+          when (c = UTF8_HASH);
+            if (lastMarkerChar = UTF8_COLON);
+              lastMarkerChar = c;
+              tmp = %subst(pUrl : partStart : i - partStart);
+              url.port = %uns(tmp);
+              partStart = i;
+              state = STATE_QUERY;
+            elseif (lastMarkerChar = UTF8_HASH);
+              lastMarkerChar = c;
+              if (i - partStart > 0);
+                url.query = %subst(pUrl : partStart : i - partStart);
+              endif;
+              partStart = i+1;
+              state = STATE_QUERY;
+            else;
+              lastMarkerChar = c;
+              url.path = %subst(pUrl : partStart : i - partStart);
+              partStart = i+1;
+              state = STATE_QUERY;
+            endif;
+            leave;
+        endsl;
+
+      when (state = STATE_PORT);
+        select;
+          when (c = UTF8_QUESTION_MARK);
+            lastMarkerChar = c;
+            url.path = %subst(pUrl : partStart : i - partStart);
+            partStart = i+1;
+            state = STATE_PATH;
+          when (c = UTF8_HASH);
+            lastMarkerChar = c;
+            url.path = %subst(pUrl : partStart : i - partStart);
+            partStart = i+1;
+            state = STATE_QUERY;
+            leave;
+        endsl;
+        
+      when (state = STATE_PATH);
+        select;
+          when (c = UTF8_HASH);
+            if (lastMarkerChar = UTF8_QUESTION_MARK);
+              lastMarkerChar = c;
+              if (i - partStart > 0);
+                url.query = %subst(pUrl : partStart : i - partStart);
+              endif;
+              partStart = i+1;
+              state = STATE_QUERY;
+            endif;
+            leave;
+        endsl;
+    endsl;
+
+    i += 1;
+    ptr += 1;
+  enddo;
+
+  select;
+    when (state = STATE_START);
+      url.host = %subst(pUrl : partStart);
+    when (state <= STATE_AUTH);
+      url.host = %subst(pUrl : partStart);
+    when (state = STATE_HOST);
+      if (partStart < %len(pUrl)); 
+        if (lastMarkerChar = UTF8_COLON);
+          tmp = %subst(pUrl : partStart);
+          url.port = %uns(tmp);
+        else;
+          url.path = %subst(pUrl : partStart);
+        endif;
+      endif;
+    when (state = STATE_PORT);
+      if (lastMarkerChar = UTF8_COLON);
+        url.path = %subst(pUrl : partStart);
+      else;
+        if (partStart <= %len(pUrl));
+          url.query = %subst(pUrl : partStart);
+        endif;
+      endif;
+    when (state = STATE_PATH);
+      if (lastMarkerChar = UTF8_QUESTION_MARK);
+        if (partStart <= %len(pUrl));
+          url.query = %subst(pUrl : partStart);
+        endif;
+      endif;
+  endsl;
+
+  if (url.port = 0);
+    if (isHttps(url.protocol));
+      url.port = 443;
+    else;
+      url.port = 80;
+    endif;  
+  endif;
+
+  if (inIpv6);
+    // missing closing bracket
+    return *allx'00';
+  endif;
+
+  // TODO reverse urlencoding in path and query
+
+  return url;
+end-proc;
+
+
+dcl-proc iv_url_toString export;
+  dcl-pi *n varchar(100000) ccsid(*utf8);
+    url likeds(iv_url_t) const;
+  end-pi;
+  
+  dcl-s s varchar(100000) ccsid(*utf8);
+  
+  if (%len(url.host) = 0);
+    return *blank;
+  endif;
+  
+  s = url.protocol + '://';
+  
+  if (url.authentication <> *blank);
+    s += url.authentication + UTF8_AT;
+  endif;
+  
+  if (url.ipv6);
+    s += UTF8_BRACKET_OPEN + url.host + UTF8_BRACKET_CLOSE; 
+  else;
+    s += url.host;
+  endif;
+  
+  s += UTF8_COLON + %char(url.port) + url.path;
+  
+  if (url.query <> *blank);
+    s += UTF8_QUESTION_MARK + url.query;
+  endif;
+  
+  return s;
+end-proc;
+
+
+
+dcl-proc isHttps;
+  dcl-pi *n ind;
+    protocol varchar(20) ccsid(IV_URL_ASCII) const;
+  end-pi;
+  
+  // TODO better check for ignoring case
+  if (protocol = 'http' or protocol = 'HTTP' or protocol = 'Http');
+    return *off;
+  else;
+    return *on;
+  endif;
+end-proc;

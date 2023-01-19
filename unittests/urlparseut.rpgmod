@@ -1,0 +1,265 @@
+**FREE
+
+///
+// URL Parser : Unit Test
+//
+//
+// @author Mihael Schmidt
+// @date   19.01.2023
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'url.rpginc'
+
+dcl-c BRACKET_OPEN %ucs2('[');
+dcl-c BRACKET_CLOSE %ucs2(']');
+dcl-s UTF8_BRACKET_OPEN char(1) inz('[') ccsid(*utf8);
+dcl-s UTF8_BRACKET_CLOSE char(1) inz(']') ccsid(*utf8);
+
+dcl-pr test_emptyUrl end-pr;
+dcl-pr test_localhost end-pr;
+dcl-pr test_https end-pr;
+dcl-pr test_simpleHostname end-pr;
+dcl-pr test_ipv4Host end-pr;
+dcl-pr test_ipv6Host end-pr;
+dcl-pr test_emptyIpv6Host end-pr;
+dcl-pr test_defaultHttpPort end-pr;
+dcl-pr test_defaultHttpsPort end-pr;
+dcl-pr test_noPath end-pr;
+dcl-pr test_rootPath end-pr;
+dcl-pr test_noQuery end-pr;
+dcl-pr test_emptyQuery end-pr;
+dcl-pr test_emptyQueryWithFragment end-pr;
+dcl-pr test_queryWithoutPath end-pr;
+dcl-pr test_queryWithPortWithoutPath end-pr;
+dcl-pr test_queryKeyOnly end-pr;
+dcl-pr test_queryKeyOnlyWithFragment end-pr;
+dcl-pr test_queryKeyAndValue end-pr;
+dcl-pr test_queryAndFragment end-pr;
+dcl-pr test_proxyPrepended end-pr;
+dcl-pr test_fragmentWithoutPath end-pr;
+dcl-pr test_fragmentWithoutQuery end-pr;
+dcl-pr test_hostWithFragment end-pr;
+
+
+dcl-proc test_emptyUrl export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('');
+  s = iv_url_toString(url);
+  aEqual('' : s);  
+end-proc;
+
+
+dcl-proc test_localhost export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost');
+  s = iv_url_toString(url);
+  aEqual('http://localhost:80' : s);  
+end-proc;
+
+
+dcl-proc test_https export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://localhost');
+  s = iv_url_toString(url);
+  aEqual('https://localhost:443' : s);  
+end-proc;
+
+dcl-proc test_simpleHostname export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://www.rpgnextgen.com');
+  s = iv_url_toString(url);
+  aEqual('https://www.rpgnextgen.com:443' : s);  
+end-proc;
+
+
+dcl-proc test_ipv4Host export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://127.0.0.1');
+  s = iv_url_toString(url);
+  aEqual('http://127.0.0.1:80' : s);  
+end-proc;
+
+
+dcl-proc test_ipv6Host export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://' + UTF8_BRACKET_OPEN + 'cc82:4f5d:da76:7aa8:8ffc:e05c:638e:14bf' + UTF8_BRACKET_CLOSE);
+  s = iv_url_toString(url);
+  aEqual('https://' + UTF8_BRACKET_OPEN + 'cc82:4f5d:da76:7aa8:8ffc:e05c:638e:14bf' + UTF8_BRACKET_CLOSE + ':443' : s);
+  aEqual('cc82:4f5d:da76:7aa8:8ffc:e05c:638e:14bf' : url.host);
+  assert(url.ipv6 : 'ipv6 indicator should be on');
+end-proc;
+
+
+dcl-proc test_emptyIpv6Host export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://' + UTF8_BRACKET_OPEN + UTF8_BRACKET_CLOSE);
+  s = iv_url_toString(url);
+  aEqual('https://' : s);
+  aEqual('' : url.host);
+  assert(not url.ipv6 : 'ipv6 indicator should be off');
+end-proc;
+
+
+dcl-proc test_defaultHttpPort export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost');
+  s = iv_url_toString(url);
+  iEqual(80 : url.port);
+end-proc;
+
+
+dcl-proc test_defaultHttpsPort export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://localhost');
+  s = iv_url_toString(url);
+  iEqual(443 : url.port);
+end-proc;
+
+
+dcl-proc test_noPath export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost');
+  s = iv_url_toString(url);
+  aEqual('' : url.path);
+end-proc;
+
+
+dcl-proc test_noQuery export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost');
+  s = iv_url_toString(url);
+  aEqual('' : url.query);
+end-proc;
+
+
+dcl-proc test_queryAndFragment export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost/index.js?q=hello#/component/123');
+  s = iv_url_toString(url);
+  aEqual('q=hello' : url.query);
+end-proc;
+
+
+dcl-proc test_queryWithoutPath export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost?q=hello#/component/123');
+  s = iv_url_toString(url);
+  aEqual('q=hello' : url.query);
+end-proc;
+
+
+dcl-proc test_emptyQuery export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost?');
+  s = iv_url_toString(url);
+  aEqual('' : url.query);
+end-proc;
+
+
+dcl-proc test_emptyQueryWithFragment export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost?#/component/123');
+  s = iv_url_toString(url);
+  aEqual('' : url.query);
+end-proc;
+
+
+dcl-proc test_queryWithPortWithoutPath export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://ibmi:8181?q=hello');
+  s = iv_url_toString(url);
+  aEqual('ibmi' : url.host);
+  iEqual(8181 : url.port);
+  aEqual('q=hello' : url.query);
+end-proc;
+
+
+dcl-proc test_queryKeyOnly export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost?q');
+  s = iv_url_toString(url);
+  aEqual('q' : url.query);
+end-proc;
+
+
+dcl-proc test_queryKeyOnlyWithFragment export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost?q#/component/123');
+  s = iv_url_toString(url);
+  aEqual('q' : url.query);
+end-proc;
+
+
+dcl-proc test_hostWithFragment export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://ibmi#/component/123');
+  s = iv_url_toString(url);
+  aEqual('ibmi' : url.host);
+end-proc;
+
+
+dcl-proc test_portWithFragment export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://ibmi:8181#/component/123');
+  s = iv_url_toString(url);
+  aEqual('ibmi' : url.host);
+  iEqual(8181 : url.port);
+end-proc;
+
+
+// TODO prepended proxy is not standard , do we need to implement this.
+//
+// dcl-proc test_proxyPrepended export;
+//   dcl-ds url likeds(iv_url_t);
+//   dcl-s s varchar(1000);
+// 
+//   url = iv_url_parse('<http://squid:3128>http://localhost?q');
+//   s = iv_url_toString(url);
+//   aEqual('q' : url.proxy);
+// end-proc;
+ 

@@ -2,7 +2,7 @@
 
 ctl-opt nomain;
 
-/include assert
+/include 'assert.rpginc'
 
 dcl-ds SLISTNODE_t qualified template;
    pNext pointer; // struct SLISTNODE_t

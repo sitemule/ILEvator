@@ -15,8 +15,8 @@ ctl-opt nomain;
 //
 // Includes
 //
-/include '../headers/ilevator.rpgle'
-/include assert
+/include 'assert.rpginc'
+/include 'base64.rpginc'
 
 dcl-pr memcpy pointer extproc('memcpy');
   dest   pointer value;
@@ -35,16 +35,18 @@ dcl-pr test_il_decode end-pr;
 // Procedures
 //
 dcl-proc test_il_encode export;
-  aEqual(utf8('bXlfdXNlcm5hbWU6bXlfcGFzc3dv') : il_encodeBase64('my_username:my_passwo'));
+  aEqual(utf8('bXlfdXNlcm5hbWU6bXlfcGFzc3dv') : base64_encode('my_username:my_passwo'));
 end-proc;
+
 
 dcl-proc test_il_decode export;
   dcl-s encoded varchar(100) ccsid(*utf8);
   
   encoded = 'bXlfdXNlcm5hbWU6bXlfcGFzc3dv';
   
-  aEqual(utf8('my_username:my_passwo') : il_decodeBase64(encoded));
+  aEqual(utf8('my_username:my_passwo') : base64_decode(encoded));
 end-proc;
+
 
 dcl-proc utf8;
   dcl-pi *n varchar(1024) ccsid(*utf8);
