@@ -252,7 +252,7 @@ dcl-proc test_portWithFragment export;
 end-proc;
 
 
-// TODO prepended proxy is not standard , do we need to implement this.
+// TODO prepended proxy is not standard , do we need to implement this?
 //
 // dcl-proc test_proxyPrepended export;
 //   dcl-ds url likeds(iv_url_t);

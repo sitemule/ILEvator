@@ -3,7 +3,6 @@
 ctl-opt nomain thread(*concurrent);
 
 // Reference: https://url.spec.whatwg.org/
-// TODO IPv6 support
 // TODO punycode support
 // TODO <www.extraprivacy.com:8080>http://www.google.com
 
@@ -15,7 +14,7 @@ dcl-pr memcmp int(10)  extproc('memcmp');
   count uns(10) value;
 end-pr;
 
-dcl-s UTF8_SCHEME_SEPARATOR char(3) inz('://') ccsid(*utf8);
+dcl-s SCHEME_SEPARATOR char(3) inz('://');
 dcl-s UTF8_COLON char(1) inz(':') ccsid(*utf8);
 dcl-s UTF8_SLASH char(1) inz('/') ccsid(*utf8);
 dcl-s UTF8_QUESTION_MARK char(1) inz('?') ccsid(*utf8);
@@ -27,15 +26,15 @@ dcl-s UTF8_BRACKET_CLOSE char(1) inz(']') ccsid(*utf8);
 
 dcl-proc iv_url_parse export;
   dcl-pi *n likeds(iv_url_t);
-    pUrl varchar(100000) ccsid(*utf8) value;
+    pUrl varchar(100000) value;
   end-pi;
 
   dcl-ds url likeds(iv_url_t) inz(*likeds);
-  dcl-s c char(1) ccsid(*utf8) based(ptr);
+  dcl-s c char(1) based(ptr);
   dcl-s state uns(3);
   dcl-s i uns(10) inz(1);
   dcl-s partStart uns(10);
-  dcl-s lastMarkerChar char(1) ccsid(*utf8);
+  dcl-s lastMarkerChar char(1);
   dcl-s tmp char(10);
   dcl-s inIpv6 ind inz(*off);
   
@@ -81,7 +80,7 @@ dcl-proc iv_url_parse export;
             lastMarkerChar = UTF8_BRACKET_CLOSE;
           when (c = UTF8_COLON);
             lastMarkerChar = c;
-            if (memcmp(ptr : %addr(UTF8_SCHEME_SEPARATOR) : 3) = 0);
+            if (memcmp(ptr : %addr(SCHEME_SEPARATOR) : 3) = 0);
               url.protocol = %subst(pUrl : partStart : i - partStart);
               partStart = i+3; // :// => 3 chars  TODO support mailto: (without //)
               state = STATE_PROTOCOL;
@@ -289,11 +288,11 @@ end-proc;
 
 
 dcl-proc iv_url_toString export;
-  dcl-pi *n varchar(100000) ccsid(*utf8);
+  dcl-pi *n varchar(100000);
     url likeds(iv_url_t) const;
   end-pi;
   
-  dcl-s s varchar(100000) ccsid(*utf8);
+  dcl-s s varchar(100000);
   
   if (%len(url.host) = 0);
     return *blank;
@@ -321,16 +320,16 @@ dcl-proc iv_url_toString export;
 end-proc;
 
 
-
 dcl-proc isHttps;
   dcl-pi *n ind;
-    protocol varchar(20) ccsid(IV_URL_ASCII) const;
+    pProtocol varchar(20) const;
   end-pi;
   
-  // TODO better check for ignoring case
-  if (protocol = 'http' or protocol = 'HTTP' or protocol = 'Http');
-    return *off;
-  else;
-    return *on;
-  endif;
+  dcl-c UPPER 'HTPS';
+  dcl-c LOWER 'htps';
+  dcl-s protocol varchar(20);
+  
+  protocol = %xlate(UPPER : LOWER : pProtocol);
+  
+  return protocol = 'https';
 end-proc;

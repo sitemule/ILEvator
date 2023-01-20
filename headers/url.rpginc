@@ -22,13 +22,13 @@ dcl-c IV_URL_ASCII 367;
 // URL template
 ///
 dcl-ds iv_url_t qualified template align(*full);
-  protocol varchar(20 : 4) ccsid(*utf8) inz('http');
-  authentication varchar(100 : 4) inz('');
+  protocol varchar(12 : 4) inz('http');
+  authentication varchar(4000 : 4) inz('');
   host varchar(1000 : 4) inz('localhost');
   port uns(5) inz(0);
-  path varchar(65530 : 4) ccsid(*utf8) inz('');
-  query varchar(65530 : 4) ccsid(*utf8) inz('');
-  proxy varchar(1000 : 4);
+  path varchar(65530 : 4) inz('');
+  query varchar(65530 : 4) inz('');
+  proxy varchar(1000 : 4) inz('');
   ipv6 ind inz(*off);
 end-ds;
 
@@ -45,10 +45,10 @@ end-ds;
 //       (encoded).
 ///
 dcl-pr iv_url_parse likeds(iv_url_t) extproc(*dclcase);
-  url varchar(100000) ccsid(*utf8) value;
+  url varchar(100000) value;
 end-pr;
 
-dcl-pr iv_url_toString varchar(100000) ccsid(*utf8) extproc(*dclcase);
+dcl-pr iv_url_toString varchar(100000) extproc(*dclcase);
   url likeds(iv_url_t) const;
 end-pr;
 
