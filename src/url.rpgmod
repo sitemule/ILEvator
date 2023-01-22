@@ -30,21 +30,28 @@ dcl-proc iv_url_parse export;
 
   dcl-ds url likeds(iv_url_t) inz(*likeds);
   dcl-s c char(1) based(ptr);
-  dcl-s state uns(3);
   dcl-s i uns(10) inz(1);
   dcl-s partStart uns(10);
   dcl-s lastMarkerChar char(1);
   dcl-s tmp char(10);
   dcl-s inIpv6 ind inz(*off);
+  dcl-s inProxy ind inz(*off);
   dcl-s authData varchar(100) dim(2) inz;
   
+  // state indicates the last part of the URL which has already been processed
+  dcl-s state uns(3);
+  
+  // proxy URL   | protocol  | username  | password | host | port | path        | query  | fragment
+  // <proxy url>   http     :// my_user  : my_pass  @ host : 8181   /index.html ? q=term # /component/123
+  
   dcl-c STATE_START 1;
-  dcl-c STATE_PROTOCOL 2;
-  dcl-c STATE_AUTH 3;
-  dcl-c STATE_HOST 4;
-  dcl-c STATE_PORT 5;
-  dcl-c STATE_PATH 6;
-  dcl-c STATE_QUERY 7;
+  dcl-c STATE_PROXY 2;
+  dcl-c STATE_PROTOCOL 3;
+  dcl-c STATE_AUTH 4;
+  dcl-c STATE_HOST 5;
+  dcl-c STATE_PORT 6;
+  dcl-c STATE_PATH 7;
+  dcl-c STATE_QUERY 8;
 
   if (%len(pUrl) = 0);
     return *allx'00';
@@ -60,11 +67,28 @@ dcl-proc iv_url_parse export;
   if (c = '/');
     state = STATE_PORT;
   endif;
+  
+  // support IceBreak proxy urls
+  if (c = UNICODE_LESS_THAN);
+    inProxy = *on;
+    state = STATE_START;
+  else;
+    state = STATE_PROXY;
+  endif;
 
   dou (i > %len(pUrl));
     select;
-
+     
       when (state = STATE_START);
+        if (c = UNICODE_GREATER_THAN);
+          url.proxy = %subst(pUrl : partStart + 1 : i - partStart - 1);
+          partStart = i+1;
+          state = STATE_PROXY;
+          lastMarkerChar = UNICODE_GREATER_THAN;
+          inProxy = *off;
+        endif;
+        
+      when (state = STATE_PROXY);
         select;
           when (c = UNICODE_SQUARE_BRACKET_OPEN);
             inIpv6 = *on;
@@ -293,6 +317,11 @@ dcl-proc iv_url_parse export;
   endif;
 
   if (inIpv6);
+    // missing closing bracket
+    return *allx'00';
+  endif;
+  
+  if (inProxy);
     // missing closing bracket
     return *allx'00';
   endif;

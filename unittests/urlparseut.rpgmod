@@ -18,6 +18,8 @@ ctl-opt nomain;
 dcl-c BRACKET_OPEN u'005B';
 dcl-c BRACKET_CLOSE u'005D';
 dcl-c UNICODE_AT u'0040';
+dcl-c UNICODE_LESS_THAN u'003C';    // <
+dcl-c UNICODE_GREATER_THAN u'003E'; // >
 
 dcl-pr test_emptyUrl end-pr;
 dcl-pr test_localhost end-pr;
@@ -48,6 +50,8 @@ dcl-pr test_password end-pr;
 dcl-pr test_userpass end-pr;
 dcl-pr test_emptyUsername end-pr;
 dcl-pr test_emptyPassword end-pr;
+dcl-pr test_proxyUrl end-pr;
+dcl-pr test_incompleteProxyUrl end-pr;
 
 
 dcl-proc test_emptyUrl export;
@@ -302,4 +306,25 @@ dcl-proc test_userpass export;
   aEqual('myuser' : url.username);
   aEqual('secret' : url.password);
 end-proc;
- 
+
+
+dcl-proc test_proxyUrl export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse(UNICODE_LESS_THAN + 'http://squid:3128' + UNICODE_GREATER_THAN + 'https://ibmi');
+  s = iv_url_toString(url);
+  aEqual('http://squid:3128' : url.proxy);
+  aEqual('https' : url.protocol);
+  aEqual('ibmi' : url.host);
+end-proc;
+
+
+dcl-proc test_incompleteProxyUrl export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse(UNICODE_LESS_THAN + 'http://squid:3128 https://ibmi');
+  s = iv_url_toString(url);
+  assert(url = *allx'00' : 'Incomplete URL should result in all hex nulls.');
+end-proc;
