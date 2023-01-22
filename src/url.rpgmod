@@ -4,7 +4,6 @@ ctl-opt nomain thread(*concurrent);
 
 // Reference: https://url.spec.whatwg.org/
 // TODO punycode support
-// TODO <www.extraprivacy.com:8080>http://www.google.com
 
 /include 'url.rpginc'
 
