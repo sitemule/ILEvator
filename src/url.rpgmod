@@ -15,13 +15,12 @@ dcl-pr memcmp int(10)  extproc('memcmp');
 end-pr;
 
 dcl-s SCHEME_SEPARATOR char(3) inz('://');
-dcl-s UTF8_COLON char(1) inz(':') ccsid(*utf8);
-dcl-s UTF8_SLASH char(1) inz('/') ccsid(*utf8);
-dcl-s UTF8_QUESTION_MARK char(1) inz('?') ccsid(*utf8);
-dcl-s UTF8_HASH char(1) inz('#') ccsid(*utf8);
-dcl-s UTF8_AT char(1) inz('@') ccsid(*utf8);
-dcl-s UTF8_BRACKET_OPEN char(1) inz('[') ccsid(*utf8);
-dcl-s UTF8_BRACKET_CLOSE char(1) inz(']') ccsid(*utf8);
+dcl-c UNICODE_HASH u'0023';
+dcl-c UNICODE_AT u'0040';
+dcl-c UNICODE_SQUARE_BRACKET_OPEN u'005B';
+dcl-c UNICODE_SQUARE_BRACKET_CLOSE u'005D';
+dcl-c UNICODE_LESS_THAN u'003C';    // <
+dcl-c UNICODE_GREATER_THAN u'003E'; // >
 
 
 dcl-proc iv_url_parse export;
@@ -37,6 +36,7 @@ dcl-proc iv_url_parse export;
   dcl-s lastMarkerChar char(1);
   dcl-s tmp char(10);
   dcl-s inIpv6 ind inz(*off);
+  dcl-s authData varchar(100) dim(2) inz;
   
   dcl-c STATE_START 1;
   dcl-c STATE_PROTOCOL 2;
@@ -55,8 +55,9 @@ dcl-proc iv_url_parse export;
 
   ptr = %addr(pUrl : *data);
 
-  // support relative paths without protocol, host or port
-  if (c = UTF8_SLASH);
+  // support path without protocol, host or port
+  // defaults to http, localhost, 80
+  if (c = '/');
     state = STATE_PORT;
   endif;
 
@@ -65,9 +66,9 @@ dcl-proc iv_url_parse export;
 
       when (state = STATE_START);
         select;
-          when (c = UTF8_BRACKET_OPEN);
+          when (c = UNICODE_SQUARE_BRACKET_OPEN);
             inIpv6 = *on;
-          when (c = UTF8_BRACKET_CLOSE and inIpv6);
+          when (c = UNICODE_SQUARE_BRACKET_CLOSE and inIpv6);
             if (partStart + 1 <> i);
               url.host = %subst(pUrl : partStart + 1 : i - partStart - 1);
               url.ipv6 = *on;
@@ -77,8 +78,8 @@ dcl-proc iv_url_parse export;
             inIpv6 = *off;
             partStart = i+1;
             state = STATE_HOST;
-            lastMarkerChar = UTF8_BRACKET_CLOSE;
-          when (c = UTF8_COLON);
+            lastMarkerChar = UNICODE_SQUARE_BRACKET_CLOSE;
+          when (c = ':');
             lastMarkerChar = c;
             if (memcmp(ptr : %addr(SCHEME_SEPARATOR) : 3) = 0);
               url.protocol = %subst(pUrl : partStart : i - partStart);
@@ -93,7 +94,7 @@ dcl-proc iv_url_parse export;
               partStart = i+1;
               state = STATE_PORT;
             endif;
-          when (c = UTF8_SLASH);
+          when (c = '/');
             lastMarkerChar = c;
             url.host = %subst(pUrl : partStart : i - partStart);
             partStart = i;
@@ -102,9 +103,16 @@ dcl-proc iv_url_parse export;
 
       when (state = STATE_PROTOCOL);
         select;
-          when (c = UTF8_BRACKET_OPEN);
+          when (c = UNICODE_AT);
+            authData = parseUserPassword(%subst(pUrl : partStart : i - partStart));
+            url.username = authData(1);
+            url.password = authData(2);
+            partStart = i+1;
+            state = STATE_AUTH;
+            lastMarkerChar = UNICODE_AT;
+          when (c = UNICODE_SQUARE_BRACKET_OPEN);
             inIpv6 = *on;
-          when (c = UTF8_BRACKET_CLOSE and inIpv6);
+          when (c = UNICODE_SQUARE_BRACKET_CLOSE and inIpv6);
             if (partStart + 1 <> i);
               url.host = %subst(pUrl : partStart + 1 : i - partStart - 1);
               url.ipv6 = *on;
@@ -114,23 +122,23 @@ dcl-proc iv_url_parse export;
             inIpv6 = *off;
             partStart = i+1;
             state = STATE_HOST;
-            lastMarkerChar = UTF8_BRACKET_CLOSE;
-          when (c = UTF8_COLON and not inIpv6);
+            lastMarkerChar = UNICODE_SQUARE_BRACKET_CLOSE;
+          when (c = ':' and not inIpv6);
             lastMarkerChar = c;
             url.host = %subst(pUrl : partStart : i - partStart);
             partStart = i+1;
             state = STATE_HOST;
-          when (c = UTF8_SLASH);
+          when (c = '/');
             lastMarkerChar = c;
             url.host = %subst(pUrl : partStart : i - partStart);
             partStart = i;
             state = STATE_PORT;
-          when (c = UTF8_QUESTION_MARK);
+          when (c = '?');
             lastMarkerChar = c;
             url.host = %subst(pUrl : partStart : i - partStart);
             partStart = i+1;
             state = STATE_PATH;
-          when (c = UTF8_HASH);
+          when (c = UNICODE_HASH);
             lastMarkerChar = c;
             url.host = %subst(pUrl : partStart : i - partStart);
             partStart = i+1;
@@ -140,9 +148,9 @@ dcl-proc iv_url_parse export;
 
       when (state = STATE_AUTH);
         select;
-          when (c = UTF8_BRACKET_OPEN);
+          when (c = UNICODE_SQUARE_BRACKET_OPEN);
             inIpv6 = *on;
-          when (c = UTF8_BRACKET_CLOSE and inIpv6);
+          when (c = UNICODE_SQUARE_BRACKET_CLOSE and inIpv6);
             if (partStart + 1 <> i);
               url.host = %subst(pUrl : partStart + 1 : i - partStart - 1);
               url.ipv6 = *on;
@@ -152,13 +160,13 @@ dcl-proc iv_url_parse export;
             inIpv6 = *off;
             partStart = i+1;
             state = STATE_HOST;
-            lastMarkerChar = UTF8_BRACKET_CLOSE;
-          when (c = UTF8_COLON and not inIpv6);
+            lastMarkerChar = UNICODE_SQUARE_BRACKET_CLOSE;
+          when (c = ':' and not inIpv6);
             lastMarkerChar = c;
             url.host = %subst(pUrl : partStart : i - partStart);
             partStart = i+1;
             state = STATE_HOST;
-          when (c = UTF8_SLASH);
+          when (c = '/');
             lastMarkerChar = c;
             url.host = %subst(pUrl : partStart : i - partStart);
             partStart = i;
@@ -167,28 +175,36 @@ dcl-proc iv_url_parse export;
 
       when (state = STATE_HOST);
         select;
-          when (c = UTF8_SLASH);
+          when (c = UNICODE_AT and lastMarkerChar = ':');
+            // the username has been scanned as hostname
+            url.username = url.host;
+            url.host = *blank;
+            url.password = %subst(pUrl : partStart : i - partStart);
+            partStart = i+1;
+            state = STATE_AUTH;
+            lastMarkerChar = c;
+          when (c = '/');
             lastMarkerChar = c;
             tmp = %subst(pUrl : partStart : i - partStart);
             url.port = %uns(tmp);
             partStart = i;
             state = STATE_PORT;
-          when (c = UTF8_QUESTION_MARK);
-            if (lastMarkerChar = UTF8_COLON);
+          when (c = '?');
+            if (lastMarkerChar = ':');
               lastMarkerChar = c;
               tmp = %subst(pUrl : partStart : i - partStart);
               url.port = %uns(tmp);
               partStart = i+1;
               state = STATE_PATH;
             endif;
-          when (c = UTF8_HASH);
-            if (lastMarkerChar = UTF8_COLON);
+          when (c = UNICODE_HASH);
+            if (lastMarkerChar = ':');
               lastMarkerChar = c;
               tmp = %subst(pUrl : partStart : i - partStart);
               url.port = %uns(tmp);
               partStart = i;
               state = STATE_QUERY;
-            elseif (lastMarkerChar = UTF8_HASH);
+            elseif (lastMarkerChar = UNICODE_HASH);
               lastMarkerChar = c;
               if (i - partStart > 0);
                 url.query = %subst(pUrl : partStart : i - partStart);
@@ -206,12 +222,12 @@ dcl-proc iv_url_parse export;
 
       when (state = STATE_PORT);
         select;
-          when (c = UTF8_QUESTION_MARK);
+          when (c = '?');
             lastMarkerChar = c;
             url.path = %subst(pUrl : partStart : i - partStart);
             partStart = i+1;
             state = STATE_PATH;
-          when (c = UTF8_HASH);
+          when (c = UNICODE_HASH);
             lastMarkerChar = c;
             url.path = %subst(pUrl : partStart : i - partStart);
             partStart = i+1;
@@ -221,8 +237,8 @@ dcl-proc iv_url_parse export;
         
       when (state = STATE_PATH);
         select;
-          when (c = UTF8_HASH);
-            if (lastMarkerChar = UTF8_QUESTION_MARK);
+          when (c = UNICODE_HASH);
+            if (lastMarkerChar = '?');
               lastMarkerChar = c;
               if (i - partStart > 0);
                 url.query = %subst(pUrl : partStart : i - partStart);
@@ -245,7 +261,7 @@ dcl-proc iv_url_parse export;
       url.host = %subst(pUrl : partStart);
     when (state = STATE_HOST);
       if (partStart < %len(pUrl)); 
-        if (lastMarkerChar = UTF8_COLON);
+        if (lastMarkerChar = ':');
           tmp = %subst(pUrl : partStart);
           url.port = %uns(tmp);
         else;
@@ -253,7 +269,7 @@ dcl-proc iv_url_parse export;
         endif;
       endif;
     when (state = STATE_PORT);
-      if (lastMarkerChar = UTF8_COLON);
+      if (lastMarkerChar = ':');
         url.path = %subst(pUrl : partStart);
       else;
         if (partStart <= %len(pUrl));
@@ -261,7 +277,7 @@ dcl-proc iv_url_parse export;
         endif;
       endif;
     when (state = STATE_PATH);
-      if (lastMarkerChar = UTF8_QUESTION_MARK);
+      if (lastMarkerChar = '?');
         if (partStart <= %len(pUrl));
           url.query = %subst(pUrl : partStart);
         endif;
@@ -298,22 +314,33 @@ dcl-proc iv_url_toString export;
     return *blank;
   endif;
   
-  s = url.protocol + '://';
+  s = url.protocol + SCHEME_SEPARATOR;
   
-  if (url.authentication <> *blank);
-    s += url.authentication + UTF8_AT;
+  if (url.username <> *blank);
+    s += url.username;
+  endif;
+  
+  if (url.password <> *blank);
+    if (url.username <> *blank);
+      s += ':';
+    endif;
+    s += url.password;
+  endif;
+  
+  if (url.username <> *blank or url.password <> *blank);
+    s += UNICODE_AT;
   endif;
   
   if (url.ipv6);
-    s += UTF8_BRACKET_OPEN + url.host + UTF8_BRACKET_CLOSE; 
+    s += UNICODE_SQUARE_BRACKET_OPEN + url.host + UNICODE_SQUARE_BRACKET_CLOSE; 
   else;
     s += url.host;
   endif;
   
-  s += UTF8_COLON + %char(url.port) + url.path;
+  s += ':' + %char(url.port) + url.path;
   
   if (url.query <> *blank);
-    s += UTF8_QUESTION_MARK + url.query;
+    s += '?' + url.query;
   endif;
   
   return s;
@@ -332,4 +359,32 @@ dcl-proc isHttps;
   protocol = %xlate(UPPER : LOWER : pProtocol);
   
   return protocol = 'https';
+end-proc;
+
+
+dcl-proc parseUserPassword;
+  dcl-pi *n varchar(100) dim(2);
+    s varchar(10000) const;
+  end-pi;
+  
+  dcl-s authData varchar(100) dim(2) inz;
+  dcl-s x int(10);
+  
+  x = %scan(':' : s);
+  if (x = 0);
+    // only the username
+    authData(1) = s;
+  elseif (x = 1);
+    // empty user , only password
+    if (%len(s) > x);
+      authData(2) = %subst(s : 2);
+    endif;
+  else;
+    authData(1) = %subst(s : x+1 : x-1);
+    if (%len(s) > x);
+      authData(2) = %subst(s : x+1);
+    endif;
+  endif;
+  
+  return authData;
 end-proc;

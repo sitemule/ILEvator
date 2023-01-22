@@ -15,10 +15,9 @@ ctl-opt nomain;
 /include 'assert.rpginc'
 /include 'url.rpginc'
 
-dcl-c BRACKET_OPEN %ucs2('[');
-dcl-c BRACKET_CLOSE %ucs2(']');
-dcl-s UTF8_BRACKET_OPEN char(1) inz('[') ccsid(*utf8);
-dcl-s UTF8_BRACKET_CLOSE char(1) inz(']') ccsid(*utf8);
+dcl-c BRACKET_OPEN u'005B';
+dcl-c BRACKET_CLOSE u'005D';
+dcl-c UNICODE_AT u'0040';
 
 dcl-pr test_emptyUrl end-pr;
 dcl-pr test_localhost end-pr;
@@ -44,6 +43,11 @@ dcl-pr test_proxyPrepended end-pr;
 dcl-pr test_fragmentWithoutPath end-pr;
 dcl-pr test_fragmentWithoutQuery end-pr;
 dcl-pr test_hostWithFragment end-pr;
+dcl-pr test_username end-pr;
+dcl-pr test_password end-pr;
+dcl-pr test_userpass end-pr;
+dcl-pr test_emptyUsername end-pr;
+dcl-pr test_emptyPassword end-pr;
 
 
 dcl-proc test_emptyUrl export;
@@ -99,9 +103,9 @@ dcl-proc test_ipv6Host export;
   dcl-ds url likeds(iv_url_t);
   dcl-s s varchar(1000);
 
-  url = iv_url_parse('https://' + UTF8_BRACKET_OPEN + 'cc82:4f5d:da76:7aa8:8ffc:e05c:638e:14bf' + UTF8_BRACKET_CLOSE);
+  url = iv_url_parse('https://' + BRACKET_OPEN + 'cc82:4f5d:da76:7aa8:8ffc:e05c:638e:14bf' + BRACKET_CLOSE);
   s = iv_url_toString(url);
-  aEqual('https://' + UTF8_BRACKET_OPEN + 'cc82:4f5d:da76:7aa8:8ffc:e05c:638e:14bf' + UTF8_BRACKET_CLOSE + ':443' : s);
+  aEqual('https://' + BRACKET_OPEN + 'cc82:4f5d:da76:7aa8:8ffc:e05c:638e:14bf' + BRACKET_CLOSE + ':443' : s);
   aEqual('cc82:4f5d:da76:7aa8:8ffc:e05c:638e:14bf' : url.host);
   assert(url.ipv6 : 'ipv6 indicator should be on');
 end-proc;
@@ -111,7 +115,7 @@ dcl-proc test_emptyIpv6Host export;
   dcl-ds url likeds(iv_url_t);
   dcl-s s varchar(1000);
 
-  url = iv_url_parse('https://' + UTF8_BRACKET_OPEN + UTF8_BRACKET_CLOSE);
+  url = iv_url_parse('https://' + BRACKET_OPEN + BRACKET_CLOSE);
   s = iv_url_toString(url);
   aEqual('https://' : s);
   aEqual('' : url.host);
@@ -252,14 +256,50 @@ dcl-proc test_portWithFragment export;
 end-proc;
 
 
-// TODO prepended proxy is not standard , do we need to implement this?
-//
-// dcl-proc test_proxyPrepended export;
-//   dcl-ds url likeds(iv_url_t);
-//   dcl-s s varchar(1000);
-// 
-//   url = iv_url_parse('<http://squid:3128>http://localhost?q');
-//   s = iv_url_toString(url);
-//   aEqual('q' : url.proxy);
-// end-proc;
+dcl-proc test_usernameOnly export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://myuser' + UNICODE_AT + 'ibmi');
+  s = iv_url_toString(url);
+  aEqual('ibmi' : url.host);
+  aEqual('myuser' : url.username);
+  aEqual('' : url.password);
+end-proc;
+ 
+
+dcl-proc test_emptyUsername export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://:secret' + UNICODE_AT + 'ibmi');
+  s = iv_url_toString(url);
+  aEqual('ibmi' : url.host);
+  aEqual('' : url.username);
+  aEqual('secret' : url.password);
+end-proc;
+
+
+dcl-proc test_emptyPassword export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://myuser:' + UNICODE_AT + 'ibmi');
+  s = iv_url_toString(url);
+  aEqual('ibmi' : url.host);
+  aEqual('myuser' : url.username);
+  aEqual('' : url.password);
+end-proc;
+
+
+dcl-proc test_userpass export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://myuser:secret' + UNICODE_AT + 'ibmi');
+  s = iv_url_toString(url);
+  aEqual('ibmi' : url.host);
+  aEqual('myuser' : url.username);
+  aEqual('secret' : url.password);
+end-proc;
  
