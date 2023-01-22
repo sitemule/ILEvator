@@ -343,7 +343,11 @@ dcl-proc iv_url_toString export;
     return *blank;
   endif;
   
-  s = url.protocol + SCHEME_SEPARATOR;
+  if (url.proxy <> *blank);
+    s = UNICODE_LESS_THAN + url.proxy + UNICODE_GREATER_THAN;
+  endif;
+  
+  s += url.protocol + SCHEME_SEPARATOR;
   
   if (url.username <> *blank);
     s += url.username;
