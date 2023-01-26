@@ -3,6 +3,9 @@
 #define CR 0x0D
 #define LF 0x25
 
+#include "ostypes.h"
+#include "ilevator.h"
+
 LONG urlEncodeBlanks  (PUCHAR outBuf , PUCHAR inBuf);
 void putWsTrace(PILEVATOR pIv, PUCHAR ctlStr, ...);
 void xsetmsg(PILEVATOR pIv , PUCHAR msgid , PUCHAR Ctlstr, ...);
