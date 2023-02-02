@@ -52,5 +52,6 @@ FIXEDDEC strutil_str2dec(PUCHAR str, UCHAR decPoint);
 LONG strutil_packedMem2Int(PUCHAR buf, SHORT bytes);
 PUCHAR strutil_memmem  (PUCHAR heystack , ULONG haystackLen, PUCHAR needle, ULONG needleLen);
 LONG strutil_a2i (PUCHAR s);
+PUCHAR strutil_itoa(int value, PUCHAR buffer, int base);
 
 #endif

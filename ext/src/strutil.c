@@ -539,7 +539,7 @@ PUCHAR strutil_righttrimcpy(PUCHAR dst, PUCHAR src)
 }
 /* -----------------------------------------------------------------
    ----------------------------------------------------------------- */
-PUCHAR strrighttrimncpy(PUCHAR dst, PUCHAR src, LONG len)
+PUCHAR strutil_righttrimncpy(PUCHAR dst, PUCHAR src, LONG len)
 {
    PUCHAR end = dst;
    PUCHAR ret = dst;
@@ -785,11 +785,6 @@ PUCHAR strutil_strDup(PUCHAR s)
 }
 */
 /* ------------------------------------------------------------- */
-LGL isOn (int boolExpr)
-{
-    return ( boolExpr ? ON : OFF);
-}
-/* ------------------------------------------------------------- */
 PUCHAR strutil_strlastchr(PUCHAR str , UCHAR c)
 {
      PUCHAR p, found = NULL;
@@ -799,7 +794,7 @@ PUCHAR strutil_strlastchr(PUCHAR str , UCHAR c)
      }
      return found;
 }
-PUCHAR strutil_blob2str  (PBLOB pb)
+PUCHAR strutil_blob2str(PBLOB pb)
 {
     pb->String[pb->Length] = '\0';
     return  pb->String;
@@ -838,3 +833,57 @@ LONG strutil_a2i (PUCHAR s)
 }
 #pragma convert(0)
 
+static void swap(PUCHAR x, PUCHAR y) {
+    char t = *x; *x = *y; *y = t;
+}
+ 
+static PUCHAR reverse(PUCHAR buffer, int i, int j)
+{
+    while (i < j) {
+        swap(&buffer[i++], &buffer[j--]);
+    }
+ 
+    return buffer;
+}
+ 
+PUCHAR strutil_itoa(int value, PUCHAR buffer, int base)
+{
+    // max base = 32
+    if (base < 2 || base > 32) {
+        return buffer;
+    }
+ 
+    int n = abs(value);
+ 
+    int i = 0;
+    while (n) {
+        int r = n % base;
+ 
+        if (r >= 10) {
+            // chars A-Z , 65 = A in ASCII , in EBCDIC : A=193 , J=209 , S=226
+            if (r <= 18)
+              buffer[i++] = 193 + (r - 10);
+            else if (r <= 27)
+              buffer[i++] = 209 + (r - 10 - 9);
+            else
+              buffer[i++] = 226 + (r - 10 - 18);
+        }
+        else {
+            // numbers 0 - 9 , 0=48 in ASCII , 0=240 in EBCDIC
+            buffer[i++] = 240 + r; 
+        }
+ 
+        n = n / base;
+    }
+ 
+    // if the number is 0
+    if (i == 0) {
+        buffer[i++] = '0';
+    }
+ 
+    if (value < 0) buffer[i++] = '-';
+ 
+    buffer[i] = '\0';
+ 
+    return reverse(buffer, 0, i - 1);
+}

@@ -1,0 +1,109 @@
+**FREE
+
+///
+// URL Parser : Unit Test
+//
+//
+// @author Mihael Schmidt
+// @date   19.01.2023
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'strutil.rpginc'
+
+
+dcl-pr test_itoa_null end-pr;
+dcl-pr test_itoa_positiveBase10 end-pr;
+dcl-pr test_itoa_positiveBase16 end-pr;
+dcl-pr test_itoa_positiveBase32 end-pr;
+dcl-pr test_itoa_negativeBase10 end-pr;
+dcl-pr test_itoa_negativeBase16 end-pr;
+dcl-pr test_itoa_negativeBase32 end-pr;
+
+
+dcl-proc test_itoa_null export;
+  dcl-s buffer char(50);
+  dcl-s ptr pointer;
+
+  ptr = %addr(buffer);
+
+  strutil_itoa(0: ptr : 10);
+
+  aEqual('0' : %str(ptr : %size(buffer)));
+end-proc;
+
+
+dcl-proc test_itoa_positiveBase10 export;
+  dcl-s buffer char(50);
+  dcl-s ptr pointer;
+
+  ptr = %addr(buffer);
+
+  strutil_itoa(44001: ptr : 10);
+
+  aEqual('44001' : %str(ptr : %size(buffer)));
+end-proc;
+
+
+dcl-proc test_itoa_positiveBase16 export;
+  dcl-s buffer char(50);
+  dcl-s ptr pointer;
+
+  ptr = %addr(buffer);
+
+  strutil_itoa(44001: ptr : 16);
+
+  aEqual('ABE1' : %str(ptr : %size(buffer)));
+end-proc;
+
+
+dcl-proc test_itoa_positiveBase32 export;
+  dcl-s buffer char(50);
+  dcl-s ptr pointer;
+
+  ptr = %addr(buffer);
+
+  strutil_itoa(44001: ptr : 32);
+
+  aEqual('1AV1' : %str(ptr : %size(buffer)));
+end-proc;
+
+
+dcl-proc test_itoa_negativeBase10 export;
+  dcl-s buffer char(50);
+  dcl-s ptr pointer;
+
+  ptr = %addr(buffer);
+
+  strutil_itoa(-44001: ptr : 10);
+
+  aEqual('-44001' : %str(ptr : %size(buffer)));
+end-proc;
+
+
+dcl-proc test_itoa_negativeBase16 export;
+  dcl-s buffer char(50);
+  dcl-s ptr pointer;
+
+  ptr = %addr(buffer);
+
+  strutil_itoa(-44001: ptr : 16);
+
+  aEqual('-ABE1' : %str(ptr : %size(buffer)));
+end-proc;
+
+
+dcl-proc test_itoa_negativeBase32 export;
+  dcl-s buffer char(50);
+  dcl-s ptr pointer;
+
+  ptr = %addr(buffer);
+
+  strutil_itoa(-20241231: ptr : 32);
+
+  aEqual('-J9MQF' : %str(ptr : %size(buffer)));
+end-proc;
