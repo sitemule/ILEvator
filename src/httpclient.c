@@ -30,8 +30,6 @@
 #include "varchar.h"
 #include "xlate.h"
 
-char * _itoa(int value, char * string, int radix);
-
 static UCHAR EOL [] = {CR, LF , 0};
 
 /* --------------------------------------------------------------------------- *\
@@ -290,7 +288,7 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
     }
 
     strncat(pIv->server , l_url.host.String, l_url.host.Length);
-    _itoa(l_url.port, pIv->port, 10);
+    strutil_itoa(l_url.port, pIv->port, 10);
     strncat(pIv->host , l_url.host.String, l_url.host.Length);
     strcat(pIv->host , ":");
     strcat(pIv->host , pIv->port);
