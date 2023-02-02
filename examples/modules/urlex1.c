@@ -19,7 +19,7 @@ int main() {
   url = iv_url_parse(s);
   printf("Protocol size: %d\n", url.protocolLength);
   printf("Host size: %d\n", url.hostLength);
-  printf("Host: %.2s\n", url.host);
+  printf("Host: %.12s\n", url.host);
   
   output = iv_url_toString(&url);
   printf("URL: %s\n", output.String);

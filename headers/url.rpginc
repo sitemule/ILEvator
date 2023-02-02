@@ -22,14 +22,14 @@ dcl-c IV_URL_ASCII 367;
 // URL template
 ///
 dcl-ds iv_url_t qualified template align(*full);
-  protocol varchar(12 : 4) inz('http');
-  username varchar(100 : 4) inz('');
-  password varchar(100 : 4) inz('');
-  host varchar(1000 : 4) inz('localhost');
+  protocol varchar(12 : 2) inz('http');
+  username varchar(128 : 2) inz('');
+  password varchar(128 : 2) inz('');
+  host varchar(1024 : 2) inz('localhost');
   port uns(5) inz(0);
-  path varchar(65530 : 4) inz('');
-  query varchar(65530 : 4) inz('');
-  proxy varchar(1000 : 4) inz('');
+  path varchar(1048576 : 4) inz('');
+  query varchar(1048576 : 4) inz('');
+  proxy varchar(1024 : 2) inz('');
   ipv6 ind inz(*off);
 end-ds;
 

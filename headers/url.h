@@ -5,21 +5,14 @@
 #include "varchar.h"
 
 typedef _Packed struct _URL {
-    ULONG protocolLength;
-    UCHAR protocol[12];
-    ULONG usernameLength;
-    UCHAR username[100];
-    ULONG passwordLength;
-    UCHAR password[100];
-    ULONG hostLength;
-    UCHAR host[1000];
+    VARCHAR12 protocol;
+    VARCHAR128 username;
+    VARCHAR128 password;
+    VARCHAR1024 host;
     USHORT port;     
-    ULONG pathLength;
-    UCHAR path[65530];
-    ULONG queryLength;
-    UCHAR query[65530];
-    ULONG proxyLength;
-    UCHAR proxy[1000];
+    LVARCHAR path;
+    LVARCHAR query;
+    VARCHAR1024 proxy;
     LGL ipv6;
 } URL, *PURL;
 

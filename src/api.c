@@ -184,16 +184,7 @@ LGL iv_execute (
     pIv->timeOut = (parms >= 4) ? timeOut : 30000; 
     pIv->retries = (parms >= 5) ? retries : 3;
     
-    parseUrl (
-        pIv,
-        url,
-        pIv->server ,
-        pIv->port ,
-        pIv->resource ,
-        pIv->host ,
-        pIv->user ,
-        pIv->password
-    ); 
+    parseUrl(pIv, url); 
 
     for (retry = 0; retry < pIv->retries ; retry++) {
 

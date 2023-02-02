@@ -22,14 +22,6 @@ API_STATUS sendHeader (PILEVATOR pIv) ;
 API_STATUS receiveHeader ( PILEVATOR pIv);
 API_STATUS receiveData ( PILEVATOR pIv);
 
-void parseUrl (
-    PILEVATOR pIv,
-    PUCHAR url, 
-    PUCHAR server , 
-    PUCHAR port , 
-    PUCHAR resource, 
-    PUCHAR host, 
-    PUCHAR user, 
-    PUCHAR password);
+void parseUrl (PILEVATOR pIv, PUCHAR url);
 
 #endif

@@ -15,21 +15,22 @@
 #include <errno.h>
 #include <locale.h>
 
-
-#include "ostypes.h"
 #include "anychar.h"
-#include "simpleList.h"
-#include "ilevator.h"
-#include "xlate.h"
 #include "base64.h"
+#include "httpclient.h"
+#include "ilevator.h"
+#include "message.h"
 #include "mime.h"
-#include "teraspace.h"
-#include "varchar.h"
+#include "ostypes.h"
+#include "parms.h"
 #include "strutil.h"
 #include "simpleList.h"
-#include "message.h"
-#include "parms.h"
-#include "httpclient.h"
+#include "teraspace.h"
+#include "url.h"
+#include "varchar.h"
+#include "xlate.h"
+
+char * _itoa(int value, char * string, int radix);
 
 static UCHAR EOL [] = {CR, LF , 0};
 
@@ -269,146 +270,49 @@ UCHAR masterspace ()
    http://userid:password@www.google.com:1234/any.asp&parm1=value1
 
 \* -------------------------------------------------------------------------- */
-void parseUrl (
-    PILEVATOR pIv,
-    PUCHAR url, 
-    PUCHAR server , 
-    PUCHAR port , 
-    PUCHAR resource, 
-    PUCHAR host, 
-    PUCHAR user, 
-    PUCHAR password)
+void parseUrl (PILEVATOR pIv, PUCHAR url)
 {
-    PUCHAR pProtocol;
-    PUCHAR pServer;
-    PUCHAR pPort;
-    PUCHAR pResource;
-    PUCHAR pProxy = NULL;
-    PUCHAR pProxyEnd = NULL;
-    PUCHAR pTemp;
-    PUCHAR pUrlParm;
-
-    pIv->pSockets->asSSL =  PLAIN_SOCKET;
+    PUCHAR temp;
+    URL l_url;
+    LVARCHAR s;
+    
+    str2lvc(&s, url);
+    l_url = iv_url_parse(s);
+    
+    pIv->pSockets->asSSL = PLAIN_SOCKET;
     pIv->useProxy = FALSE;
-    strcpy (user, "");
-    strcpy (password, "");
-
-    // Skip blanks
-    for (; *url == ' '; url++);
-
-    // No remote server was given ... just use loopback
-    /* 
-    if (url[0] == '/') {
-        int PortNum = pSvr->SVPORT;
-        sprintf(Port, "%d" , PortNum);
-        strcpy(Server, "127.0.0.1");
-        UrlEncodeBlanks (Resource , url );
-        sprintf(Host , "%s:%d" , Server , PortNum);
-        AsHttps = pSvr->SVPROT == 1;
-        return;
-    }
-    */ 
-
-    // Skip the parm for now, so they dont interrupt the parsing
-    pUrlParm  = strchr (url, '?');
-    if (pUrlParm) {
-        *pUrlParm = '\0';
-    }
-
-    // Detect if a proxy parameter is given
-    if (url[0] == '<') {
-        pProxyEnd = strstr(url , ">");  // Skip until > is found
-        if (pProxyEnd == NULL) return; // TODO Log invalid proxy syntax missing > after proxy name
-        pProxy = url + 1;
-        url = pProxyEnd + 1; // Skip the proxy from the url
-        for (; *url == ' '; url++); // Skip the leading blanks in url
-    }
-
-    pProtocol = strstr(url , "://");
-    if (pProtocol) {
-        pIv->pSockets->asSSL = ( strutil_beginsWith(url , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
-        pServer = pProtocol + 3;
-    } else {
-        pServer = url;
-    }
+    strcpy(pIv->user, "");
+    strcpy(pIv->password, "");
     
 
-    pTemp = strchr(pServer , masterspace());
-    if (pTemp) {
-        UCHAR userPassword [256];
-        PUCHAR pPassword;
-        strutil_substr(userPassword , pServer , pTemp - pServer);
-        pPassword  = strchr(userPassword  , ':');
-        if (pPassword) {
-            strutil_substr(user, userPassword ,  pPassword - userPassword );
-            strcpy (password, pPassword+1);
-        }
-        pServer = pTemp +1;
+    if (l_url.protocol.Length > 0) {
+        pIv->pSockets->asSSL = ( strutil_beginsWith(l_url.protocol.String , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
     }
 
-    pPort      = strstr(pServer , ":");
-    pResource  = strstr(pServer , "/");
-
-    // Now put the parms back
-    if (pUrlParm) {
-        *pUrlParm = '?';
+    strncat(pIv->server , l_url.host.String, l_url.host.Length);
+    _itoa(l_url.port, pIv->port, 10);
+    strncat(pIv->host , l_url.host.String, l_url.host.Length);
+    strcat(pIv->host , ":");
+    strcat(pIv->host , pIv->port);
+    
+    strncat(pIv->resource , l_url.path.String, l_url.path.Length);
+    if (l_url.query.Length > 0) {
+        strcat(pIv->resource , "?");
+        strncat(pIv->resource , l_url.query.String, l_url.query.Length);
     }
-
-    if (pResource) {
-        urlEncodeBlanks (resource , pResource);
-    } else {
-        strcpy(resource , "/");
+    
+    strncat(pIv->user , l_url.username.String, l_url.username.Length);
+    strncat(pIv->password, l_url.password.String, l_url.password.Length);
+    
+    if(l_url.path.Length == 0) {
+        // TODO brauchen wir das noch? pIv->resource  = strstr(pIv->server , "/");
+        strcpy(pIv->resource , "/");
     }
-
-    // Pick up the port
-    if (pPort) {
-        if (pResource) {
-            strutil_substr (port, pPort + 1, pResource - pPort -1);
-        } else {
-            strcpy (port, pPort + 1);
-        }
-    } else {
-        if (pIv->pSockets->asSSL == PLAIN_SOCKET) {
-            strcpy (port, "80");
-        } else {
-            strcpy (port , "443");
-        }
+    else {
+        // TODO urlEncodeBlanks (resource , pResource);
     }
-
-    // Pick up the server
-    if (pPort) {
-        strutil_substr ( server , pServer , pPort - pServer);
-    } else if (pResource) {
-        strutil_substr ( server , pServer , pResource - pServer);
-    } else if (pUrlParm) {
-        strutil_substr ( server , pServer , pUrlParm - pServer);
-    } else {
-        strutil_righttrimcpy(server , pServer);
-    }
-
-    // Pick up host (server + port)
-    if (pPort) {
-        sprintf(host , "%s:%s" , server , port);
-    } else {
-        strcpy (host , server);
-    }
-
-    // pick up the non standart proxy was given between a < and a >
-    if (pProxy) {
-        UCHAR  proxy [256];
-        pIv->useProxy = TRUE;
-        pIv->pSockets->asSSL = PLAIN_SOCKET;
-        strutil_substr(proxy, pProxy , pProxyEnd - pProxy);
-        pPort  = strstr(proxy , ":");
-        if (pPort) {
-            strcpy ( port , pPort + 1);
-            strutil_substr ( server , proxy , pPort - proxy);
-        } else {
-            strcpy ( port   , "8080");
-            strcpy ( server , proxy);
-        }
-        urlEncodeBlanks (resource , pProxyEnd  + 1);
-    }
+    
+    // TODO URL encode path and query
 }
 /* --------------------------------------------------------------------------- */
 API_STATUS sendHeader (PILEVATOR pIv) 
@@ -516,13 +420,7 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
                 ||  pIv->status == 302) {  // Permanent moved
                     parseUrl (
                         pIv,
-                        pIv->location, // New input !!
-                        pIv->server ,
-                        pIv->port ,
-                        pIv->resource ,
-                        pIv->host ,
-                        pIv->user ,
-                        pIv->password
+                        pIv->location // New input !!
                     ); 
                     sockets_close(pIv->pSockets);
                     putWsTrace( pIv, "\r\n redirected to %s\r\n",  pIv->location );
