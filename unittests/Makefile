@@ -50,6 +50,10 @@ all: clean compile
 
 compile: $(OBJECTS)
 
+REQUESTUT:
+	system -i "CRTRPGMOD MODULE($(BIN_LIB)/REQUESTUT) SRCSTMF('requestut.rpgmod') $(RCFLAGS)"
+	system -i "CRTSRVPGM $(BIN_LIB)/REQUESTUT MODULE(($(BIN_LIB)/REQUESTUT)) $(BINDFLAGS)"
+
 STRUTILUT:
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/STRUTILUT) SRCSTMF('strutilut.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/STRUTILUT MODULE(($(BIN_LIB)/STRUTILUT)) $(BINDFLAGS)"
@@ -71,6 +75,8 @@ SMPLLSTUT:
 clean:
 	-system -i "DLTMOD $(BIN_LIB)/REQUESTUT"
 	-system -i "DLTSRVPGM $(BIN_LIB)/REQUESTUT"
+	-system -i "DLTMOD $(BIN_LIB)/STRUTILUT"
+	-system -i "DLTSRVPGM $(BIN_LIB)/STRUTILUT"
 	-system -i "DLTMOD $(BIN_LIB)/BASE64UT"
 	-system -i "DLTSRVPGM $(BIN_LIB)/BASE64UT"
 	-system -i "DLTMOD $(BIN_LIB)/SMPLLSTUT"

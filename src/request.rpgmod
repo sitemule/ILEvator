@@ -3,25 +3,28 @@
 ctl-opt nomain thread(*concurrent);
 
 
-/include 'httpclient.rpginc'
-/include 'memory.rpginc'
+/include 'teraspace.rpginc'
 /include 'libc.rpginc'
-/include 'message/message_h.rpgle'
-/include 'noxdb2/noxdb2.rpgle'
+/include 'message.rpginc'
+/include 'simpleList.rpginc'
 /include 'request.rpginc'
-/include 'string.rpginc'
+/include 'url.rpginc'
 
-
+dcl-c ASCII 367;
+dcl-c ANSI 437;
+dcl-c URL_SIZE 65530;
 dcl-s CRLF char(2) inz(x'0D0A') ccsid(*utf8);
+dcl-s UTF8_SLASH char(1) inz('/') ccsid(*utf8);
 dcl-s UTF8_QUESTION_MARK char(1) inz('?') ccsid(*utf8);
 dcl-s UTF8_SPACE char(1) inz ccsid(*utf8);
 dcl-s UTF8_COLON char(1) inz(':') ccsid(*utf8);
-dcl-s UPPER char(26) ccsid(HTTPCLIENT_ASCII) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-dcl-s LOWER char(26) ccsid(HTTPCLIENT_ASCII) inz('abcdefghijklmnopqrstuvwxyz');
+dcl-s UPPER char(26) ccsid(*utf8) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+dcl-s LOWER char(26) ccsid(*utf8) inz('abcdefghijklmnopqrstuvwxyz');
+dcl-c ILEVATOR_VERSION '0.1.0';
 
-dcl-ds httpclient_request_t qualified template;
+dcl-ds iv_request_t qualified template;
   method varchar(10);
-  url likeds(httpclient_url_t);
+  url likeds(iv_url_t);
   headers pointer;
   stream pointer;
   content pointer;
@@ -32,97 +35,97 @@ dcl-ds httpclient_request_t qualified template;
 end-ds;
 
 
-dcl-proc httpclient_request_new export;
+dcl-proc iv_request_new export;
   dcl-pi *n pointer;
-    method varchar(10) ccsid(HTTPCLIENT_ASCII) const;
-    url varchar(HTTPCLIENT_URL_SIZE) ccsid(*utf8) const;
-    contentType varchar(1000) ccsid(HTTPCLIENT_ASCII) const options(*nopass);
+    method varchar(10) const;
+    url varchar(URL_SIZE) ccsid(*utf8) const;
+    acceptMimeType varchar(1000) ccsid(*utf8) const options(*nopass);
   end-pi;
 
-  dcl-ds request likeds(httpclient_request_t) based(ptr);
+  dcl-ds request likeds(iv_request_t) based(ptr);
   
-  ptr = httpclient_memory_alloc(%size(httpclient_request_t));
+  ptr = teraspace_alloc(%size(iv_request_t));
 
   clear request;
   request.method = method;
-  request.url = httpclient_url_parse(url);
-  request.headers = nox_newObject();
+  request.url = iv_url_parse(url);
+  request.headers = sList_new();
 
-  if (%parms() >= 3);
-    nox_setStr(request.headers : 'content-type' : contentType);
+  if (%parms() >= 3 and %len(acceptMimeType) > 0);
+    iv_request_setHeader(ptr : 'accept' : acceptMimeType);
   endif;
 
   return ptr;
 end-proc;
 
 
-dcl-proc httpclient_request_dispose export;
+dcl-proc iv_request_dispose export;
   dcl-pi *n;
     p_request pointer;
   end-pi;
 
-  dcl-ds request likeds(httpclient_request_t) based(p_request);
+  dcl-ds request likeds(iv_request_t) based(p_request);
 
   if (p_request = *null);
     return;
   endif;
 
   if (request.content <> *null);
-    httpclient_memory_dealloc(request.content);
+    teraspace_free(request.content);
   endif;
 
-  nox_close(request.headers);
+  deallocateHeaders(request.headers);
 
   // TODO dealloc stream
 
-  httpclient_memory_dealloc(p_request);
+  teraspace_free(p_request);
 end-proc;
 
 
-dcl-proc httpclient_request_toString export;
-  dcl-pi *n likeds(httpclient_string_t);
+dcl-proc iv_request_toString export;
+  dcl-pi *n varchar(1000000 : 4) ccsid(*utf8); // TODO
     p_request pointer const;
   end-pi;
 
-  dcl-ds request likeds(httpclient_request_t) based(p_request);
-  dcl-ds iterator likeds(nox_iterator);
+  dcl-ds request likeds(iv_request_t) based(p_request);
+  dcl-ds iterator likeds(SLISTITERATOR_t);
+  dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
+  dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
   dcl-s data varchar(100000) ccsid(*utf8);
   dcl-s headerName varchar(1000) ccsid(*utf8);
   dcl-s headerValue varchar(10000) ccsid(*utf8);
-  dcl-ds serialized likeds(httpclient_string_t);
+  dcl-s serialized varchar(1000000 : 4) ccsid(*utf8);
   dcl-s body pointer;
-
-  serialized = httpclient_string_new(1048576);
 
   // TODO CONNECT message has different request line, see HTTP/1.1 spec
   // TODO percent-encode header
   // TODO need to check that we have enough space for the headers when adding them
 
-  data = request.method + UTF8_SPACE + request.url.path;
+  data = request.method + UTF8_SPACE;
+  if (%len(request.url.path) = 0);
+    data += UTF8_SLASH;
+  else;
+    data += request.url.path;
+  endif;
   if (%len(request.url.query) > 0);
     data += UTF8_QUESTION_MARK + request.url.query;
   endif;
   data += ' HTTP/1.1' + CRLF;
-  
-  // Host
   data += 'Host: ' + request.url.host + UTF8_COLON + %char(request.url.port) + CRLF;
-  
-  // user-agent
   data += 'User-Agent: ILEvator for IBM i/' + ILEVATOR_VERSION + CRLF;
   
-  iterator = nox_setIterator(request.headers);
-  dow (nox_forEach(iterator));
-    headerName = nox_getName(iterator.this);
-    headerValue = nox_getValueStr(iterator.this);
+  iterator = sList_setIterator(request.headers);
+  dow (sList_foreach(iterator));
+    headerName = %str(nodePayload.key.string : nodePayload.key.length);
+    headerValue = %str(nodePayload.value.string : nodePayload.value.length);
     data+= headerName + UTF8_COLON + headerValue + CRLF;
   enddo;
   
   data += CRLF;
   
-  memcpy(serialized.value : %addr(data : *data) : %len(data));
-  serialized.size = strlen(serialized.value);
+  serialized = data;
   
-  body = serialized.value + serialized.size;
+  body = %addr(serialized : *data) + %len(serialized);
 
   if (request.content <> *null and request.contentSize > 0);
     memcpy(body : request.content : request.contentSize);
@@ -135,113 +138,157 @@ dcl-proc httpclient_request_toString export;
 end-proc;
 
 
-dcl-proc httpclient_request_setHeader export;
+dcl-proc iv_request_setHeader export;
   dcl-pi *n;
     p_request pointer const;
-    name varchar(100) ccsid(HTTPCLIENT_ASCII) const;
-    value varchar(8000) ccsid(HTTPCLIENT_ASCII) const;
+    name varchar(100) ccsid(*utf8) const;
+    value varchar(8000) ccsid(*utf8) const;
   end-pi;
 
-  dcl-ds request likeds(httpclient_request_t) based(p_request);
-  dcl-s lowerName varchar(100) ccsid(HTTPCLIENT_ASCII);
+  dcl-ds request likeds(iv_request_t) based(p_request);
+  dcl-s lowerName varchar(100) ccsid(*utf8);
+  dcl-ds listKey likeds(LVARPUCHAR_t);
+  dcl-ds listValue likeds(LVARPUCHAR_t);
+  
+  if (name = *blank);
+    return;
+  endif;
   
   lowerName = %xlate(LOWER : UPPER : name);
   
-  nox_setStr(request.headers : lowerName : value);
+  listKey.length = %len(name);
+  listKey.string = teraspace_alloc(listKey.length + 1);
+  %str(listKey.string : listKey.length + 1) = name;
+  listValue.length = %len(value);
+  listValue.string = teraspace_alloc(listValue.length + 1);
+  %str(listValue.string : listValue.length + 1) = value;
+  sList_pushLVPC(request.headers : listKey : listValue);
 end-proc;
 
 
-dcl-proc httpclient_request_setContentType export;
+dcl-proc iv_request_setContentType export;
   dcl-pi *n;
     p_request pointer const;
-    contentType varchar(1000) ccsid(HTTPCLIENT_ASCII) const;
+    contentType varchar(1000) ccsid(*utf8) const;
   end-pi;
 
-  dcl-ds request likeds(httpclient_request_t) based(p_request);
+  dcl-ds request likeds(iv_request_t) based(p_request);
 
-  nox_setStr(request.headers : 'content-type' : contentType);
+  iv_request_setHeader(p_request : 'content-type' : contentType);
 end-proc;
 
 
-dcl-proc httpclient_request_setTextBody export;
+dcl-proc iv_request_setAcceptMimeType export;
   dcl-pi *n;
-    requestPtr pointer const;
-    content varchar(100000) value;
+    p_request pointer const;
+    contentType varchar(1000) ccsid(*utf8) const;
   end-pi;
 
-  dcl-ds request likeds(httpclient_request_t) based(requestPtr);
+  dcl-ds request likeds(iv_request_t) based(p_request);
+
+  iv_request_setHeader(p_request : 'content-type' : contentType);
+end-proc;
+
+
+dcl-proc iv_request_setTextBody export;
+  dcl-pi *n;
+    requestPtr pointer const;
+    content varchar(1000000) value;
+  end-pi;
+
+  dcl-ds request likeds(iv_request_t) based(requestPtr);
 
   if (request.content <> *null);
-    httpclient_memory_dealloc(request.content);
+    teraspace_free(request.content);
   endif;
 
   request.binaryContent = *off;
   request.contentSize = %len(content);
-  request.content = httpclient_memory_alloc(%len(content));
+  request.content = teraspace_alloc(%len(content));
   memcpy(request.content : %addr(content : *data) : %len(content));
 end-proc;
 
 
-dcl-proc httpclient_request_setBinaryBody export;
+dcl-proc iv_request_setBinaryBody export;
   dcl-pi *n;
     p_request pointer const;
     content pointer const;
     size uns(10) const;
   end-pi;
 
-  dcl-ds request likeds(httpclient_request_t) based(p_request);
+  dcl-ds request likeds(iv_request_t) based(p_request);
 
   if (request.content <> *null);
-    httpclient_memory_dealloc(request.content);
+    teraspace_free(request.content);
   endif;
 
   request.binaryContent = *on;
   request.contentSize = size;
-  request.content = httpclient_memory_alloc(size);
+  request.content = teraspace_alloc(size);
   memcpy(request.content : content : size);
 end-proc;
 
 
-dcl-proc httpclient_request_setStream export;
+dcl-proc iv_request_setStream export;
   dcl-pi *n;
     p_request pointer const;
     stream pointer const;
   end-pi;
 
-  dcl-ds request likeds(httpclient_request_t) based(p_request);
+  dcl-ds request likeds(iv_request_t) based(p_request);
 
   request.stream = stream;
 end-proc;
 
 
-dcl-proc httpclient_request_hasStream export;
+dcl-proc iv_request_hasStream export;
   dcl-pi *n ind;
     p_request pointer const;
   end-pi;
 
-  dcl-ds request likeds(httpclient_request_t) based(p_request);
+  dcl-ds request likeds(iv_request_t) based(p_request);
 
   return request.stream <> *null;
 end-proc;
 
 
-dcl-proc httpclient_request_hasTextBody export;
+dcl-proc iv_request_hasTextBody export;
   dcl-pi *n ind;
     p_request pointer const;
   end-pi;
 
-  dcl-ds request likeds(httpclient_request_t) based(p_request);
+  dcl-ds request likeds(iv_request_t) based(p_request);
 
   return request.content <> *null;
 end-proc;
 
 
-dcl-proc httpclient_request_hasBody export;
+dcl-proc iv_request_hasBody export;
   dcl-pi *n ind;
     p_request pointer const;
   end-pi;
 
-  dcl-ds request likeds(httpclient_request_t) based(p_request);
+  dcl-ds request likeds(iv_request_t) based(p_request);
 
   return request.stream <> *null or request.content <> *null;
+end-proc;
+
+
+dcl-proc deallocateHeaders;
+  dcl-pi *n;
+    list pointer;
+  end-pi;
+  
+  dcl-ds iterator likeds(SLISTITERATOR_t) inz;
+  dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
+  dcl-ds payload likeds(SLISTKEYVAL_t) based(node.payloadData);
+  
+  iterator = sList_setIterator(list);
+  
+  dow (sList_foreach(iterator));
+    teraspace_free(payload.key.string);
+    teraspace_free(payload.value.string);
+  enddo;
+  
+  sList_free(list);
 end-proc;

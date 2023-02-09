@@ -130,5 +130,5 @@ void sList_lookupLVPC (PLVARCHAR pRetVal , PSLIST pSlist , PLVARCHAR key)
     }
     pRetVal->Length = 0;
     return;
-
 }
+

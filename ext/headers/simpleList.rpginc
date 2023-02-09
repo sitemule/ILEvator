@@ -1,0 +1,71 @@
+**FREE
+
+/if not defined (SIMPLELIST)
+/define SIMPLELIST
+
+dcl-ds LVARPUCHAR_t qualified template;
+   length uns(10);
+   string pointer;
+end-ds;
+
+dcl-ds PLVARCHAR_t qualified template;
+   length int(10);
+   string varchar(1024:4);
+end-ds;
+
+dcl-ds SLISTNODE_t qualified template;
+   pNext pointer; // pointer of type SLISTNODE_t
+   payLoadLength int(10);
+   payloadData pointer;
+end-ds;
+
+dcl-ds SLIST_t qualified template;
+   pHead pointer;
+   pTail pointer;
+   length int(10);
+end-ds;
+
+dcl-ds SLISTITERATOR_t qualified align(*full) template;
+   pThis pointer; // pointer of type SLISTNODE_t
+   pNext pointer; // pointer of type SLISTNODE_t
+   hasNext ind;
+end-ds;
+
+dcl-ds SLISTKEYVAL_t qualified template;
+   key likeds(LVARPUCHAR_t);
+   value likeds(LVARPUCHAR_t);
+end-ds;
+
+dcl-pr sList_new pointer extproc('sList_new') end-pr;
+
+dcl-pr sList_free extproc('sList_free');
+   sList pointer value; // simpleList.c: PSLIST
+end-pr;
+
+dcl-pr sList_push pointer extproc(*CWIDEN: 'sList_push'); // SLISTNODE_t
+   sList pointer value; // PSLIST
+   len uns(10) value;
+   data pointer options(*string) value;
+   head ind value;
+end-pr;
+
+dcl-pr sList_pushLVPC pointer extproc('sList_pushLVPC');
+   sList pointer value; // PSLIST
+   key likeds(LVARPUCHAR_t) const;
+   value likeds(LVARPUCHAR_t) const;
+end-pr;
+
+dcl-pr sList_lookupLVPC varchar(1048576:4) rtnparm extproc('sList_lookupLVPC');
+   sList pointer value; // PSLIST
+   searchTerm varchar(1048576:4) const;
+end-pr;
+
+dcl-pr sList_setIterator likeds(SLISTITERATOR_t) extproc('sList_setIterator');
+   slist pointer value; // PSLIST
+end-pr;
+
+dcl-pr sList_foreach ind extproc('sList_foreach');
+   iterator likeds(SLISTITERATOR_t) const;
+end-pr;
+
+/endif

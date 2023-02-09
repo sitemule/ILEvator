@@ -5,15 +5,14 @@
 /define ILEVATOR_REQUEST_BUILDER
 
 
-/include 'common.rpginc'
-/include 'string.rpginc'
 /include 'url.rpginc'
 
+dcl-c IV_REQUEST_URL_SIZE 65530;
 
 ///
 // Template for the next block of streamed data
 ///
-dcl-ds httpclient_stream_result qualified template;
+dcl-ds iv_request_stream_result qualified template;
   more ind;
   content pointer;
   size uns(10);
@@ -22,13 +21,22 @@ end-ds;
 ///
 // Create new HTTP request
 //
-// Creates a new URL request with the
+// Creates a new URL request with the given HTTP method, URL and optional
+// the given Accept MIME type.
 //
+// @param HTTP method
+// @param URL
+// @param Accept HTTP header MIME type
+//
+// @return Request
+// 
+// @info The caller needs to free the allocated memory of the request by
+//       calling <code>iv_request_dispose</code>.
 ///
-dcl-pr httpclient_request_new pointer extproc(*dclcase);
-  method varchar(10) ccsid(HTTPCLIENT_ASCII) const;
-  url varchar(HTTPCLIENT_URL_SIZE) ccsid(*utf8) const;
-  contentType varchar(1000) ccsid(HTTPCLIENT_ASCII) const options(*nopass);
+dcl-pr iv_request_new pointer extproc(*dclcase);
+  method varchar(10) const;
+  url varchar(IV_REQUEST_URL_SIZE) ccsid(*utf8) const;
+  mimeType varchar(1000) ccsid(*utf8) const options(*nopass);
 end-pr;
 
 ///
@@ -38,7 +46,7 @@ end-pr;
 //
 // @param HTTP request
 ///
-dcl-pr httpclient_request_dispose extproc(*dclcase);
+dcl-pr iv_request_dispose extproc(*dclcase);
   request pointer;
 end-pr;
 
@@ -55,10 +63,24 @@ end-pr;
 // @info The HTTP header need to be in ASCII.
 // @info The HTTP header will always be converted to lowercase.
 ///
-dcl-pr httpclient_request_setHeader extproc(*dclcase);
+dcl-pr iv_request_setHeader extproc(*dclcase);
   request pointer const;
-  name varchar(100) ccsid(HTTPCLIENT_ASCII) const;
-  value varchar(8000) ccsid(HTTPCLIENT_ASCII) const;
+  name varchar(100) ccsid(*utf8) const;
+  value varchar(8000) ccsid(*utf8) const;
+end-pr;
+
+///
+// Set HTTP request Accept MIME type
+//
+// Sets the content type HTTP header for the passed request. Any previously set
+// content type will be overwritten.
+//
+// @param HTTP request
+// @param MIME type
+///
+dcl-pr iv_request_setAcceptMimeType extproc(*dclcase);
+  request pointer const;
+  mimeType varchar(1000) ccsid(*utf8) const;
 end-pr;
 
 ///
@@ -70,9 +92,9 @@ end-pr;
 // @param HTTP request
 // @param Content type
 ///
-dcl-pr httpclient_request_setContentType extproc(*dclcase);
+dcl-pr iv_request_setContentType extproc(*dclcase);
   request pointer const;
-  contentType varchar(1000) ccsid(HTTPCLIENT_ASCII) const;
+  contentType varchar(1000) ccsid(*utf8) const;
 end-pr;
 
 ///
@@ -84,7 +106,7 @@ end-pr;
 // @param Request
 // @param Form data (noxDB2)
 ///
-dcl-pr httpclient_request_setFormBody extproc(*dclcase);
+dcl-pr iv_request_setFormBody extproc(*dclcase);
   request pointer const;
   formData pointer const;
 end-pr;
@@ -106,49 +128,49 @@ end-pr;
 // <br><br>
 //
 // If any data should be sent as is (without CCSID conversion) the procedure
-// <tt>httpclient_request_setBinaryBody</tt> can be used to set the data.
+// <tt>iv_request_setBinaryBody</tt> can be used to set the data.
 //
 // @param HTTP request
 // @param Message body
 ///
-dcl-pr httpclient_request_setTextBody extproc(*dclcase);
+dcl-pr iv_request_setTextBody extproc(*dclcase);
   request pointer const;
-  content varchar(100000) value; // TODO check for ccsid problem
+  content varchar(1000000) value; // TODO check for ccsid problem
 end-pr;
 
-dcl-pr httpclient_request_setBinaryBody extproc(*dclcase);
+dcl-pr iv_request_setBinaryBody extproc(*dclcase);
   request pointer const;
   content pointer const;
   size uns(10) const;
 end-pr;
 
-dcl-pr httpclient_request_setBody overload(
-  httpclient_request_setTextBody :
-  httpclient_request_setBinaryBody
+dcl-pr iv_request_setBody overload(
+  iv_request_setTextBody :
+  iv_request_setBinaryBody
 );
 
-dcl-pr httpclient_request_setStream extproc(*dclcase);
+dcl-pr iv_request_setStream extproc(*dclcase);
   request pointer const;
   stream pointer const;
 end-pr;
 
-dcl-pr httpclient_request_toString likeds(httpclient_string_t) extproc(*dclcase);
+dcl-pr iv_request_toString varchar(1000000 : 4) ccsid(*utf8) extproc(*dclcase);
   request pointer const;
 end-pr;
 
-dcl-pr httpclient_request_stream likeds(httpclient_stream_result) extproc(*dclcase);
+dcl-pr iv_request_stream likeds(iv_request_stream_result) extproc(*dclcase);
   request pointer const;
 end-pr;
 
-dcl-pr httpclient_request_hasStream ind extproc(*dclcase);
+dcl-pr iv_request_hasStream ind extproc(*dclcase);
   request pointer const;
 end-pr;
 
-dcl-pr httpclient_request_hasTextBody ind extproc(*dclcase);
+dcl-pr iv_request_hasTextBody ind extproc(*dclcase);
   request pointer const;
 end-pr;
 
-dcl-pr httpclient_request_hasBody ind extproc(*dclcase);
+dcl-pr iv_request_hasBody ind extproc(*dclcase);
   request pointer const;
 end-pr;
 
