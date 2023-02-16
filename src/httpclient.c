@@ -281,7 +281,6 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
     pIv->useProxy = FALSE;
     strcpy(pIv->user, "");
     strcpy(pIv->password, "");
-    
 
     if (l_url.protocol.Length > 0) {
         pIv->pSockets->asSSL = ( strutil_beginsWith(l_url.protocol.String , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
@@ -293,7 +292,13 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
     strcat(pIv->host , ":");
     strcat(pIv->host , pIv->port);
     
-    strncat(pIv->resource , l_url.path.String, l_url.path.Length);
+    if(l_url.path.Length == 0) {
+        strcpy(pIv->resource , "/");
+    }
+    else {
+        strncat(pIv->resource , l_url.path.String, l_url.path.Length);
+    }
+    
     if (l_url.query.Length > 0) {
         strcat(pIv->resource , "?");
         strncat(pIv->resource , l_url.query.String, l_url.query.Length);
@@ -302,14 +307,7 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
     strncat(pIv->user , l_url.username.String, l_url.username.Length);
     strncat(pIv->password, l_url.password.String, l_url.password.Length);
     
-    if(l_url.path.Length == 0) {
-        // TODO brauchen wir das noch? pIv->resource  = strstr(pIv->server , "/");
-        strcpy(pIv->resource , "/");
-    }
-    else {
-        // TODO urlEncodeBlanks (resource , pResource);
-    }
-    
+    // TODO urlEncodeBlanks (resource , pResource);
     // TODO URL encode path and query
 }
 /* --------------------------------------------------------------------------- */
