@@ -30,6 +30,8 @@ dcl-pr test_ipv6Host end-pr;
 dcl-pr test_emptyIpv6Host end-pr;
 dcl-pr test_defaultHttpPort end-pr;
 dcl-pr test_defaultHttpsPort end-pr;
+dcl-pr test_path end-pr;
+dcl-pr test_pathAndPort end-pr;
 dcl-pr test_noPath end-pr;
 dcl-pr test_rootPath end-pr;
 dcl-pr test_noQuery end-pr;
@@ -144,6 +146,29 @@ dcl-proc test_defaultHttpsPort export;
   url = iv_url_parse('https://localhost');
   s = iv_url_toString(url);
   iEqual(443 : url.port);
+end-proc;
+
+
+dcl-proc test_pathAndPort export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost:8080/index.html');
+  s = iv_url_toString(url);
+  aEqual('/index.html' : url.path);
+  aEqual('' : url.query);
+  iEqual(8080 : url.port);
+end-proc;
+
+
+dcl-proc test_path export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost/index.html');
+  s = iv_url_toString(url);
+  aEqual('/index.html' : url.path);
+  aEqual('' : url.query);
 end-proc;
 
 
