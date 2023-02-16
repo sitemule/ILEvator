@@ -51,19 +51,23 @@ dcl-pr iv_request_dispose extproc(*dclcase);
 end-pr;
 
 ///
-// Set HTTP request header
+// Add HTTP request header
 //
-// Sets the passed HTTP header in the request. Any previously added header with
-// the same name will be overwritten.
+// Adds the passed HTTP header in the request. The header will be appended to the list
+// of headers. Any previously added header with the same name will still be included
+// in the HTTP message.
+//
+// In HTTP the last header in the list (with the same name) wins.
 //
 // @param HTTP request
 // @param HTTP header name
 // @param HTTP header value
 //
-// @info The HTTP header need to be in ASCII.
+// @info The HTTP header name needs to be in ASCII.
 // @info The HTTP header will always be converted to lowercase.
+// @info The HTTP header value will be percent-encoded.
 ///
-dcl-pr iv_request_setHeader extproc(*dclcase);
+dcl-pr iv_request_addHeader extproc(*dclcase);
   request pointer const;
   name varchar(100) ccsid(*utf8) const;
   value varchar(8000) ccsid(*utf8) const;

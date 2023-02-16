@@ -6,9 +6,12 @@ ctl-opt nomain thread(*concurrent);
 /include 'teraspace.rpginc'
 /include 'libc.rpginc'
 /include 'message.rpginc'
+/include 'mime.rpginc'
 /include 'simpleList.rpginc'
 /include 'request.rpginc'
 /include 'url.rpginc'
+/include 'xlate.rpginc'
+
 
 dcl-c ASCII 367;
 dcl-c ANSI 437;
@@ -52,7 +55,7 @@ dcl-proc iv_request_new export;
   request.headers = sList_new();
 
   if (%parms() >= 3 and %len(acceptMimeType) > 0);
-    iv_request_setHeader(ptr : 'accept' : acceptMimeType);
+    iv_request_addHeader(ptr : 'accept' : acceptMimeType);
   endif;
 
   return ptr;
@@ -96,10 +99,10 @@ dcl-proc iv_request_toString export;
   dcl-s headerValue varchar(10000) ccsid(*utf8);
   dcl-s serialized varchar(1000000 : 4) ccsid(*utf8);
   dcl-s body pointer;
+  dcl-s convertedContentLength uns(10);
+  dcl-s sizeHeadersOnly uns(10);
 
   // TODO CONNECT message has different request line, see HTTP/1.1 spec
-  // TODO percent-encode header
-  // TODO need to check that we have enough space for the headers when adding them
 
   data = request.method + UTF8_SPACE;
   if (%len(request.url.path) = 0);
@@ -118,6 +121,8 @@ dcl-proc iv_request_toString export;
   dow (sList_foreach(iterator));
     headerName = %str(nodePayload.key.string : nodePayload.key.length);
     headerValue = %str(nodePayload.value.string : nodePayload.value.length);
+    // TODO encode header names and values (only ASCII allowed)
+    // TODO need to check that we have enough space for the headers when adding them
     data+= headerName + UTF8_COLON + headerValue + CRLF;
   enddo;
   
@@ -128,8 +133,17 @@ dcl-proc iv_request_toString export;
   body = %addr(serialized : *data) + %len(serialized);
 
   if (request.content <> *null and request.contentSize > 0);
-    memcpy(body : request.content : request.contentSize);
-    // encoding? mime type , charset attribute? defaults?
+    if (request.binaryContent);
+      %len(serialized) = %len(serialized) + request.contentSize;
+      memcpy(body : request.content : request.contentSize);
+    else;
+      // make space (... and assumes the worst : size * 2)
+      sizeHeadersOnly = %len(serialized);
+      %len(serialized) = sizeHeadersOnly + request.contentSize * 2;
+      
+      convertedContentLength = serializeContent(body : p_request);
+      %len(serialized) = sizeHeadersOnly + convertedContentLength;
+    endif;
   endif;
   
   // Note: no ending CRLF after body !!!
@@ -138,7 +152,7 @@ dcl-proc iv_request_toString export;
 end-proc;
 
 
-dcl-proc iv_request_setHeader export;
+dcl-proc iv_request_addHeader export;
   dcl-pi *n;
     p_request pointer const;
     name varchar(100) ccsid(*utf8) const;
@@ -154,6 +168,7 @@ dcl-proc iv_request_setHeader export;
     return;
   endif;
   
+  // TODO use OS API for proper conversion
   lowerName = %xlate(LOWER : UPPER : name);
   
   listKey.length = %len(name);
@@ -174,7 +189,7 @@ dcl-proc iv_request_setContentType export;
 
   dcl-ds request likeds(iv_request_t) based(p_request);
 
-  iv_request_setHeader(p_request : 'content-type' : contentType);
+  iv_request_addHeader(p_request : 'content-type' : contentType);
 end-proc;
 
 
@@ -186,7 +201,7 @@ dcl-proc iv_request_setAcceptMimeType export;
 
   dcl-ds request likeds(iv_request_t) based(p_request);
 
-  iv_request_setHeader(p_request : 'content-type' : contentType);
+  iv_request_addHeader(p_request : 'content-type' : contentType);
 end-proc;
 
 
@@ -292,3 +307,52 @@ dcl-proc deallocateHeaders;
   
   sList_free(list);
 end-proc;
+
+
+dcl-proc serializeContent;
+  dcl-pi *n uns(10);
+    buffer pointer;
+    p_request pointer const;
+  end-pi;
+
+  dcl-ds request likeds(iv_request_t) based(p_request);
+  dcl-s outLength uns(10);
+  dcl-s ccsid int(10);
+  dcl-s contentTypeHeader varchar(1000) ccsid(*utf8);
+  
+  if (request.content = *null or request.contentSize = 0);
+    return *zero;
+  endif;
+  
+  contentTypeHeader = getContentTypeHeader(request.headers);
+  ccsid = iv_mime_getCcsid(contentTypeHeader);
+  if (ccsid = 0);
+    ccsid = 1208; // default to utf-8
+  endif;
+  
+  outLength = xlate_translateBuffer(buffer : request.content : request.contentSize : 0 : ccsid);
+
+  return outLength;
+end-proc;
+
+
+dcl-proc getContentTypeHeader;
+  dcl-pi *n varchar(1000) ccsid(*utf8);
+    list pointer;
+  end-pi;
+  
+  dcl-ds iterator likeds(SLISTITERATOR_t) inz;
+  dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
+  dcl-ds payload likeds(SLISTKEYVAL_t) based(node.payloadData);
+  
+  iterator = sList_setIterator(list);
+  
+  dow (sList_foreach(iterator));
+    if (%str(payload.key.string : payload.key.length) = 'content-type');
+      return %str(payload.value.string : payload.value.length);
+    endif;
+  enddo;
+  
+  return *blank;
+end-proc;
+
