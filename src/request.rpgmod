@@ -41,9 +41,9 @@ end-ds;
 
 dcl-proc iv_request_new export;
   dcl-pi *n pointer;
-    method varchar(10) const;
-    url varchar(URL_SIZE) ccsid(*utf8) const;
-    acceptMimeType varchar(1000) ccsid(*utf8) const options(*nopass);
+    method varchar(12) value;
+    url varchar(URL_SIZE) ccsid(*utf8) value;
+    acceptMimeType varchar(1024:2) ccsid(*utf8) value options(*nopass);
   end-pi;
 
   dcl-ds request likeds(iv_request_t) based(ptr);
@@ -55,7 +55,7 @@ dcl-proc iv_request_new export;
   request.url = iv_url_parse(url);
   request.headers = sList_new();
 
-  if (%parms() >= 3 and %len(acceptMimeType) > 0);
+  if (%parms() >= 3 and %addr(acceptMimeType) <> *null and %len(acceptMimeType) > 0);
     iv_request_addHeader(ptr : 'accept' : acceptMimeType);
   endif;
 
@@ -133,6 +133,8 @@ dcl-proc iv_request_toString export;
     // TODO need to check that we have enough space for the headers when adding them
     data+= headerName + UTF8_COLON + headerValue + CRLF;
   enddo;
+  
+  // TODO add content-length header when there is a content
   
   data += CRLF;
   

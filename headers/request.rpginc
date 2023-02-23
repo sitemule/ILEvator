@@ -36,9 +36,9 @@ end-ds;
 //       calling <code>iv_request_dispose</code>.
 ///
 dcl-pr iv_request_new pointer extproc(*dclcase);
-  method varchar(10) const;
-  url varchar(IV_REQUEST_URL_SIZE) ccsid(*utf8) const;
-  mimeType varchar(1000) ccsid(*utf8) const options(*nopass);
+  method varchar(12) value;
+  url varchar(IV_REQUEST_URL_SIZE:2) ccsid(*utf8) value;
+  mimeType varchar(1024:2) ccsid(*utf8) value options(*nopass);
 end-pr;
 
 ///
