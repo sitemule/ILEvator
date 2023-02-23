@@ -1,0 +1,17 @@
+**FREE
+
+/if not defined (VARCHAR)
+/define VARCHAR
+
+dcl-ds LVARPUCHAR_t qualified template;
+   length uns(10);
+   string pointer;
+end-ds;
+
+dcl-ds PLVARCHAR_t qualified template;
+   length int(10);
+   string varchar(1024:4);
+end-ds;
+
+
+/endif

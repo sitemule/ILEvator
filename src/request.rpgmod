@@ -10,6 +10,7 @@ ctl-opt nomain thread(*concurrent);
 /include 'simpleList.rpginc'
 /include 'request.rpginc'
 /include 'url.rpginc'
+/include 'varchar.rpginc'
 /include 'xlate.rpginc'
 
 
@@ -86,21 +87,28 @@ end-proc;
 
 
 dcl-proc iv_request_toString export;
-  dcl-pi *n varchar(1000000 : 4) ccsid(*utf8); // TODO
+  dcl-pi *n likeds(LVARPUCHAR_t);
     p_request pointer const;
   end-pi;
-
+  
+  dcl-c SERIALIZED_INIT_SIZE 1048576;
+  dcl-ds serialized likeds(LVARPUCHAR_t);
+  dcl-s sizeAllocated uns(10);
+  dcl-s sizeUsed uns(10);
+  
   dcl-ds request likeds(iv_request_t) based(p_request);
   dcl-ds iterator likeds(SLISTITERATOR_t);
   dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
   dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
-  dcl-s data varchar(100000) ccsid(*utf8);
+  dcl-s data varchar(SERIALIZED_INIT_SIZE) ccsid(*utf8);
   dcl-s headerName varchar(1000) ccsid(*utf8);
   dcl-s headerValue varchar(10000) ccsid(*utf8);
-  dcl-s serialized varchar(1000000 : 4) ccsid(*utf8);
-  dcl-s body pointer;
-  dcl-s convertedContentLength uns(10);
-  dcl-s sizeHeadersOnly uns(10);
+
+  // TODO check content size , if content size > init size => adjust init size
+
+  sizeAllocated = SERIALIZED_INIT_SIZE;
+  serialized.length = 0;
+  serialized.string = teraspace_alloc(SERIALIZED_INIT_SIZE);
 
   // TODO CONNECT message has different request line, see HTTP/1.1 spec
 
@@ -128,21 +136,22 @@ dcl-proc iv_request_toString export;
   
   data += CRLF;
   
-  serialized = data;
   
-  body = %addr(serialized : *data) + %len(serialized);
-
+  serialized.length = %len(data);
+  memcpy(serialized.string : %addr(data : *data) : %len(data));
+  
   if (request.content <> *null and request.contentSize > 0);
     if (request.binaryContent);
-      %len(serialized) = %len(serialized) + request.contentSize;
-      memcpy(body : request.content : request.contentSize);
+      memcpy(serialized.string + serialized.length : request.content : request.contentSize);
+      serialized.length += request.contentSize;
     else;
-      // make space (... and assumes the worst : size * 2)
-      sizeHeadersOnly = %len(serialized);
-      %len(serialized) = sizeHeadersOnly + request.contentSize * 2;
+      // check available space (... and assume the worst : size * 4)
+      if (serialized.length + request.contentSize * 4 > sizeAllocated);
+        sizeAllocated = serialized.length + request.contentSize * 4;
+        serialized.string = teraspace_realloc(serialized.string : sizeAllocated);
+      endif;
       
-      convertedContentLength = serializeContent(body : p_request);
-      %len(serialized) = sizeHeadersOnly + convertedContentLength;
+      serializeContent(serialized : p_request);
     endif;
   endif;
   
@@ -310,8 +319,8 @@ end-proc;
 
 
 dcl-proc serializeContent;
-  dcl-pi *n uns(10);
-    buffer pointer;
+  dcl-pi *n;
+    serialized likeds(LVARPUCHAR_t);
     p_request pointer const;
   end-pi;
 
@@ -321,7 +330,7 @@ dcl-proc serializeContent;
   dcl-s contentTypeHeader varchar(1000) ccsid(*utf8);
   
   if (request.content = *null or request.contentSize = 0);
-    return *zero;
+    return;
   endif;
   
   contentTypeHeader = getContentTypeHeader(request.headers);
@@ -330,9 +339,9 @@ dcl-proc serializeContent;
     ccsid = 1208; // default to utf-8
   endif;
   
-  outLength = xlate_translateBuffer(buffer : request.content : request.contentSize : 0 : ccsid);
-
-  return outLength;
+  outLength = xlate_translateBuffer(serialized.string + serialized.length : 
+      request.content : request.contentSize : 0 : ccsid);
+  serialized.length += outLength;
 end-proc;
 
 

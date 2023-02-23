@@ -3,15 +3,8 @@
 /if not defined (SIMPLELIST)
 /define SIMPLELIST
 
-dcl-ds LVARPUCHAR_t qualified template;
-   length uns(10);
-   string pointer;
-end-ds;
+/include 'varchar.rpginc'
 
-dcl-ds PLVARCHAR_t qualified template;
-   length int(10);
-   string varchar(1024:4);
-end-ds;
 
 dcl-ds SLISTNODE_t qualified template;
    pNext pointer; // pointer of type SLISTNODE_t

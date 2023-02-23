@@ -14,6 +14,9 @@ ctl-opt nomain;
 
 /include 'assert.rpginc'
 /include 'request.rpginc'
+/include 'teraspace.rpginc'
+/include 'varchar.rpginc'
+
 
 dcl-c O_RDONLY 1;
 dcl-pr open int(10) extproc('open');
@@ -50,7 +53,7 @@ dcl-pr test_queryNoPath end-pr;
 
 dcl-proc test_minimum export;
   dcl-s request pointer;
-  dcl-s buffer varchar(1000000:4) ccsid(*utf8);
+  dcl-ds buffer likeds(LVARPUCHAR_t);
   dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
   
   assumedResult = loadFile('unittests/request/test1-minimum.http');
@@ -58,17 +61,19 @@ dcl-proc test_minimum export;
   request = iv_request_new('GET' : 'http://localhost'); 
   buffer = iv_request_toString(request);
   
-  iEqual(%len(assumedResult) : %len(buffer));
-  assert(assumedResult = buffer : 'Request does not correspond to assumed result.');
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
   
   on-exit;
     iv_request_dispose(request);
+    teraspace_free(buffer.string);
 end-proc;
 
 
 dcl-proc test_delete export;
   dcl-s request pointer;
-  dcl-s buffer varchar(1000000:4) ccsid(*utf8);
+  dcl-ds buffer likeds(LVARPUCHAR_t);
   dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
   
   assumedResult = loadFile('unittests/request/test2-delete.http');
@@ -76,17 +81,19 @@ dcl-proc test_delete export;
   request = iv_request_new('DELETE' : 'http://localhost'); 
   buffer = iv_request_toString(request);
   
-  iEqual(%len(assumedResult) : %len(buffer));
-  assert(assumedResult = buffer : 'Request does not correspond to assumed result.');
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
   
   on-exit;
     iv_request_dispose(request);
+    teraspace_free(buffer.string);
 end-proc;
 
 
 dcl-proc test_options export;
   dcl-s request pointer;
-  dcl-s buffer varchar(1000000:4) ccsid(*utf8);
+  dcl-ds buffer likeds(LVARPUCHAR_t);
   dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
   
   assumedResult = loadFile('unittests/request/test3-options.http');
@@ -94,17 +101,19 @@ dcl-proc test_options export;
   request = iv_request_new('OPTIONS' : 'http://localhost'); 
   buffer = iv_request_toString(request);
   
-  iEqual(%len(assumedResult) : %len(buffer));
-  assert(assumedResult = buffer : 'Request does not correspond to assumed result.');
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
   
   on-exit;
     iv_request_dispose(request);
+    teraspace_free(buffer.string);
 end-proc;
 
 
 dcl-proc test_head export;
   dcl-s request pointer;
-  dcl-s buffer varchar(1000000:4) ccsid(*utf8);
+  dcl-ds buffer likeds(LVARPUCHAR_t);
   dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
   
   assumedResult = loadFile('unittests/request/test4-head.http');
@@ -112,17 +121,19 @@ dcl-proc test_head export;
   request = iv_request_new('HEAD' : 'http://localhost'); 
   buffer = iv_request_toString(request);
   
-  iEqual(%len(assumedResult) : %len(buffer));
-  assert(assumedResult = buffer : 'Request does not correspond to assumed result.');
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
   
   on-exit;
     iv_request_dispose(request);
+    teraspace_free(buffer.string);
 end-proc;
 
 
 dcl-proc test_port export;
   dcl-s request pointer;
-  dcl-s buffer varchar(1000000:4) ccsid(*utf8);
+  dcl-ds buffer likeds(LVARPUCHAR_t);
   dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
   
   assumedResult = loadFile('unittests/request/test5-port.http');
@@ -130,17 +141,19 @@ dcl-proc test_port export;
   request = iv_request_new('GET' : 'http://localhost:8080'); 
   buffer = iv_request_toString(request);
   
-  iEqual(%len(assumedResult) : %len(buffer));
-  assert(assumedResult = buffer : 'Request does not correspond to assumed result.');
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
   
   on-exit;
     iv_request_dispose(request);
+    teraspace_free(buffer.string);
 end-proc;
 
 
 dcl-proc test_path export;
   dcl-s request pointer;
-  dcl-s buffer varchar(1000000:4) ccsid(*utf8);
+  dcl-ds buffer likeds(LVARPUCHAR_t);
   dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
   
   assumedResult = loadFile('unittests/request/test6-path.http');
@@ -148,17 +161,19 @@ dcl-proc test_path export;
   request = iv_request_new('GET' : 'http://localhost/api/entity/123'); 
   buffer = iv_request_toString(request);
   
-  iEqual(%len(assumedResult) : %len(buffer));
-  assert(assumedResult = buffer : 'Request does not correspond to assumed result.');
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
   
   on-exit;
     iv_request_dispose(request);
+    teraspace_free(buffer.string);
 end-proc;
 
 
 dcl-proc test_queryNoPath export;
   dcl-s request pointer;
-  dcl-s buffer varchar(1000000:4) ccsid(*utf8);
+  dcl-ds buffer likeds(LVARPUCHAR_t);
   dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
   
   assumedResult = loadFile('unittests/request/test7-queryNoPath.http');
@@ -166,17 +181,19 @@ dcl-proc test_queryNoPath export;
   request = iv_request_new('GET' : 'http://localhost?q=searchterm'); 
   buffer = iv_request_toString(request);
   
-  iEqual(%len(assumedResult) : %len(buffer));
-  assert(assumedResult = buffer : 'Request does not correspond to assumed result.');
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
   
   on-exit;
     iv_request_dispose(request);
+    teraspace_free(buffer.string);
 end-proc;
 
 
 dcl-proc test_textBody export;
   dcl-s request pointer;
-  dcl-s buffer varchar(1000000:4) ccsid(*utf8);
+  dcl-ds buffer likeds(LVARPUCHAR_t);
   dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
   
   assumedResult = loadFile('unittests/request/test8-textBody.http');
@@ -185,11 +202,13 @@ dcl-proc test_textBody export;
   iv_request_setTextBody(request : 'The quick brown fox jumps over the fence.');
   buffer = iv_request_toString(request);
   
-  iEqual(%len(assumedResult) : %len(buffer));
-  assert(assumedResult = buffer : 'Request does not correspond to assumed result.');
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
   
   on-exit;
     iv_request_dispose(request);
+    teraspace_free(buffer.string);
 end-proc;
 
 
