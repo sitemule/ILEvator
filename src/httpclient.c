@@ -23,6 +23,7 @@
 #include "mime.h"
 #include "ostypes.h"
 #include "parms.h"
+#include "request.h"
 #include "strutil.h"
 #include "simpleList.h"
 #include "teraspace.h"
@@ -311,50 +312,38 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
     // TODO URL encode path and query
 }
 /* --------------------------------------------------------------------------- */
-API_STATUS sendHeader (PILEVATOR pIv) 
+API_STATUS sendRequest (PILEVATOR pIv) 
 {
+    PVOID request;
+    VARCHAR12 method;
+    VARCHAR1024 acceptMimeType; 
+    VARCHAR url;
+    LVARPUCHAR requestString;
+    LONG rc;
 
-    UCHAR buffer [65535];
-    PUCHAR pReq;
-    LONG len, rc;
+    str2vc(&method, pIv->method);
+    method.Length = strlen(method.String);
 
-    pReq = buffer;
-    pReq += sprintf(pReq, "%s %s HTTP/1.1%s", pIv->method , pIv->useProxy ? pIv->url : pIv->resource , EOL);
+    xlate_translateBuffer(url.String , pIv->url , strlen(pIv->url) , 0, 1252);
+    url.Length = strlen(pIv->url);
+    // TODO check if translated length still fits
+    
+// TODO auth
+//    if (*pIv->user > ' ') {
+//        pReq += addRealmLogin (pReq, pIv->user , pIv->password);
+//    }
 
-    if (*pIv->user > ' ') {
-        pReq += addRealmLogin (pReq, pIv->user , pIv->password);
-    }
-    if (pIv->requestLength > 0) {
-        pReq += sprintf(pReq, "Content-Length: %d%s" , pIv->requestLength , EOL);
-    }
-    pReq += sprintf(pReq, "User-Agent: ILEvator%s", EOL);
-    pReq += sprintf(pReq, "Host: %s%s", pIv->host, EOL);
-    //pReq += sprintf(pReq, "Connection: Close%s", EOL);
-    pReq += sprintf(pReq, "Connection: keep-alive%s", EOL);
+// TODO connection
+//    pReq += sprintf(pReq, "Connection: keep-alive%s", EOL);
 
-    // Todo !! Headers;
-    SLISTITERATOR iterator = sList_setIterator(pIv-> headerList);
-    while (sList_foreach(&iterator) == ON) {
-        PSLISTNODE node = iterator.this;
-        pReq += sprintf(pReq, "%s%s", iterator.this->payloadData , EOL);
-    }
+    request = iv_request_new(method, url, acceptMimeType);
+    requestString = iv_request_toString(&request);
+    iv_request_dispose(request);
+    
+    rc = sockets_send (pIv->pSockets, requestString.String, requestString.Length); 
+    teraspace_free((PVOID) requestString.String);
 
-
-    len = pReq - buffer;
-    len = xlate_translateBuffer(buffer , buffer , len , 0 , 1252); // simple SBCS conversion !! Perhaps UTF-8
-
-
-    if (isNewLineAscii( * (pReq -1))) {
-        pReq += sprintf(pReq, "%c%c", 0x0d , 0x0a);
-    } else {
-        pReq += sprintf(pReq, "%c%c", 0x0d , 0x0a);
-        pReq += sprintf(pReq, "%c%c", 0x0d , 0x0a);
-    }
-    len = pReq - buffer;
-
-    rc = sockets_send (pIv->pSockets, buffer, len); 
-
-    return (rc == len ? API_OK : API_ERROR); 
+    return (rc == requestString.Length ? API_OK : API_ERROR); 
 
 }
 

@@ -18,7 +18,7 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData);
 LONG addRealmLogin (PUCHAR pReq, PUCHAR user , PUCHAR password);
 UCHAR masterspace (void); 
 void initialize(void);
-API_STATUS sendHeader (PILEVATOR pIv) ;
+API_STATUS sendRequest (PILEVATOR pIv) ;
 API_STATUS receiveHeader ( PILEVATOR pIv);
 API_STATUS receiveData ( PILEVATOR pIv);
 

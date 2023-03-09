@@ -19,11 +19,9 @@
 
 #include "ostypes.h"
 #include "anychar.h"
-#include "simpleList.h"
 #include "sockets.h"
 #include "ilevator.h"
 #include "chunked.h"
-#include "xlate.h"
 #include "base64.h"
 #include "teraspace.h"
 #include "varchar.h"
@@ -198,7 +196,7 @@ LGL iv_execute (
         if (apiStatus == API_ERROR) break; 
 
 
-        apiStatus = sendHeader (pIv);
+        apiStatus = sendRequest (pIv);
         if (apiStatus == API_ERROR) break; 
 
         apiStatus = receiveHeader (pIv);

@@ -23,6 +23,7 @@ dcl-c UNICODE_GREATER_THAN u'003E'; // >
 
 dcl-pr test_emptyUrl end-pr;
 dcl-pr test_localhost end-pr;
+dcl-pr test_domainOnly end-pr;
 dcl-pr test_https end-pr;
 dcl-pr test_simpleHostname end-pr;
 dcl-pr test_ipv4Host end-pr;
@@ -73,6 +74,16 @@ dcl-proc test_localhost export;
   url = iv_url_parse('http://localhost');
   s = iv_url_toString(url);
   aEqual('http://localhost:80' : s);  
+end-proc;
+
+
+dcl-proc test_domainOnly export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://sitemule.com');
+  s = iv_url_toString(url);
+  aEqual('http://sitemule.com:80' : s);  
 end-proc;
 
 
