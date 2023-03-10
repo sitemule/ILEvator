@@ -333,9 +333,6 @@ API_STATUS sendRequest (PILEVATOR pIv)
 //        pReq += addRealmLogin (pReq, pIv->user , pIv->password);
 //    }
 
-// TODO connection
-//    pReq += sprintf(pReq, "Connection: keep-alive%s", EOL);
-
     request = iv_request_new(method, url, acceptMimeType);
     requestString = iv_request_toString(&request);
     iv_request_dispose(request);

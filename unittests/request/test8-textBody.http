@@ -1,6 +1,7 @@
 POST / HTTP/1.1
 Host: localhost:80
 User-Agent: ILEvator for IBM i/0.1.0
+Connection: keep-alive
 content-length:41
 content-type: text/plain
 
