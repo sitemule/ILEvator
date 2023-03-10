@@ -106,6 +106,7 @@ dcl-proc iv_request_toString export;
   dcl-ds tmpSerializedContent likeds(LVARPUCHAR_t);
   dcl-s translatedLength uns(10);
   dcl-s hasContentTypeHeader ind inz(*off);
+  dcl-s hasAcceptHeader ind inz(*off);
   
   if (request.contentSize > SERIALIZED_INIT_SIZE);
       sizeAllocated = SERIALIZED_INIT_SIZE + request.contentSize;
@@ -143,7 +144,15 @@ dcl-proc iv_request_toString export;
     if (headerName = 'content-type');
       hasContentTypeHeader = *on;
     endif;
+    
+    if (headerName = 'accept');
+      hasAcceptHeader = *on;
+    endif;
   enddo;
+  
+  if (not hasAcceptHeader);
+    data += 'Accept: */*' + CRLF;
+  endif;
   
   if (request.content <> *null);
     // request.contentSize may not be the real size after char conversion    

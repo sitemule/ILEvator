@@ -49,6 +49,7 @@ dcl-pr test_options end-pr;
 dcl-pr test_path end-pr;
 dcl-pr test_port end-pr;
 dcl-pr test_queryNoPath end-pr;
+dcl-pr test_overrideAccept end-pr;
 
 
 dcl-proc test_minimum export;
@@ -200,6 +201,26 @@ dcl-proc test_textBody export;
   
   request = iv_request_new('POST' : 'http://localhost'); 
   iv_request_setTextBody(request : 'The quick brown fox jumps over the fence.');
+  buffer = iv_request_toString(request);
+  
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+    teraspace_free(buffer.string);
+end-proc;
+
+
+dcl-proc test_overrideAccept export;
+  dcl-s request pointer;
+  dcl-ds buffer likeds(LVARPUCHAR_t);
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  
+  assumedResult = loadFile('unittests/request/test9-overrideAccept.http');
+  
+  request = iv_request_new('GET' : 'http://localhost' : 'application/vendor-sitemule-item+json+v2'); 
   buffer = iv_request_toString(request);
   
   iEqual(%len(assumedResult) : buffer.length);
