@@ -219,15 +219,45 @@ dcl-proc iv_request_addHeader export;
   endif;
   
   // TODO use OS API for proper conversion
-  lowerName = %xlate(LOWER : UPPER : name);
+  lowerName = %xlate(UPPER : LOWER : name);
   
-  listKey.length = %len(name);
+  listKey.length = %len(lowerName);
   listKey.string = teraspace_alloc(listKey.length + 1);
-  %str(listKey.string : listKey.length + 1) = name;
+  %str(listKey.string : listKey.length + 1) = lowerName;
   listValue.length = %len(value);
   listValue.string = teraspace_alloc(listValue.length + 1);
   %str(listValue.string : listValue.length + 1) = value;
   sList_pushLVPC(request.headers : listKey : listValue);
+end-proc;
+
+
+dcl-proc iv_request_getHeader export;
+  dcl-pi *n varchar(8000) ccsid(*utf8);
+    p_request pointer const;
+    name varchar(100) ccsid(*utf8) const;
+  end-pi;
+
+  dcl-ds request likeds(iv_request_t) based(p_request);
+  dcl-s value varchar(8000) ccsid(*utf8);
+  dcl-ds iterator likeds(SLISTITERATOR_t);
+  dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
+  dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
+  dcl-s lowerName varchar(100) ccsid(*utf8);
+  dcl-s headerName varchar(100) ccsid(*utf8);
+  
+  lowerName = %xlate(UPPER : LOWER : name);
+  
+  iterator = sList_setIterator(request.headers);
+  dow (sList_foreach(iterator));
+    headerName = %str(nodePayload.key.string : nodePayload.key.length);
+    
+    if (headerName = lowerName);
+      value = %str(nodePayload.value.string : nodePayload.value.length);
+      leave;
+    endif;
+  enddo;
+  
+  return value;
 end-proc;
 
 

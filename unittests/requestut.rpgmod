@@ -42,6 +42,8 @@ dcl-pr memcmp int(10) extproc('memcmp');
   count uns(10) value;
 end-pr;
 
+dcl-pr test_getHeader end-pr;
+dcl-pr test_getHeaderNonExist end-pr;
 dcl-pr test_minimum end-pr;
 dcl-pr test_delete end-pr;
 dcl-pr test_head end-pr;
@@ -50,6 +52,31 @@ dcl-pr test_path end-pr;
 dcl-pr test_port end-pr;
 dcl-pr test_queryNoPath end-pr;
 dcl-pr test_overrideAccept end-pr;
+
+
+dcl-proc test_getHeader export;
+  dcl-s request pointer;
+  
+  request = iv_request_new('GET' : 'http://localhost'); 
+  iv_request_addHeader(request : 'Query-Count' : '100');
+  
+  aEqual('100' : iv_request_getHeader(request : 'Query-Count'));
+  
+  on-exit;
+    iv_request_dispose(request);
+end-proc;
+
+
+dcl-proc test_getHeaderNonExist export;
+  dcl-s request pointer;
+  
+  request = iv_request_new('GET' : 'http://localhost'); 
+  
+  aEqual('' : iv_request_getHeader(request : 'Non-Existant'));
+  
+  on-exit;
+    iv_request_dispose(request);
+end-proc;
 
 
 dcl-proc test_minimum export;

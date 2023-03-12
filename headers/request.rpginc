@@ -75,6 +75,23 @@ dcl-pr iv_request_addHeader extproc(*dclcase);
   value varchar(8000) ccsid(*utf8) const;
 end-pr;
 
+
+///
+// Get HTTP request header
+//
+// Returns the first request header value with the corresponding passed header 
+// name. 
+//
+// @param HTTP request
+// @param HTTP header name
+// @return HTTP header value or <code>*blank</code> 
+///
+dcl-pr iv_request_getHeader varchar(8000) ccsid(*utf8) extproc(*dclcase);
+  request pointer const;
+  name varchar(100) ccsid(*utf8) const;
+end-pr;
+
+
 ///
 // Set HTTP request Accept MIME type
 //
