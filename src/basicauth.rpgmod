@@ -1,0 +1,51 @@
+**FREE
+
+ctl-opt nomain thread(*concurrent);
+
+
+/include 'base64.rpginc'
+/include 'basicauth.rpginc'
+/include 'request.rpginc'
+/include 'teraspace.rpginc'
+
+
+dcl-ds iv_auth_t qualified template;
+    processRequest pointer(*proc);
+    username varchar(1000) ccsid(*utf8);
+    password varchar(1000) ccsid(*utf8);
+end-ds;
+
+
+dcl-proc iv_basicauth_new export;
+    dcl-pi *n pointer;
+        username varchar(1000) ccsid(*utf8) const;
+        password varchar(1000) ccsid(*utf8) const;    
+    end-pi;
+    
+    dcl-ds auth likeds(iv_auth_t) based(authPtr);
+    
+    authPtr = teraspace_alloc(%size(iv_auth_t));
+    
+    auth.processRequest = %paddr(iv_basicauth_processRequest);
+    auth.username = username;
+    auth.password = password;
+    
+    return authPtr;
+end-proc;
+
+
+dcl-proc iv_basicauth_processRequest export;
+    dcl-pi *n;
+        p_auth pointer const;
+        request pointer const;
+    end-pi;
+
+    dcl-ds auth likeds(iv_auth_t) based(p_auth);
+    dcl-s headerValue varchar(8000) ccsid(*utf8);
+    dcl-s encoded varchar(524284:4) ccsid(*utf8);
+    
+    encoded = base64_encode(auth.username + ':' + auth.password);
+    headerValue = 'Basic ' + encoded;
+    
+    iv_request_addHeader(request : 'Authorization' : headerValue);
+end-proc;

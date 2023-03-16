@@ -1,0 +1,37 @@
+**FREE
+
+///
+// BasicAuth Unit Test
+//
+// @author Mihael Schmidt
+// @date   16.03.2023
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'basicauth.rpginc'
+/include 'request.rpginc'
+
+
+dcl-pr test_basicauth end-pr;
+
+
+dcl-proc test_basicauth export;
+  dcl-s request pointer;
+  dcl-s authenticator pointer;
+  dcl-s authHeaderValue varchar(8000) ccsid(*utf8);
+  
+  request = iv_request_new('GET' : 'http://localhost/index.html');
+  authenticator = iv_basicauth_new('username' : 'password');
+  
+  iv_basicauth_processRequest(authenticator : request);
+  authHeaderValue = iv_request_getHeader(request : 'Authorization');
+  
+  aEqual('Basic dXNlcm5hbWU6cGFzc3dvcmQ=' : authHeaderValue);
+  
+  on-exit;
+    iv_request_dispose(request);
+end-proc;

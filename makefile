@@ -91,7 +91,7 @@ modules: api.c basicauth.rpgmod httpclient.c chunked.c sockets.c anychar.c mime.
 ilevator.bnd: %.bnd
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$*) OBJ((*LIBL/ILEVATOR *SRVPGM *IMMED))"
 
-# TOD does not work yet
+# TODO does not work yet
 modules.bnd: %.bnd
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/BASE64 *MODULE))"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/TERASPACE *MODULE))"
