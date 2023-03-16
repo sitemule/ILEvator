@@ -521,11 +521,25 @@ end-pr;
 // returns the http status code 
 //
 //
-// @param  pClient pointer to the http client 
+// @param  pointer to the http client 
 // @return pointer to the client
 ///
 dcl-pr iv_getStatus int(5) extproc(*CWIDEN:'iv_getStatus');
     pClient       pointer value;
+end-pr;
+
+
+///
+// Set authentication provider
+//
+// Sets the passed authentication provider on the HTTP client.
+//
+// @param HTTP Client
+// @param Authentication provider
+///
+dcl-pr iv_setAuthProvider extproc(*dclcase);
+  client pointer value;
+  authProvider pointer value;
 end-pr;
 
 

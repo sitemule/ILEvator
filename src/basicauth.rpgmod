@@ -36,8 +36,8 @@ end-proc;
 
 dcl-proc iv_basicauth_processRequest export;
     dcl-pi *n;
-        p_auth pointer const;
-        request pointer const;
+        p_auth pointer value;
+        request pointer value;
     end-pi;
 
     dcl-ds auth likeds(iv_auth_t) based(p_auth);

@@ -50,6 +50,7 @@ void iv_delete ( PILEVATOR pIv)
     if (pIv == NULL) return;
     sockets_free (pIv->pSockets);
     sList_free (pIv->headerList);
+    teraspace_free (&pIv->authProvider);
     teraspace_free (&pIv->buffer);
     teraspace_free (&pIv);
 }
@@ -134,7 +135,7 @@ void iv_setResponseFile (
     ccsid = (parms >=3) ? parms : 1252;   
 
     sprintf(mode , "wb,o_ccsid=%d", ccsid);
-	unlink  ( strutil_righttrim(fileName)); // Just to reset the CCSID which will not change if file exists
+	unlink(strutil_righttrim(fileName)); // Just to reset the CCSID which will not change if file exists
 	pIv->responseDataFile  = fopen ( strutil_righttrim(fileName) , mode );
 	if (pIv->responseDataFile == NULL) {
         message_info("Response output open failed: %s" , strerror(errno));
@@ -276,5 +277,12 @@ PUCHAR iv_getFileExtension  (PVARCHAR256 extension, PVARCHAR fileName)
 /* --------------------------------------------------------------------------- */
 SHORT iv_getStatus ( PILEVATOR pIv)
 {
-   return pIv->status; 
+    return pIv->status; 
 }
+/* --------------------------------------------------------------------------- */
+void iv_setAuthProvider(PILEVATOR pIv, PAUTH_PROVIDER authProvider) {
+    if (pIv->authProvider) teraspace_free(&pIv->authProvider);
+    
+    pIv->authProvider = authProvider;
+}
+

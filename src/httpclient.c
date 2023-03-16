@@ -226,30 +226,6 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
     return 0 ; // OK
 }
 #pragma convert(0)
-/* --------------------------------------------------------------------------- *\
-   Authentications is base64 encoded userid in ascii
-\* --------------------------------------------------------------------------- */
-LONG addRealmLogin (PUCHAR pReq, PUCHAR user , PUCHAR password)
-{
-   UCHAR userAndPasseord [256];
-   ULONG pw1Len, pw2Len, pw3Len, len;
-   UCHAR pw1 [256];
-   UCHAR pw2 [256];
-   UCHAR pw3 [256];
-
-   if (*user == '\0' ||  *password == '\0') return 0;
-
-   sprintf(userAndPasseord , "%s:%s" , user , password);
-   pw1Len  = xlate_translateBuffer(pw1 , userAndPasseord , strlen(userAndPasseord) , 0 , 1252);
-   pw2Len = base64_encodeBuffer(pw2 , pw1, pw1Len);
-   pw2[pw2Len] = '\0';
-   pw3Len = xlate_translateBuffer(pw3 , pw2 , strlen(pw2) , 1252, 0);
-   pw3[pw3Len] = '\0';
-
-   len = sprintf(pReq, "Authorization: Basic %s%s" , pw3, EOL);
-
-   return len;
-}
 /* -------------------------------------------------------------------------- *\
    returns @ in current CCSID
 \* -------------------------------------------------------------------------- */
@@ -334,6 +310,10 @@ API_STATUS sendRequest (PILEVATOR pIv)
 //    }
 
     request = iv_request_new(method, url, acceptMimeType);
+    
+    if (pIv->authProvider)
+      pIv->authProvider->processRequest(pIv->authProvider, request);
+    
     requestString = iv_request_toString(&request);
     iv_request_dispose(request);
     

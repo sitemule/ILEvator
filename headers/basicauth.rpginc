@@ -9,8 +9,8 @@ dcl-pr iv_basicauth_new pointer extproc(*dclcase);
 end-pr;
 
 dcl-pr iv_basicauth_processRequest extproc(*dclcase);
-    p_auth pointer const;
-    request pointer const;
+    p_auth pointer value;
+    request pointer value;
 end-pr;
 
 /endif
