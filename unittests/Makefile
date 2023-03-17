@@ -23,7 +23,7 @@ OUTPUT=*NONE
 #-------------------------------------------------------------------------------
 
 
-OBJECTS = BASE64UT SMPLLSTUT URLPARSEUT REQUESTUT STRUTILUT BASICAUTUT
+OBJECTS = BASE64UT SMPLLSTUT URLPARSEUT REQUESTUT STRUTILUT BASICAUTUT BEARERUT
 SRVPGMS = $(RU_LIB)/RUTESTCASE
 
 # system and application include folder
@@ -71,6 +71,11 @@ BASICAUTUT:
 	system -i "CHGATR OBJ('basicautut.rpgmod') ATR(*CCSID) VALUE(1252)"
 	system -ik "CRTRPGMOD MODULE($(BIN_LIB)/BASICAUTUT) SRCSTMF('basicautut.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/BASICAUTUT MODULE(($(BIN_LIB)/BASICAUTUT)) $(BINDFLAGS)"
+
+BEARERUT:
+	system -i "CHGATR OBJ('bearerut.rpgmod') ATR(*CCSID) VALUE(1252)"
+	system -ik "CRTRPGMOD MODULE($(BIN_LIB)/BEARERUT) SRCSTMF('bearerut.rpgmod') $(RCFLAGS)"
+	system -i "CRTSRVPGM $(BIN_LIB)/BEARERUT MODULE(($(BIN_LIB)/BEARERUT)) $(BINDFLAGS)"
 
 SMPLLSTUT:
 	system -i "CHGATR OBJ('smpllstut.rpgmod') ATR(*CCSID) VALUE(1252)"

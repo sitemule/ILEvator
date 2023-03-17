@@ -1,0 +1,15 @@
+**FREE
+
+/if not defined (ILEVATOR_BEARER)
+/define ILEVATOR_BEARER
+
+dcl-pr iv_bearer_new pointer extproc(*dclcase);
+    token varchar(8000) ccsid(*utf8) const;
+end-pr;
+
+dcl-pr iv_bearer_processRequest extproc(*dclcase);
+    p_auth pointer value;
+    request pointer value;
+end-pr;
+
+/endif
