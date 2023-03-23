@@ -287,11 +287,11 @@ end-proc;
 
 dcl-proc iv_request_setTextBody export;
   dcl-pi *n;
-    requestPtr pointer const;
-    content varchar(1000000) value;
+    p_request pointer value;
+    content varchar(1048576) value;
   end-pi;
 
-  dcl-ds request likeds(iv_request_t) based(requestPtr);
+  dcl-ds request likeds(iv_request_t) based(p_request);
 
   if (request.content <> *null);
     teraspace_free(request.content);
@@ -306,9 +306,9 @@ end-proc;
 
 dcl-proc iv_request_setBinaryBody export;
   dcl-pi *n;
-    p_request pointer const;
-    content pointer const;
-    size uns(10) const;
+    p_request pointer value;
+    content pointer value;
+    size uns(10) value;
   end-pi;
 
   dcl-ds request likeds(iv_request_t) based(p_request);
@@ -321,6 +321,26 @@ dcl-proc iv_request_setBinaryBody export;
   request.contentSize = size;
   request.content = teraspace_alloc(size);
   memcpy(request.content : content : size);
+end-proc;
+
+
+dcl-proc iv_request_setFormBody export;
+  dcl-pi *n;
+    p_request pointer value;
+    formData likeds(LVARPUCHAR_t) value;
+  end-pi;
+
+  dcl-ds request likeds(iv_request_t) based(p_request);
+  
+  // we use binary content here because the form data is already in ASCII and
+  // should not be converted to any other CCSID
+  request.binaryContent = *on;
+  
+  request.contentSize = formData.Length;
+  request.content = teraspace_alloc(formData.Length);
+  memcpy(request.content : formData.String : formData.Length);
+  
+  teraspace_free(formData.String);
 end-proc;
 
 

@@ -13,6 +13,7 @@ ctl-opt nomain;
 
 
 /include 'assert.rpginc'
+/include 'form.rpginc'
 /include 'request.rpginc'
 /include 'teraspace.rpginc'
 /include 'varchar.rpginc'
@@ -42,16 +43,17 @@ dcl-pr memcmp int(10) extproc('memcmp');
   count uns(10) value;
 end-pr;
 
-dcl-pr test_getHeader end-pr;
-dcl-pr test_getHeaderNonExist end-pr;
-dcl-pr test_minimum end-pr;
-dcl-pr test_delete end-pr;
-dcl-pr test_head end-pr;
-dcl-pr test_options end-pr;
-dcl-pr test_path end-pr;
-dcl-pr test_port end-pr;
-dcl-pr test_queryNoPath end-pr;
-dcl-pr test_overrideAccept end-pr;
+dcl-pr test_getHeader extproc(*dclcase) end-pr;
+dcl-pr test_getHeaderNonExist extproc(*dclcase) end-pr;
+dcl-pr test_minimum extproc(*dclcase) end-pr;
+dcl-pr test_delete extproc(*dclcase) end-pr;
+dcl-pr test_head extproc(*dclcase) end-pr;
+dcl-pr test_options extproc(*dclcase) end-pr;
+dcl-pr test_path extproc(*dclcase) end-pr;
+dcl-pr test_port extproc(*dclcase) end-pr;
+dcl-pr test_queryNoPath extproc(*dclcase) end-pr;
+dcl-pr test_overrideAccept extproc(*dclcase) end-pr;
+dcl-pr test_formData extproc(*dclcase) end-pr;
 
 
 dcl-proc test_getHeader export;
@@ -248,6 +250,28 @@ dcl-proc test_overrideAccept export;
   assumedResult = loadFile('unittests/request/test9-overrideAccept.http');
   
   request = iv_request_new('GET' : 'http://localhost' : 'application/vendor-sitemule-item+json+v2'); 
+  buffer = iv_request_toString(request);
+  
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+    teraspace_free(buffer.string);
+end-proc;
+
+
+dcl-proc test_formData export;
+  dcl-s request pointer;
+  dcl-ds buffer likeds(LVARPUCHAR_t);
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  
+  assumedResult = loadFile('unittests/request/test10-formData.http');
+  
+  request = iv_request_new('POST' : 'http://localhost');
+  iv_request_setContentType(request : 'application/x-www-form-urlencoded');
+  iv_request_setFormBody(request : iv_form_of('name' : 'Mihael Schmidt' : 'role' : 'developer'));
   buffer = iv_request_toString(request);
   
   iEqual(%len(assumedResult) : buffer.length);

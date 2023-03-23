@@ -1,0 +1,34 @@
+**FREE
+
+/if not defined (ILEVATOR_FORM_DATA)
+/define ILEVATOR_FORM_DATA
+
+dcl-pr iv_form_ofMap likeds(LVARPUCHAR_t) extproc(*dclcase);
+    formDataMap pointer value;
+end-pr;
+
+dcl-pr iv_form_ofString likeds(LVARPUCHAR_t) extproc(*dclcase);
+    key1 varchar(1000) ccsid(*utf8) const;
+    value1 varchar(1048576) ccsid(*utf8) const;
+    key2 varchar(1000) ccsid(*utf8) const options(*nopass);
+    value2 varchar(1048576) ccsid(*utf8) const options(*nopass);
+    key3 varchar(1000) ccsid(*utf8) const options(*nopass);
+    value3 varchar(1048576) ccsid(*utf8) const options(*nopass);
+    key4 varchar(1000) ccsid(*utf8) const options(*nopass);
+    value4 varchar(1048576) ccsid(*utf8) const options(*nopass);
+    key5 varchar(1000) ccsid(*utf8) const options(*nopass);
+    value5 varchar(1048576) ccsid(*utf8) const options(*nopass);
+    key6 varchar(1000) ccsid(*utf8) const options(*nopass);
+    value6 varchar(1048576) ccsid(*utf8) const options(*nopass);
+    key7 varchar(1000) ccsid(*utf8) const options(*nopass);
+    value7 varchar(1048576) ccsid(*utf8) const options(*nopass);
+    key8 varchar(1000) ccsid(*utf8) const options(*nopass);
+    value8 varchar(1048576) ccsid(*utf8) const options(*nopass);
+end-pr;
+
+dcl-pr iv_form_of likeds(LVARPUCHAR_t) overload(
+  iv_form_ofMap :
+  iv_form_ofString
+);
+
+/endif
