@@ -10,7 +10,7 @@ end-ds;
 
 dcl-ds PLVARCHAR_t qualified template;
    length int(10);
-   string varchar(1024:4);
+   string varchar(1048576:4);
 end-ds;
 
 

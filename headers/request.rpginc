@@ -130,8 +130,8 @@ end-pr;
 // @param Form data (noxDB2)
 ///
 dcl-pr iv_request_setFormBody extproc(*dclcase);
-  request pointer const;
-  formData pointer const;
+  request pointer value;
+  formData likeds(LVARPUCHAR_t) value;
 end-pr;
 
 ///
@@ -157,14 +157,14 @@ end-pr;
 // @param Message body
 ///
 dcl-pr iv_request_setTextBody extproc(*dclcase);
-  request pointer const;
-  content varchar(1000000) value; // TODO check for ccsid problem
+  request pointer value;
+  content varchar(1048576) value;
 end-pr;
 
 dcl-pr iv_request_setBinaryBody extproc(*dclcase);
-  request pointer const;
-  content pointer const;
-  size uns(10) const;
+  request pointer value;
+  content pointer value;
+  size uns(10) value;
 end-pr;
 
 dcl-pr iv_request_setBody overload(

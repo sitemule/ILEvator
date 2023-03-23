@@ -1,7 +1,7 @@
       /if not defined (IRPGUNIT_ASSERT)
       /define IRPGUNIT_ASSERT
 
-      /include TEMPLATES.RPGINC
+      /include 'templates.rpginc'
        
 
        //----------------------------------------------------------------------

@@ -1,0 +1,75 @@
+**FREE
+
+///
+// Encode Unit Test
+//
+// @author Mihael Schmidt
+// @date   23.03.2023
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'encode.rpginc'
+
+dcl-pr test_urlEncodeAsciiOnly end-pr;
+dcl-pr test_urlEncodeInvariantChars end-pr;
+dcl-pr test_urlEncodeUmlaute end-pr;
+dcl-pr test_formUrlEncodeAsciiOnly end-pr;
+dcl-pr test_formUrlEncodeInvariantChars end-pr;
+dcl-pr test_formUrlEncodeUmlaute end-pr;
+
+
+dcl-proc test_urlEncodeAsciiOnly export;
+  dcl-s encodedValue varchar(4194304) ccsid(*utf8);
+  
+  encodedValue = iv_encode_url('sitemule.com');
+  
+  aEqual('sitemule.com' : encodedValue);
+end-proc;
+
+
+dcl-proc test_urlEncodeInvariantChars export;
+  dcl-s encodedValue varchar(4194304) ccsid(*utf8);
+  
+  encodedValue = iv_encode_url('Question Mark:?');
+  aEqual('Question%20Mark%3A%3F' : encodedValue);
+end-proc;
+
+
+dcl-proc test_urlEncodeUmlaute export;
+  dcl-s encodedValue varchar(4194304) ccsid(*utf8);
+
+  // ae and UE
+  encodedValue = iv_encode_url('Umlaute:' + u'00E4' + u'00DC');
+  aEqual('Umlaute%3A%C3%A4%C3%9C' : encodedValue);
+end-proc;
+
+
+dcl-proc test_formUrlEncodeAsciiOnly export;
+  dcl-s encodedValue varchar(4194304) ccsid(*utf8);
+  
+  encodedValue = iv_encode_formUrl('sitemule.com');
+  
+  aEqual('sitemule.com' : encodedValue);
+end-proc;
+
+
+dcl-proc test_formUrlEncodeInvariantChars export;
+  dcl-s encodedValue varchar(4194304) ccsid(*utf8);
+  
+  encodedValue = iv_encode_formUrl('Question Mark:?');
+  aEqual('Question+Mark%3A%3F' : encodedValue);
+end-proc;
+
+
+dcl-proc test_formUrlEncodeUmlaute export;
+  dcl-s encodedValue varchar(4194304) ccsid(*utf8);
+
+  // ae and UE
+  encodedValue = iv_encode_formUrl('Umlaute:' + u'00E4' + u'00DC');
+  aEqual('Umlaute%3A%C3%A4%C3%9C' : encodedValue);
+end-proc;
+
