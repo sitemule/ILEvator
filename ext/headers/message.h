@@ -2,6 +2,8 @@
 #define SNDPGMMSG_I
 
 #include "qmhsndpm.h"
+#include "ostypes.h"
+
 #define MESSAGE_ESCAPE  "*ESCAPE   "
 #define MESSAGE_INFO    "*INFO     "
 #define MESSAGE_DIAG    "*DIAG     "

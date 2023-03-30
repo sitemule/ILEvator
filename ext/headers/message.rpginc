@@ -4,11 +4,11 @@
 /define MESSAGE_H
 
 dcl-pr message_info extproc(*CWIDEN : *dclcase);
-  message pointer;
+  message pointer value options(*string);
 end-pr;
 
 dcl-pr message_escape extproc(*CWIDEN : *dclcase);
-  message pointer;
+  message pointer value options(*string);
 end-pr;
 
 /endif

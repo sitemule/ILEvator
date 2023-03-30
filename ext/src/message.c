@@ -16,8 +16,8 @@ void message_send(PUCHAR msgId,PUCHAR msgFile, PUCHAR type ,PUCHAR msgData, ... 
    va_start(arg_ptr,  msgData);
    len = vsprintf(temp, msgData , arg_ptr);
    va_end(arg_ptr);
-   QMHSNDPM (msgId, msgFile, temp , len , type , "message_send        " ,
-             stackcount, msgkey , &apierr);
+   QMHSNDPM (msgId, msgFile, temp , len , type , "message_send" ,
+             stackcount, msgkey , &apierr, 12, "*NONE     *NONE     ", -1);
    if (apierr.avail) {
       printf ("Api error: %7s - %s" ,apierr.msgid, apierr.msgdta);
    }
@@ -35,7 +35,7 @@ void message_info(PUCHAR message, ... )
    len = vsprintf(temp, message, arg_ptr);
    va_end(arg_ptr);
    QMHSNDPM ("CPF9898", MESSAGE_QCPFMSG , temp , len , MESSAGE_INFO , 
-             "message_info           " , stackcount, msgkey , &apierr);
+             "message_info" , stackcount, msgkey , &apierr, 12, "*NONE     *NONE     ", -1);
    if (apierr.avail) {
       printf ("Api error: %7s - %s" ,apierr.msgid, apierr.msgdta);
    }
@@ -53,7 +53,7 @@ void message_escape(PUCHAR message, ... )
    len = vsprintf(temp, message, arg_ptr);
    va_end(arg_ptr);
    QMHSNDPM ("CPF9898", MESSAGE_QCPFMSG ,  temp , len , MESSAGE_ESCAPE , 
-             "message_escape         " , stackcount, msgkey , &apierr);
+             "message_escape" , stackcount, msgkey , &apierr, 14, "*NONE     *NONE     ", -1);
    if (apierr.avail) {
       printf ("Api error: %7s - %s" ,apierr.msgid, apierr.msgdta);
    }
