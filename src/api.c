@@ -30,6 +30,7 @@
 #include "message.h"
 #include "parms.h"
 #include "httpclient.h"
+#include "debug.h"
 
 static UCHAR EOL [] = {CR, LF , 0};
 
@@ -203,6 +204,8 @@ LGL iv_execute (
         apiStatus = receiveHeader (pIv);
         if (apiStatus == API_ERROR) break; 
         if (apiStatus == API_RETRY) continue; 
+
+        iv_debug("HTTP response status: TODO", 0); 
 
         // Dont try to get data if it was a HEAD request - it is only the header
         // or status 204 => no content

@@ -36,7 +36,7 @@ CCFLAGS=OUTPUT($(OUTPUT)) OPTIMIZE(10) ENUM(*INT) TERASPACE(*YES) STGMDL(*INHERI
 
 all: compile
 
-compile: xlate.c base64.c teraspace.c simplelist.c strutil.c varchar.c
+compile: xlate.c base64.c message.c teraspace.c simplelist.c strutil.c varchar.c
 
 %.c:
 	system -q "CHGATR OBJ('src/$*.c') ATR(*CCSID) VALUE(1252)"

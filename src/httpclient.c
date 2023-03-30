@@ -17,6 +17,7 @@
 
 #include "anychar.h"
 #include "base64.h"
+#include "debug.h"
 #include "httpclient.h"
 #include "ilevator.h"
 #include "message.h"
@@ -54,39 +55,6 @@ LONG urlEncodeBlanks  (PUCHAR outBuf , PUCHAR inBuf)
     *outBuf = '\0';
     return (outBuf - start);
 }
-
-/* --------------------------------------------------------------------------- *\
-  wrapper for the message and trace to  the message log
-\* --------------------------------------------------------------------------- */
-void putWsTrace(PILEVATOR pIv, PUCHAR ctlStr, ...)
-{
-    va_list arg_ptr;
-    UCHAR   temp[4096];
-    UCHAR   temp2[4096];
-    LONG    len;
-    SHORT   l,i;
-    if (pIv->wstrace == NULL) return;
-
-    va_start(arg_ptr, ctlStr);
-    len = vsprintf( temp , ctlStr, arg_ptr);
-    va_end(arg_ptr);
-    xlate_translateBuffer (temp2 , temp , len+1, 0 , 1252); // Incl the null termination
-    fputs (temp2 , pIv->wstrace);
-}
-/* --------------------------------------------------------------------------- *\
-  wrapper for the message and trace to  the message log
-\* --------------------------------------------------------------------------- */
-void xsetmsg(PILEVATOR pIv , PUCHAR msgid , PUCHAR Ctlstr, ...)
-{
-    va_list arg_ptr;
-    LONG    len;
-    SHORT   l,i;
-    va_start(arg_ptr, Ctlstr);
-    len = vsprintf( pIv->message , Ctlstr, arg_ptr);
-    va_end(arg_ptr);
-
-    putWsTrace(pIv ,"%s" , pIv->message);
-}
 /* -------------------------------------------------------------------------- */
 PUCHAR findEOL(PUCHAR p)
 {
@@ -117,13 +85,6 @@ int getCcsid(PUCHAR mimeType)
     return ccsid;
 }
 
-/* --------------------------------------------------------------------------- */
-BOOL isNewLineAscii(UCHAR c)
-{
-   if (c == 0x0d) return(TRUE);
-   if (c == 0x0a) return(TRUE);
-   return(FALSE);
-}
 /* -------------------------------------------------------------------------- */
 BOOL lookForHeader(PUCHAR Buf, LONG totlen, PUCHAR * contentData)
 {
@@ -304,11 +265,6 @@ API_STATUS sendRequest (PILEVATOR pIv)
     url.Length = strlen(pIv->url);
     // TODO check if translated length still fits
     
-// TODO auth
-//    if (*pIv->user > ' ') {
-//        pReq += addRealmLogin (pReq, pIv->user , pIv->password);
-//    }
-
     request = iv_request_new(method, url, acceptMimeType);
     
     if (pIv->authProvider)
@@ -321,7 +277,6 @@ API_STATUS sendRequest (PILEVATOR pIv)
     teraspace_free((PVOID) requestString.String);
 
     return (rc == requestString.Length ? API_OK : API_ERROR); 
-
 }
 
 /* --------------------------------------------------------------------------- */
@@ -358,7 +313,7 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
             return API_ERROR;
         }
 
-        // "Connection close" - end of transmission and no "Content-Length" provided, the we are done
+        // "Connection close" - end of transmission and no "Content-Length" provided, then we are done
         if (len == 0 && pIv->responseHeaderHasContentLength == false) {
             return API_OK;
         }
@@ -385,12 +340,12 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
                         pIv->location // New input !!
                     ); 
                     sockets_close(pIv->pSockets);
-                    putWsTrace( pIv, "\r\n redirected to %s\r\n",  pIv->location );
+                    iv_debug("redirected to %s", 1, pIv->location);
                     return API_RETRY;
                 }
                 
                 if (pIv->status == 100) {  // Continue is was a proxy
-                    putWsTrace( pIv, "\r\n-- Proxy continue received --\r\n");
+                    iv_debug("-- Proxy continue received --", 0);
                     return API_RETRY; // Found but start over again - it was a proxy
                 }
 

@@ -7,11 +7,8 @@
 #include "ilevator.h"
 
 LONG urlEncodeBlanks  (PUCHAR outBuf , PUCHAR inBuf);
-void putWsTrace(PILEVATOR pIv, PUCHAR ctlStr, ...);
-void xsetmsg(PILEVATOR pIv , PUCHAR msgid , PUCHAR Ctlstr, ...);
 PUCHAR findEOL(PUCHAR p);
 int getCcsid(PUCHAR base);
-BOOL isNewLineAscii(UCHAR c);
 BOOL lookForHeader(PUCHAR Buf, LONG totlen, PUCHAR * contentData);
 VOID parseHttpParm(PILEVATOR pIv, PUCHAR Parm , PUCHAR Value);
 SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData);

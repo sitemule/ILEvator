@@ -5,7 +5,7 @@
 //
 
 int main() {
-  message_info("ILEvator by sitemule!");
+  message_info("ILEvator by %s!", "sitemule");
   
   return 0;
 }
