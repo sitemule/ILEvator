@@ -197,7 +197,6 @@ LGL iv_execute (
         apiStatus = ( ok? API_OK:API_ERROR);
         if (apiStatus == API_ERROR) break; 
 
-
         apiStatus = sendRequest (pIv);
         if (apiStatus == API_ERROR) break; 
 
@@ -205,12 +204,12 @@ LGL iv_execute (
         if (apiStatus == API_ERROR) break; 
         if (apiStatus == API_RETRY) continue; 
 
-        iv_debug("HTTP response status: TODO", 0); 
+        iv_debug("HTTP response status: %s", "unknown"); // TODO set response status code
 
         // Dont try to get data if it was a HEAD request - it is only the header
         // or status 204 => no content
-        if (strutil_beginsWith(pIv->method , "HEAD")
-        ||  pIv->status == 204 )     {  // No Content, dont read any longer
+        if (strutil_beginsWith(pIv->method , "HEAD")  ||  pIv->status == 204 )  {
+            // No Content, dont read any longer
             apiStatus = API_OK;
         }
         else if (pIv->responseIsChunked) {
@@ -235,9 +234,9 @@ LGL iv_execute (
         fclose(pIv->responseDataFile);
     }
 
-    iv_delete ( pIv);
+    iv_delete(pIv);
 
-    return (apiStatus == API_OK ? ON:OFF);
+    return apiStatus == API_OK ? ON : OFF;
 
 }
 

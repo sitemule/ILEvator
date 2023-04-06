@@ -340,12 +340,12 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
                         pIv->location // New input !!
                     ); 
                     sockets_close(pIv->pSockets);
-                    iv_debug("redirected to %s", 1, pIv->location);
+                    iv_debug("redirected to %s", pIv->location);
                     return API_RETRY;
                 }
                 
                 if (pIv->status == 100) {  // Continue is was a proxy
-                    iv_debug("-- Proxy continue received --", 0);
+                    iv_debug("-- Proxy continue received --");
                     return API_RETRY; // Found but start over again - it was a proxy
                 }
 
