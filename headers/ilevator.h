@@ -17,6 +17,21 @@
 
 #define BUFFER_SIZE 1048576
 
+//
+// buffer types
+//
+#define IV_BYTES 0
+#define IV_VARCHAR2 1
+#define IV_VARCHAR4 2
+
+//
+// Conversion - named values; more exists
+//
+#define IV_CCSID_JOB     0
+#define IV_CCSID_UTF8    1208
+#define IV_CCSID_WIN1252 1252
+#define IV_CCSID_BINARY  65535
+
 typedef enum _API_STATUS {
     API_OK, 
     API_RETRY,
@@ -107,6 +122,8 @@ LGL iv_execute (
     ULONG  timeOut,
     ULONG  retries
 );
+#pragma descriptor (void iv_execute(void))
 
+void iv_get(PLVARCHAR returnBuffer, VARCHAR url, VARCHAR acceptMimeType, PSLIST headers);
 
 #endif

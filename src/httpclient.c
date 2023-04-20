@@ -267,6 +267,8 @@ API_STATUS sendRequest (PILEVATOR pIv)
     
     request = iv_request_new(method, url, acceptMimeType);
     
+    // TODO add headers from pIv header list
+    
     if (pIv->authProvider)
       pIv->authProvider->processRequest(pIv->authProvider, request);
     

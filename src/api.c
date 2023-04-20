@@ -33,6 +33,9 @@
 #include "debug.h"
 
 static UCHAR EOL [] = {CR, LF , 0};
+#define BUFFER_SIZE 1048576
+#define DEFAULT_TIMEOUT 30000
+#define NO_RETRIES 0
 
 /* --------------------------------------------------------------------------- */
 PILEVATOR iv_newHttpClient(void)
@@ -46,7 +49,7 @@ PILEVATOR iv_newHttpClient(void)
     return (pIv);
 }
 /* --------------------------------------------------------------------------- */
-void iv_delete ( PILEVATOR pIv)
+void iv_free ( PILEVATOR pIv)
 {
     if (pIv == NULL) return;
     sockets_free (pIv->pSockets);
@@ -177,16 +180,16 @@ LGL iv_execute (
 {
     int parms = _NPMPARMLISTADDR()->OpDescList->NbrOfParms;
     API_STATUS apiStatus = API_RETRY; 
-    SHORT retry;
+    SHORT try;
     
     pIv->method = method; 
     pIv->url = url; 
-    pIv->timeOut = (parms >= 4) ? timeOut : 30000; 
-    pIv->retries = (parms >= 5) ? retries : 3;
+    pIv->timeOut = (parms >= 4) ? timeOut : DEFAULT_TIMEOUT;
+    pIv->retries = (parms >= 5) ? retries : NO_RETRIES;
     
     parseUrl(pIv, url); 
 
-    for (retry = 0; retry < pIv->retries ; retry++) {
+    for (try = 0; try <= pIv->retries ; try++) {
 
         BOOL ok = sockets_connect(
             pIv->pSockets, 
@@ -234,7 +237,7 @@ LGL iv_execute (
         fclose(pIv->responseDataFile);
     }
 
-    iv_delete(pIv);
+    iv_free(pIv);
 
     return apiStatus == API_OK ? ON : OFF;
 
@@ -282,9 +285,42 @@ SHORT iv_getStatus ( PILEVATOR pIv)
     return pIv->status; 
 }
 /* --------------------------------------------------------------------------- */
-void iv_setAuthProvider(PILEVATOR pIv, PAUTH_PROVIDER authProvider) {
+void iv_setAuthProvider(PILEVATOR pIv, PAUTH_PROVIDER authProvider) 
+{
     if (pIv->authProvider) teraspace_free(&pIv->authProvider);
     
     pIv->authProvider = authProvider;
 }
+
+void iv_get(PLVARCHAR returnBuffer, VARCHAR url, VARCHAR acceptMimeType, PSLIST headers) 
+{
+    int parms = _NPMPARMLISTADDR()->OpDescList->NbrOfParms;
+    PILEVATOR pIv = iv_newHttpClient();
+    
+    UCHAR l_url[32767];
+    memcpy(&l_url, &url.String, url.Length);
+    l_url[url.Length] = '\0';
+    
+    iv_setResponseDataBuffer(
+        pIv, 
+        (PVOID) returnBuffer, 
+        BUFFER_SIZE,
+        IV_VARCHAR4,
+        IV_CCSID_UTF8
+    );
+    
+    if (parms >= 3) {
+      // TODO handle acceptMimeType
+    }
+    
+    if (parms >= 4) {
+      // TODO handle headers
+    }
+    
+    LGL rc = iv_execute (pIv, "GET", &l_url[0], DEFAULT_TIMEOUT, NO_RETRIES);
+    // TODO what to do with the result?
+    
+    iv_free(pIv); // TODO catch any error and free the http client instance
+}
+
 

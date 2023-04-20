@@ -383,13 +383,13 @@ end-pr;
 
 
 ///
-// delete / disconnect and cleanup memry for the client
+// Disconnect and cleanup memory of the client
 //
-// @param pClient pointer to the http client 
+// @param HTTP client 
 //
 ///
-dcl-pr iv_delete  extproc(*CWIDEN:'iv_delete');
-    pClient       pointer value;
+dcl-pr iv_free extproc(*CWIDEN:'iv_free');
+    client pointer value;
 end-pr;
 
 
@@ -577,11 +577,19 @@ end-pr;
 // Convenience function: put message in joblog.
 // Works like printf but with strings only like
 //
-//    iv_joblog('This is %s a test' : 'Super');
+//    iv_joblog('This is %s a test' : 'super');
 //
 // @param format string
-// @param Parms : list of strings
-//
+// @param Replacement value
+// @param Replacement value
+// @param Replacement value
+// @param Replacement value
+// @param Replacement value
+// @param Replacement value
+// @param Replacement value
+// @param Replacement value
+// @param Replacement value
+// @param Replacement value
 ///
 dcl-pr iv_joblog extproc(*CWIDEN : 'iv_joblog') ;
   formatString  pointer  options(*string)  value;
@@ -600,11 +608,11 @@ end-pr;
 
 ///
 //
-// Convenience function: conver varchar ccsid
+// Convenience function: convert varchar ccsid
 //
 ///
 dcl-pr iv_xlateVc varchar(32768:2) ccsid(65535) extproc(*CWIDEN : 'iv_xlateVc') rtnparm;
-  inpoutString varchar(32768:2) ccsid(65535) options(*varsize) const;
+  inoutString varchar(32768:2) ccsid(65535) options(*varsize) const;
   fromCCSID int(10) value;
   toCCSID   int(10) value;
 end-pr;
@@ -612,7 +620,7 @@ end-pr;
 
 ///
 //
-// Convenience function: conver long varchar ccsid
+// Convenience function: convert long varchar ccsid
 //
 ///
 dcl-pr iv_xlateLvc varchar(2097152:4) ccsid(65535) extproc(*CWIDEN : 'iv_xlateLvc') rtnparm;
@@ -620,3 +628,12 @@ dcl-pr iv_xlateLvc varchar(2097152:4) ccsid(65535) extproc(*CWIDEN : 'iv_xlateLv
   fromCCSID int(10) value;
   toCCSID   int(10) value;
 end-pr;
+
+
+dcl-pr iv_get varchar(1048576:4) ccsid(1208) extproc(*CWIDEN : 'iv_get') rtnparm;
+    url varchar(32767:2) value;
+    acceptMimeType varchar(32767:2) ccsid(1208) value options(*nopass);
+    headers pointer value options(*nopass);
+end-pr;
+
+

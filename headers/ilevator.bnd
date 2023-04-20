@@ -1,6 +1,7 @@
 STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_newHttpClient")
-    EXPORT SYMBOL("iv_delete")
+    EXPORT SYMBOL("iv_free")
+    EXPORT SYMBOL("iv_get")
     EXPORT SYMBOL("iv_setRequestHeaderBuffer")
     EXPORT SYMBOL("iv_setRequestDataBuffer")
     EXPORT SYMBOL("iv_setResponseHeaderBuffer")
