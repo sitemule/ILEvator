@@ -44,7 +44,7 @@ PILEVATOR iv_newHttpClient(void)
     PILEVATOR pIv = teraspace_calloc(sizeof(ILEVATOR));
     pIv->buffer = teraspace_alloc(BUFFER_SIZE);
     pIv->bufferSize = BUFFER_SIZE;
-    pIv->pSockets =  sockets_new();
+    pIv->sockets =  sockets_new();
     pIv->headerList = sList_new ();
     return (pIv);
 }
@@ -52,45 +52,11 @@ PILEVATOR iv_newHttpClient(void)
 void iv_free ( PILEVATOR pIv)
 {
     if (pIv == NULL) return;
-    sockets_free (pIv->pSockets);
+    sockets_free (pIv->sockets);
     sList_free (pIv->headerList);
     teraspace_free (&pIv->authProvider);
     teraspace_free (&pIv->buffer);
     teraspace_free (&pIv);
-}
-/* --------------------------------------------------------------------------- */
-void iv_setRequestHeaderBuffer (
-    PILEVATOR pIv ,
-    PUCHAR pBuf,
-    LONG  bufferSize,
-    SHORT bufferType,
-    LONG  bufferCcsid
-)
-{
-    iv_anychar_set ( 
-        &pIv->requestHeaderBuffer,
-        pBuf,
-        bufferSize,
-        bufferType,
-        bufferCcsid
-    );
-}
-/* --------------------------------------------------------------------------- */
-void iv_setRequestDataBuffer (
-    PILEVATOR pIv ,
-    PUCHAR pBuf,
-    LONG  bufferSize,
-    SHORT bufferType,
-    LONG  bufferCcsid
-)
-{
-    iv_anychar_set ( 
-        &pIv->requestDataBuffer,
-        pBuf,
-        bufferSize,
-        bufferType,
-        bufferCcsid
-    );
 }
 /* --------------------------------------------------------------------------- */
 void iv_setResponseHeaderBuffer (
@@ -156,15 +122,15 @@ LGL iv_setCertificate  (
 {
     int parms = _NPMPARMLISTADDR()->OpDescList->NbrOfParms;
 
-    strcpy  (pIv->pSockets->certificateFile, certificateFile);
-    strcpy  (pIv->pSockets->keyringPassword , (parms >=3) ? certificatePassword: "");
+    strcpy  (pIv->sockets->certificateFile, certificateFile);
+    strcpy  (pIv->sockets->keyringPassword , (parms >=3) ? certificatePassword: "");
 
-    if (0 == access ( pIv->pSockets->certificateFile ,  R_OK)) {
+    if (0 == access ( pIv->sockets->certificateFile ,  R_OK)) {
         return ON;
     } else {
         message_info( "Certificate error: %s File: %s:", 
             strerror(errno),
-            pIv->pSockets->certificateFile
+            pIv->sockets->certificateFile
         );
         return OFF;
     }
@@ -192,7 +158,7 @@ LGL iv_execute (
     for (try = 0; try <= pIv->retries ; try++) {
 
         BOOL ok = sockets_connect(
-            pIv->pSockets, 
+            pIv->sockets, 
             pIv->server ,
             atoi (pIv->port) ,
             pIv->timeOut
@@ -228,8 +194,6 @@ LGL iv_execute (
 
     }
 
-    iv_anychar_finalize (&pIv->requestHeaderBuffer);
-    iv_anychar_finalize (&pIv->requestDataBuffer);
     iv_anychar_finalize (&pIv->responseHeaderBuffer);
     iv_anychar_finalize (&pIv->responseDataBuffer);
 

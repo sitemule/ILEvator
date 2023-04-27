@@ -33,7 +33,9 @@
 ///
 dcl-s IV_LONGUTF8VARCHAR varchar(2097152:4) ccsid(*utf8) template;
 
-
+dcl-c IV_STATUS_OK 1;
+dcl-c IV_STATUS_RETRY 2;
+dcl-c IV_STATUS_ERROR 3;
 
 ///
 // Protocol plain HTTP 

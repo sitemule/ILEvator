@@ -45,7 +45,7 @@ typedef struct _AUTH_PROVIDER {
 
 
 typedef struct _ILEVATOR {
-    PSOCKETS  pSockets;
+    PSOCKETS  sockets;
     PUCHAR    method; 
     PUCHAR    url; 
     SHORT     timeOut;
@@ -55,17 +55,9 @@ typedef struct _ILEVATOR {
     BOOL      responseIsChunked;
     PSLIST    headerList;
 
-    ANYCHAR   requestHeaderBuffer; 
-    FILE *    requestHeaderFile;
-    ANYCHAR   requestDataBuffer; 
-    FILE *    requestDataFile;
-    LONG      requestLength;
-
     ANYCHAR   responseHeaderBuffer; 
-    FILE *    responseHeaderFile;
     ANYCHAR   responseDataBuffer; 
     FILE *    responseDataFile;
-    LONG      responseLength;
 
     PAUTH_PROVIDER authProvider;
 
@@ -75,16 +67,9 @@ typedef struct _ILEVATOR {
     LONG      contentLength;
     LONG      contentLengthCalculated;
     
-    PUCHAR    ResponseString;
-    LONG      Ccsid; 
+    PUCHAR    rawResponse;
+    LONG      ccsid; 
     LONG      status;
-
-    PUCHAR    pResBuffer; 
-    ULONG     resBufferSize;
-    IV_ANYCHAR_BUFTYPE resBufferType;
-    IV_ANYCHAR_XLATE   resBufferXlate;
-    FILE *    resFile;
-    FILE *    wstrace;
 
     UCHAR     server    [512];
     UCHAR     port      [7];

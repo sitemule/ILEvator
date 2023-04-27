@@ -127,7 +127,7 @@ VOID parseHttpParm(PILEVATOR pIv, PUCHAR Parm , PUCHAR Value)
     
     // Unpack: "Content-Type: text/html; charset=windows-1252"
     if (strutil_beginsWithAscii (Parm , "Content-Type"))  {
-        pIv->Ccsid = getCcsid(Value);
+        pIv->ccsid = getCcsid(Value);
     }
 }
 #pragma convert(0)
@@ -163,7 +163,7 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
         }
     }
 
-    pIv->ResponseString = start;
+    pIv->rawResponse = start;
     end = findEOL(start);
 
     while(*end) {
@@ -215,13 +215,13 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
     str2lvc(&s, url);
     l_url = iv_url_parse(s);
     
-    pIv->pSockets->asSSL = PLAIN_SOCKET;
+    pIv->sockets->asSSL = PLAIN_SOCKET;
     pIv->useProxy = FALSE;
     strcpy(pIv->user, "");
     strcpy(pIv->password, "");
 
     if (l_url.protocol.Length > 0) {
-        pIv->pSockets->asSSL = ( strutil_beginsWith(l_url.protocol.String , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
+        pIv->sockets->asSSL = ( strutil_beginsWith(l_url.protocol.String , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
     }
 
     strncat(pIv->server , l_url.host.String, l_url.host.Length);
@@ -275,7 +275,7 @@ API_STATUS sendRequest (PILEVATOR pIv)
     requestString = iv_request_toString(&request);
     iv_request_dispose(request);
     
-    rc = sockets_send (pIv->pSockets, requestString.String, requestString.Length); 
+    rc = sockets_send (pIv->sockets, requestString.String, requestString.Length); 
     teraspace_free((PVOID) requestString.String);
 
     return (rc == requestString.Length ? API_OK : API_ERROR); 
@@ -297,13 +297,13 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
         LONG bufferRemain = pIv->bufferSize - pIv->bufferTotalLength;
          // Protocol error
         if  (bufferRemain < 0) {  
-            sockets_close(pIv->pSockets);
+            sockets_close(pIv->sockets);
             message_info("Buffer overrun ");
             return API_ERROR;
         }
 
         // Append to the current buffer
-        len = sockets_receive (pIv->pSockets, pIv->bufferEnd, bufferRemain , pIv->timeOut);
+        len = sockets_receive (pIv->sockets, pIv->bufferEnd, bufferRemain , pIv->timeOut);
         
         // timeout
         if  (len == -2) {  
@@ -330,7 +330,7 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
             if (headFound) {
                 int err = parseResponse(pIv , pIv->buffer, pIv->contentData);
                 if (err) {
-                    sockets_close(pIv->pSockets);
+                    sockets_close(pIv->sockets);
                     message_info("Invalid response header: %d" , err);
                     return API_ERROR;
                 }
@@ -341,7 +341,7 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
                         pIv,
                         pIv->location // New input !!
                     ); 
-                    sockets_close(pIv->pSockets);
+                    sockets_close(pIv->sockets);
                     iv_debug("redirected to %s", pIv->location);
                     return API_RETRY;
                 }
@@ -375,7 +375,7 @@ API_STATUS receiveData ( PILEVATOR pIv)
     }
 
     for (;;) { // repeat until a header is received
-        len = sockets_receive (pIv->pSockets, buffer , sizeof(buffer) , pIv->timeOut);
+        len = sockets_receive (pIv->sockets, buffer , sizeof(buffer) , pIv->timeOut);
         
         // timeout
         if  (len == -2) {  

@@ -36,7 +36,7 @@ API_STATUS iv_chunked_receive(PILEVATOR pIv)
 
         // Get the next block - this is asynchronious from the chrunks
         if (pInBuf == newEnd) {
-            Len = sockets_receive (pIv->pSockets, rcvbuf, sizeof(rcvbuf), pIv->timeOut); 
+            Len = sockets_receive (pIv->sockets, rcvbuf, sizeof(rcvbuf), pIv->timeOut); 
  
             if  (Len <= 0) {  // Data is complete in outbuffer, so "disconnect" is ok (len ==0)
                 return API_OK;
