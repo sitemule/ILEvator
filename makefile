@@ -49,7 +49,7 @@ all:  $(BIN_LIB).lib ext modules ilevator.srvpgm hdr ilevator.bnd modules.bnd
 ext: .PHONY
 	$(MAKE) -C ext/ $*
 
-modules: anychar.c api.c basicauth.rpgmod bearer.rpgmod chunked.c debug.rpgmod \
+modules: anychar.c api.rpgmod basicauth.rpgmod bearer.rpgmod chunked.c debug.rpgmod \
          encode.rpgmod form.rpgmod httpclient.c init.cpp mime.rpgmod request.rpgmod \
          sockets.c stream.rpgmod streammem.rpgmod url.rpgmod
 

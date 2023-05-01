@@ -65,6 +65,25 @@ void sockets_setSSL(PSOCKETS ps,USESSL asSSL, PUCHAR certificateFile , PUCHAR ke
     ps->asSSL = asSSL;
 }
 /* --------------------------------------------------------------------------- *\
+   Set certificate and password
+\* --------------------------------------------------------------------------- */
+void sockets_setCertificate(
+    PSOCKETS sockets,
+    PUCHAR certificateFile,
+    PUCHAR certificatePassword
+)
+{
+    int parms = _NPMPARMLISTADDR()->OpDescList->NbrOfParms;
+    
+    if (parms >= 2) {
+        strcpy(sockets->certificateFile, certificateFile);
+    }
+    
+    if (parms >= 3) {
+        strcpy(sockets->keyringPassword , (parms >=3) ? certificatePassword: "");
+    }
+}
+/* --------------------------------------------------------------------------- *\
    Open the trace file / default file if requestet on server
 \* --------------------------------------------------------------------------- */
 void sockets_setTrace(PSOCKETS ps,PUCHAR tracefilename)

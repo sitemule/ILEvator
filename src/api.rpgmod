@@ -1,0 +1,415 @@
+**FREE
+
+ctl-opt nomain thread(*concurrent);
+
+/include 'anychar.rpginc'
+/include 'chunked.rpginc'
+/include 'debug.rpginc'
+/include 'httpclient.rpginc'
+/include 'ilevator.rpgle'
+/include 'libc.rpginc'
+/include 'message.rpginc'
+/include 'simpleList.rpginc'
+/include 'sockets.rpginc'
+/include 'teraspace.rpginc'
+
+dcl-pr fopen pointer extproc('_C_IFS_fopen');
+    filename pointer value options(*string);
+    mode pointer value options(*string);
+end-pr;
+
+dcl-pr fclose int(10) extproc('_C_IFS_fclose');
+    stream pointer value;
+end-pr;
+
+dcl-pr unlink int(10) extproc(*dclcase);
+    path pointer value options(*string);
+end-pr;
+
+dcl-pr access int(10) extproc('access');
+    path pointer value options(*string);
+    mode int(10) value;
+end-pr;
+
+//
+// Access mode flags for access() and accessx()
+//
+// F_OK = File Exists
+// R_OK = Read Access
+// W_OK = Write Access
+// X_OK = Execute or Search
+//
+dcl-c F_OK 0;
+dcl-c R_OK 4;
+dcl-c W_OK 2;
+dcl-c X_OK 1;
+
+dcl-c FALSE 0;
+dcl-c TRUE 1;
+dcl-c NULL x'00';
+      
+dcl-ds ilevator_t qualified template align(*full);
+    sockets pointer;
+    method pointer;
+    url pointer;
+    timeout int(5);
+    retries int(5);
+    useProxy int(3);
+    responseHeaderHasContentLength int(3);
+    responseIsChunked int(3);
+    headerList pointer;
+    responseHeaderBuffer likeds(anychar_t);
+    responseDataBuffer likeds(anychar_t);
+    responseDataFile pointer;
+    authProvider pointer;
+    
+    headerLen int(10);
+    contentData pointer;
+    contentLength int(10);
+    contentLengthCalculated int(10);
+    
+    rawResponse pointer;
+    ccsid int(10);
+    status int(10);
+    
+    server char(512);
+    port char(7);
+    resource char(32766);
+    host char(512);
+    user char(256);
+    password char(256);
+    location char(256);
+    message char(256);
+    
+    buffer pointer;
+    bufferSize int(10);
+    bufferTotalLength int(10);
+    bufferEnd pointer;
+end-ds;
+
+dcl-c URL_SIZE 32766;
+dcl-c BUFFER_SIZE 1048576;
+dcl-c DEFAULT_TIMEOUT 30000;
+dcl-c DEFAULT_RETRIES 2;
+dcl-c NO_RETRIES 0;
+
+
+dcl-proc iv_newHttpClient export;
+    dcl-pi *n pointer end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+
+    pClient = teraspace_calloc(%size(ilevator_t));
+    clear client;
+
+    client.method = teraspace_alloc(10);
+    client.url = teraspace_alloc(URL_SIZE+1);
+    client.buffer = teraspace_alloc(BUFFER_SIZE);
+    client.bufferSize = BUFFER_SIZE;
+    client.sockets =  sockets_new();
+    client.headerList = sList_new ();
+    client.timeout = DEFAULT_TIMEOUT;
+    client.retries = DEFAULT_RETRIES;
+    
+    client.server = NULL;
+    client.port = NULL;
+    client.resource = NULL;
+    client.host = NULL;
+    client.user = NULL;
+    client.password = NULL;
+    client.location = NULL;
+    client.message = NULL;
+    
+    return pClient;
+end-proc;
+
+
+dcl-proc iv_free export;
+    dcl-pi *n;
+      pClient pointer value;
+    end-pi;
+    
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    
+    if (pClient = *null);
+      return;
+    endif;
+    
+    teraspace_free(client.method);
+    teraspace_free(client.url);
+    sockets_free(client.sockets);
+    sList_free(client.headerList);
+    teraspace_free(client.authProvider);
+    teraspace_free(client.buffer);
+    teraspace_free(pClient);
+end-proc;
+
+
+dcl-proc iv_setResponseHeaderBuffer export;
+    dcl-pi *n;
+        pClient pointer value;
+        buffer pointer value;
+        bufferSize int(10) value;
+        bufferType int(5) value;
+        bufferCcsid int(10) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    
+    iv_anychar_set( 
+        %addr(client.responseHeaderBuffer) :
+        buffer :
+        bufferSize :
+        bufferType :
+        bufferCcsid
+    );
+end-proc;
+
+
+dcl-proc iv_setResponseDataBuffer export;
+    dcl-pi *n;
+        pClient pointer value;
+        buffer pointer value;
+        bufferSize int(10) value;
+        bufferType int(5) value;
+        bufferCcsid int(10) value;        
+    end-pi;
+    
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    
+    iv_anychar_set( 
+        %addr(client.responseDataBuffer) :
+        buffer :
+        bufferSize :
+        bufferType :
+        bufferCcsid
+    );
+end-proc;
+
+
+dcl-proc iv_setResponseFile export;
+    dcl-pi *n;
+        pClient       pointer value;
+        fileName      pointer options(*string) value;
+        fileCcsid     int(10)  options(*nopass) value;        
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-s c_errno int(10) based(pErrno);
+    dcl-s mode char(32);
+
+    if (%parms() = 2);
+        mode = 'wb,o_ccsid=1252';
+    else;
+        mode = 'wb,o_ccsid=' + %char(fileCcsid);
+    endif;
+
+	unlink(fileName);
+	
+	client.responseDataFile = fopen(fileName : %addr(mode));
+	if (client.responseDataFile = *null);
+	    pErrno = errno();
+        message_info('Response output open failed: ' + %str(strerror(c_errno):1000));
+	endif;
+end-proc;
+
+
+dcl-proc iv_execute export;
+    dcl-pi *n ind;
+        pClient pointer value;
+        method varchar(10) const;
+        url varchar(URL_SIZE:2) const;
+        timeout int(10) options(*nopass) value; // In milisec. 30000 is default
+        retries int(10) options(*nopass) value; // retry n times. 3 is default        
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-s apiStatus int(10) inz(IV_STATUS_RETRY);
+    dcl-s try int(5);
+    dcl-s ok int(3);
+    
+    if (%len(method) > 0);
+        %str(client.method : %len(method)) = method; 
+    else;
+        %str(client.method : 1) = x'00';    
+    endif;
+    
+    if (%len(url) > 0);
+        %str(client.url : %len(url)) = url;
+    else;
+        %str(client.url : 1) = x'00';
+    endif;
+    
+    if (%parms() >= 4);
+        client.timeout = timeout;
+    endif;
+    
+    if (%parms() >= 5);
+        client.retries = retries;
+    endif;
+    
+    parseUrl(pClient : url); 
+    iv_debug('Port: %s' : %str(%addr(client.port):10) );
+    iv_debug('Server: %s' : %str(%addr(client.server):200) );
+    iv_debug('Host: %s' : %str(%addr(client.host):200) );
+    iv_debug('Resource: %s' : %str(%addr(client.resource):200) );
+     
+    for try = 0 to client.retries;
+
+        ok = sockets_connect(
+            client.sockets : 
+            %addr(client.server) : 
+            atoi(%addr(client.port)) : 
+            client.timeout
+        );
+        if (ok = TRUE);
+          apiStatus = IV_STATUS_OK;
+        else;
+          apiStatus = IV_STATUS_ERROR;
+          iter;
+        endif;
+
+        apiStatus = sendRequest(pClient);
+        if (apiStatus = IV_STATUS_ERROR);
+            leave; 
+        endif;
+        
+        apiStatus = receiveHeader(pClient);
+        if (apiStatus = IV_STATUS_ERROR);
+            leave; 
+        endif;
+        if (apiStatus = IV_STATUS_RETRY);
+            iter; 
+        endif;
+        
+        iv_debug('HTTP response status: %s' : %char(client.status));
+
+        // Don't try to get data if it was a HEAD request - it is only the header
+        // or status 204 => no content
+        if (%str(client.method:10) = 'HEAD' or client.status = 204);
+            // No content, don't read any longer
+            apiStatus = IV_STATUS_OK;
+        elseif (client.responseIsChunked = TRUE);
+            apiStatus = iv_chunked_receive(pClient);
+        else;
+            apiStatus = receiveData(pClient);
+        endif;
+
+        if (apiStatus = IV_STATUS_OK);
+            leave; 
+        endif;
+        if (apiStatus = IV_STATUS_ERROR);
+            leave; 
+        endif;
+        if (apiStatus = IV_STATUS_RETRY);
+            iter;
+        endif;
+        
+    endfor;
+
+    iv_anychar_finalize(%addr(client.responseHeaderBuffer));
+    iv_anychar_finalize(%addr(client.responseDataBuffer));
+
+    if (client.responseDataFile <> *null);
+        fclose(client.responseDataFile);
+    endif;
+
+    // TODO reset buffers to reuse the client ?
+
+    return (apiStatus = IV_STATUS_OK);
+end-proc;
+
+
+dcl-proc iv_setCertificate export;
+    dcl-pi *n ind;
+        pClient pointer value;
+        certificateFile pointer options(*string) value;
+        certificatePassword pointer options(*string : *nopass) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-s c_errno int(10) based(pErrno);
+    
+    if (0 <> access(certificateFile : R_OK));
+        pErrno = errno();
+        message_info('Certificate error: ' +
+            %str(strerror(c_errno) : 1000) + 
+            ' File: ' + %str(certificateFile : 1000)
+        );
+        return *off;
+    endif;
+    
+    sockets_setSSL(
+        client.sockets :
+        SECURE_HANDSHAKE_IMEDIATE :
+        certificateFile :
+        certificatePassword
+    );
+    
+    return *on;
+end-proc;
+
+
+dcl-proc iv_getStatus export;
+    dcl-pi *n int(5);
+        pClient pointer value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient); 
+    
+    return client.status;
+end-proc;
+
+
+dcl-proc iv_setAuthProvider export;
+    dcl-pi *n;
+        pClient pointer value;
+        authProvider pointer value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient); 
+    
+    if (client.authProvider <> *null);
+        teraspace_free(client.authProvider);
+    endif;
+    
+    client.authProvider = authProvider;
+end-proc;
+
+
+dcl-proc iv_get export;
+    dcl-pi *n varchar(BUFFER_SIZE:4) ccsid(1208) rtnparm;
+        url varchar(URL_SIZE:2) value;
+        acceptMimeType varchar(32766:2) ccsid(1208) value options(*nopass);
+        headers pointer value options(*nopass);        
+    end-pi;
+
+    dcl-s client pointer;
+    dcl-s returnBuffer varchar(BUFFER_SIZE:4) ccsid(1208);
+    dcl-s rc ind inz(*off);
+    
+    client = iv_newHttpClient();
+    
+    iv_setResponseDataBuffer(
+        client :
+        %addr(returnBuffer) : 
+        BUFFER_SIZE :
+        IV_VARCHAR4 :
+        IV_CCSID_UTF8
+    );
+    
+    if (%parms() >= 3);
+      // TODO handle acceptMimeType
+    endif;
+    
+    if (%parms() >= 4);
+      // TODO handle headers
+    endif;
+    
+    rc = iv_execute(client : 'GET' : url : DEFAULT_TIMEOUT : NO_RETRIES);
+    
+    return returnBuffer;
+        
+    on-exit;
+        iv_free(client);
+end-proc;

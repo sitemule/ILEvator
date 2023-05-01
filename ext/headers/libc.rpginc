@@ -198,4 +198,7 @@
      D   socketDesc                  10I 0 value
      D   command                     10I 0 value
      D   arg                         10I 0 value options(*nopass)
-  
+
+
+     D atoi            PR            10I 0 extproc('atoi')
+     D   string                        *   value

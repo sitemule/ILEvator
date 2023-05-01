@@ -1,0 +1,34 @@
+**FREE
+
+/if not defined (ILEVATOR_ANYCHAR_H)
+/define ILEVATOR_ANYCHAR_H
+
+
+dcl-ds anychar_t qualified template;
+    data pointer;
+    size uns(10);
+    length uns(10);
+    type int(10);
+    ccsid int(10);    
+end-ds;
+
+
+dcl-pr iv_anychar_set extproc(*CWIDEN : 'iv_anychar_set');
+    anychar pointer value;
+    buffer pointer value;
+    bufferSize int(10) value;
+    bufferType int(5) value;
+    bufferXlate int(5) value;
+end-pr;
+
+dcl-pr iv_anychar_append extproc(*CWIDEN : 'iv_anychar_append');
+    anychar pointer value;
+    string pointer value;
+    length int(10) value;
+end-pr;
+
+dcl-pr iv_anychar_finalize extproc(*CWIDEN : 'iv_anychar_finalize');
+  anychar pointer value;
+end-pr;
+
+/endif

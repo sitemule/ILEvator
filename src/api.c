@@ -122,18 +122,22 @@ LGL iv_setCertificate  (
 {
     int parms = _NPMPARMLISTADDR()->OpDescList->NbrOfParms;
 
-    strcpy  (pIv->sockets->certificateFile, certificateFile);
-    strcpy  (pIv->sockets->keyringPassword , (parms >=3) ? certificatePassword: "");
-
-    if (0 == access ( pIv->sockets->certificateFile ,  R_OK)) {
-        return ON;
-    } else {
-        message_info( "Certificate error: %s File: %s:", 
+    if (0 != access(certificateFile, R_OK)) {
+        message_info("Certificate error: %s File: %s:", 
             strerror(errno),
             pIv->sockets->certificateFile
         );
         return OFF;
     }
+    
+    sockets_setSSL(
+        pIv->sockets, 
+        SECURE_HANDSHAKE_IMEDIATE,
+        certificateFile,
+        certificatePassword
+    );
+    
+    return ON;
 }
 /* --------------------------------------------------------------------------- */
 LGL iv_execute (
