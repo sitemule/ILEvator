@@ -20,7 +20,12 @@ typedef enum {
    SECURE_HANDSHAKE_LATER = 2
 } USESSL , *PUSESSL;
 
-#define JX_INVALID_SOCKET -1
+#define  SOCK_INVALID -1
+
+#define  SOCK_OK 0
+#define  SOCK_ERROR -1
+#define  SOCK_TIMEOUT -2
+
 typedef struct _SOCKETS {
     SOCKET socket;
     BOOL   isInitialized;

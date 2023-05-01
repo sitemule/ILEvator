@@ -29,7 +29,6 @@
 #include "varchar.h"
 #include "strutil.h"
 #include "streamer.h"
-#include "simpleList.h"
 #include "sndpgmmsg.h"
 #include "parms.h"
 #include "httpclient.h"
@@ -214,7 +213,7 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
     // Retrive the HTTP responce
     start = strstr(buf , "HTTP");
     if (start == NULL ) {
-        return -2; /* No response */
+        return SOCK_ERROR; /* No response */
     }
 
     // Find the status code
@@ -250,7 +249,7 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
             parseHttpParm(pIv , parmName, parmValue);
         }
     }
-    return 0 ; // OK
+    return SOCK_OK ; // OK
 }
 #pragma convert(0)
 /* --------------------------------------------------------------------------- *\
@@ -444,6 +443,7 @@ API_STATUS sendHeader (PILEVATOR pIv)
     UCHAR buffer [65535];
     PUCHAR pReq;
     LONG len, rc;
+    SLISTITERATOR iterator;
 
     pReq = buffer;
     pReq += sprintf(pReq, "%s %s HTTP/1.1%s", pIv->method , pIv->useProxy ? pIv->url : pIv->resource , EOL);
@@ -460,16 +460,14 @@ API_STATUS sendHeader (PILEVATOR pIv)
     pReq += sprintf(pReq, "Connection: keep-alive%s", EOL);
 
     // Todo !! Headers;
-    SLISTITERATOR iterator = sList_setIterator(pIv-> headerList);
+    iterator = sList_setIterator(pIv-> headerList);
     while (sList_foreach(&iterator) == ON) {
         PSLISTNODE node = iterator.this;
         pReq += sprintf(pReq, "%s%s", iterator.this->payloadData , EOL);
     }
 
-
     len = pReq - buffer;
     len = xlateBuf(buffer , buffer , len , 0 , 1252); // simple SBCS conversion !! Perhaps UTF-8
-
 
     if (isNewLineAscii( * (pReq -1))) {
         pReq += sprintf(pReq, "%c%c", 0x0d , 0x0a);
@@ -510,12 +508,12 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
         len = sockets_receive (pIv->pSockets, pIv->bufferEnd, bufferRemain , pIv->timeOut);
         
         // timeout
-        if  (len == -2) {  
+        if  (len == SOCK_TIMEOUT) {  
             return ( pIv->bufferTotalLength > 0 ? API_OK: API_ERROR);
         }
 
         // Protocol error
-        if  (len < 0) {  
+        if  (len == SOCK_ERROR ) {  
             return API_ERROR;
         }
 
@@ -588,12 +586,12 @@ API_STATUS receiveData ( PILEVATOR pIv)
         len = sockets_receive (pIv->pSockets, buffer , sizeof(buffer) , pIv->timeOut);
         
         // timeout
-        if  (len == -2) {  
+        if  (len == SOCK_TIMEOUT) {  
             return API_ERROR;
         }
 
         // Protocol error
-        if  (len < 0) {  
+        if  (len == SOCK_ERROR) {  
             return API_ERROR;
         }
 

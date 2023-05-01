@@ -3,7 +3,7 @@
 // Simple get a resource at google
 ///
     
-ctl-opt copyright('Sitemule.com  (C), 2022');
+ctl-opt copyright('Sitemule.com  (C), 2022-2023');
 ctl-opt decEdit('0,') datEdit(*YMD.) ;
 ctl-opt debug(*yes) bndDir('ILEVATOR');
 ctl-opt main(main);
