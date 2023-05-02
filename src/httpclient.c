@@ -17,6 +17,8 @@
 
 
 #include "ostypes.h"
+#include "sockets.h"
+
 #include "anychar.h"
 #include "simpleList.h"
 #include "ilevator.h"

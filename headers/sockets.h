@@ -3,7 +3,7 @@
 /* Design  . . . : Niels Liisberg                                */
 /* Function  . . : SSL/ socket wrapper                           */
 /*                                                               */
-/*By    Date      Task   Description                        ù*/
+/* By     Date       Task    Description                         */
 /* NL     15.05.2005 0000000 New program                         */
 /* NL     25.02.2007     510 Ignore namespace for WS parameters  */
 /* ------------------------------------------------------------- */
@@ -20,11 +20,6 @@ typedef enum {
    SECURE_HANDSHAKE_LATER = 2
 } USESSL , *PUSESSL;
 
-#define  SOCK_INVALID -1
-
-#define  SOCK_OK 0
-#define  SOCK_ERROR -1
-#define  SOCK_TIMEOUT -2
 
 typedef struct _SOCKETS {
     SOCKET socket;
@@ -62,4 +57,11 @@ LONG  sockets_printf (PSOCKETS ps, PUCHAR Ctlstr , ...);
 LONG  sockets_printfXlate (PSOCKETS ps, PUCHAR Ctlstr , ...);
 LONG  sockets_printfCcsXlate   (PSOCKETS ps, int fromCcsId, int toCcsId, PUCHAR Ctlstr , ...);
 void  sockets_close(PSOCKETS ps);
+
+#define  SOCK_INVALID -1
+
+#define  SOCK_OK 0
+#define  SOCK_ERROR -1
+#define  SOCK_TIMEOUT -2
+
 #endif

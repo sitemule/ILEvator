@@ -10,8 +10,6 @@
 #ifndef ILEVATOR_H
 #define ILEVATOR_H
 
-#include "ostypes.h"
-#include "sockets.h"
 
 #define BUFFER_SIZE 1048576
 

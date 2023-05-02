@@ -1,4 +1,4 @@
-ï»¿
+
 /* SYSIFCOPT(*IFSIO) TERASPACE(*YES *NOTSIFC) STGMDL(*SNGLVL)    */
 /* ------------------------------------------------------------- */
 /* Program . . . : websockets                                    */
@@ -18,7 +18,7 @@
 /* Design  . . . : Niels Liisberg                                */
 /* Function  . . : Web Sockets                                   */
 /*                                                               */
-/*By    Date      Task   Description                         */
+/* By     Date       Task    Description                         */
 /* NL     01.04.2019         New program                         */
 /* ------------------------------------------------------------- */
 #define _MULTI_THREADED
@@ -276,7 +276,7 @@ LGL socket_writeBin (PHTTP pHttp, PVARCHAR buf)
 /* ------------------------------------------------------------- */
 LGL socket_write  (PHTTP pHttp, PVARCHAR buf)
 {
-    PUCHAR tempbuf = memAlloc (buf->Length * 2);  // When all is Ã†Ã˜Ã… then double size
+    PUCHAR tempbuf = memAlloc (buf->Length * 2);  // When all is ÆØÅ then double size
     LONG  templen = XlateXdBuf(&pHttp->e2a_1208_cd , tempbuf , buf->String , buf->Length);
     templen = templen < 0 ? 0 : templen;
     webSocketWrite(pHttp, tempbuf , templen , false);
