@@ -263,11 +263,9 @@ API_STATUS sendRequest (PILEVATOR pIv)
 
     xlate_translateBuffer(url.String , pIv->url , strlen(pIv->url) , 0, 1252);
     url.Length = strlen(pIv->url);
-    // TODO check if translated length still fits
     
     request = iv_request_new(method, url, acceptMimeType);
-    
-    // TODO add headers from pIv header list
+    iv_request_addHeaders(request, pIv->headerList);
     
     if (pIv->authProvider)
       pIv->authProvider->processRequest(pIv->authProvider, request);

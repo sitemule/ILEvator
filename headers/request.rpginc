@@ -9,7 +9,9 @@
 /include 'varchar.rpginc'
 
 
-dcl-c IV_REQUEST_URL_SIZE 65530;
+dcl-c IV_REQUEST_URL_SIZE 32766;
+dcl-c IV_REQUEST_HEADER_NAME_SIZE 1024;
+dcl-c IV_REQUEST_HEADER_VALUE_SIZE 16384;
 
 ///
 // Template for the next block of streamed data
@@ -38,7 +40,7 @@ end-ds;
 dcl-pr iv_request_new pointer extproc(*dclcase);
   method varchar(12) value;
   url varchar(IV_REQUEST_URL_SIZE:2) ccsid(*utf8) value;
-  mimeType varchar(1024:2) ccsid(*utf8) value options(*nopass);
+  mimeType varchar(IV_REQUEST_HEADER_VALUE_SIZE:2) ccsid(*utf8) value options(*nopass);
 end-pr;
 
 ///
@@ -71,8 +73,28 @@ end-pr;
 ///
 dcl-pr iv_request_addHeader extproc(*dclcase);
   request pointer const;
-  name varchar(100) ccsid(*utf8) const;
-  value varchar(8000) ccsid(*utf8) const;
+  name varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8) const;
+  value varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
+end-pr;
+
+
+///
+// Add HTTP request headers
+//
+// Adds a set of headers to the request. The header will be appended to the list
+// of headers. Any previously added header with the same name will still be 
+// included in the HTTP message.
+//
+// In HTTP the last header in the list (with the same name) wins.
+//
+// @param HTTP request
+// @param List of HTTP headers (simpleList with key/value entries)
+//
+// @info The HTTP header will always be converted to lowercase.
+///
+dcl-pr iv_request_addHeaders extproc(*dclcase);
+    request pointer value;
+    headers pointer value;
 end-pr;
 
 
@@ -88,7 +110,7 @@ end-pr;
 ///
 dcl-pr iv_request_getHeader varchar(8000) ccsid(*utf8) extproc(*dclcase);
   request pointer const;
-  name varchar(100) ccsid(*utf8) const;
+  name varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8) const;
 end-pr;
 
 
@@ -103,7 +125,7 @@ end-pr;
 ///
 dcl-pr iv_request_setAcceptMimeType extproc(*dclcase);
   request pointer const;
-  mimeType varchar(1000) ccsid(*utf8) const;
+  mimeType varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
 end-pr;
 
 ///
@@ -117,7 +139,7 @@ end-pr;
 ///
 dcl-pr iv_request_setContentType extproc(*dclcase);
   request pointer const;
-  contentType varchar(1000) ccsid(*utf8) const;
+  contentType varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
 end-pr;
 
 ///

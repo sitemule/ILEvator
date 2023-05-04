@@ -16,7 +16,6 @@ ctl-opt nomain thread(*concurrent);
 
 dcl-c ASCII 367;
 dcl-c ANSI 437;
-dcl-c URL_SIZE 65530;
 dcl-s CRLF char(2) inz(x'0D0A') ccsid(*utf8);
 dcl-s UTF8_SLASH char(1) inz('/') ccsid(*utf8);
 dcl-s UTF8_QUESTION_MARK char(1) inz('?') ccsid(*utf8);
@@ -24,7 +23,6 @@ dcl-s UTF8_SPACE char(1) inz ccsid(*utf8);
 dcl-s UTF8_COLON char(1) inz(':') ccsid(*utf8);
 dcl-s UPPER char(26) ccsid(*utf8) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 dcl-s LOWER char(26) ccsid(*utf8) inz('abcdefghijklmnopqrstuvwxyz');
-dcl-c ILEVATOR_VERSION '0.1.0';
 
 dcl-ds iv_request_t qualified template;
   method varchar(10);
@@ -42,8 +40,8 @@ end-ds;
 dcl-proc iv_request_new export;
   dcl-pi *n pointer;
     method varchar(12) value;
-    url varchar(URL_SIZE) ccsid(*utf8) value;
-    acceptMimeType varchar(1024:2) ccsid(*utf8) value options(*nopass);
+    url varchar(IV_REQUEST_URL_SIZE) ccsid(*utf8) value;
+    acceptMimeType varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) value options(*nopass);
   end-pi;
 
   dcl-ds request likeds(iv_request_t) based(ptr);
@@ -101,8 +99,8 @@ dcl-proc iv_request_toString export;
   dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
   dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
   dcl-s data varchar(SERIALIZED_INIT_SIZE) ccsid(*utf8);
-  dcl-s headerName varchar(1000) ccsid(*utf8);
-  dcl-s headerValue varchar(10000) ccsid(*utf8);
+  dcl-s headerName varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8);
+  dcl-s headerValue varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8);
   dcl-ds tmpSerializedContent likeds(LVARPUCHAR_t);
   dcl-s translatedLength uns(10);
   dcl-s hasContentTypeHeader ind inz(*off);
@@ -130,7 +128,6 @@ dcl-proc iv_request_toString export;
   endif;
   data += ' HTTP/1.1' + CRLF;
   data += 'Host: ' + request.url.host + UTF8_COLON + %char(request.url.port) + CRLF;
-  data += 'User-Agent: ILEvator for IBM i/' + ILEVATOR_VERSION + CRLF;
   data += 'Connection: keep-alive' + CRLF;
 
   iterator = sList_setIterator(request.headers);
@@ -205,12 +202,12 @@ end-proc;
 dcl-proc iv_request_addHeader export;
   dcl-pi *n;
     p_request pointer const;
-    name varchar(100) ccsid(*utf8) const;
-    value varchar(8000) ccsid(*utf8) const;
+    name varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8) const;
+    value varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
   end-pi;
 
   dcl-ds request likeds(iv_request_t) based(p_request);
-  dcl-s lowerName varchar(100) ccsid(*utf8);
+  dcl-s lowerName varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8);
   dcl-ds listKey likeds(LVARPUCHAR_t);
   dcl-ds listValue likeds(LVARPUCHAR_t);
   
@@ -231,10 +228,32 @@ dcl-proc iv_request_addHeader export;
 end-proc;
 
 
+dcl-proc iv_request_addHeaders export;
+    dcl-pi *n;
+        p_request pointer value;
+        headers pointer value;
+    end-pi;
+
+    dcl-ds request likeds(iv_request_t) based(p_request);
+    dcl-ds iterator likeds(SLISTITERATOR_t);
+    dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
+    dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
+    dcl-s headerName varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8);
+    dcl-s headerValue varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8);
+  
+    iterator = sList_setIterator(headers);
+    dow (sList_foreach(iterator));
+        headerName = %str(nodePayload.key.string : nodePayload.key.length);
+        headerValue = %str(nodePayload.value.string : nodePayload.value.length);
+        iv_request_addHeader(p_request : headerName : headerValue);
+    enddo;
+end-proc;
+
+
 dcl-proc iv_request_getHeader export;
   dcl-pi *n varchar(8000) ccsid(*utf8);
     p_request pointer const;
-    name varchar(100) ccsid(*utf8) const;
+    name varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8) const;
   end-pi;
 
   dcl-ds request likeds(iv_request_t) based(p_request);
@@ -242,8 +261,8 @@ dcl-proc iv_request_getHeader export;
   dcl-ds iterator likeds(SLISTITERATOR_t);
   dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
   dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
-  dcl-s lowerName varchar(100) ccsid(*utf8);
-  dcl-s headerName varchar(100) ccsid(*utf8);
+  dcl-s lowerName varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8);
+  dcl-s headerName varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8);
   
   lowerName = %xlate(UPPER : LOWER : name);
   
@@ -264,7 +283,7 @@ end-proc;
 dcl-proc iv_request_setContentType export;
   dcl-pi *n;
     p_request pointer const;
-    contentType varchar(1000) ccsid(*utf8) const;
+    contentType varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
   end-pi;
 
   dcl-ds request likeds(iv_request_t) based(p_request);
@@ -276,7 +295,7 @@ end-proc;
 dcl-proc iv_request_setAcceptMimeType export;
   dcl-pi *n;
     p_request pointer const;
-    contentType varchar(1000) ccsid(*utf8) const;
+    contentType varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
   end-pi;
 
   dcl-ds request likeds(iv_request_t) based(p_request);
@@ -439,7 +458,7 @@ end-proc;
 
 
 dcl-proc getContentTypeHeader;
-  dcl-pi *n varchar(1000) ccsid(*utf8);
+  dcl-pi *n varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8);
     list pointer;
   end-pi;
   

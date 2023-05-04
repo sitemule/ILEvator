@@ -87,11 +87,14 @@ dcl-ds ilevator_t qualified template align(*full);
     bufferEnd pointer;
 end-ds;
 
-dcl-c URL_SIZE 32766;
-dcl-c BUFFER_SIZE 1048576;
 dcl-c DEFAULT_TIMEOUT 30000;
 dcl-c DEFAULT_RETRIES 2;
 dcl-c NO_RETRIES 0;
+
+dcl-s UPPER char(26) ccsid(*utf8) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+dcl-s LOWER char(26) ccsid(*utf8) inz('abcdefghijklmnopqrstuvwxyz');
+
+dcl-c ILEVATOR_VERSION '0.1.0';
 
 
 dcl-proc iv_newHttpClient export;
@@ -103,11 +106,11 @@ dcl-proc iv_newHttpClient export;
     clear client;
 
     client.method = teraspace_alloc(10);
-    client.url = teraspace_alloc(URL_SIZE+1);
-    client.buffer = teraspace_alloc(BUFFER_SIZE);
-    client.bufferSize = BUFFER_SIZE;
+    client.url = teraspace_alloc(IV_URL_SIZE+1);
+    client.buffer = teraspace_alloc(IV_BUFFER_SIZE);
+    client.bufferSize = IV_BUFFER_SIZE;
     client.sockets =  sockets_new();
-    client.headerList = sList_new ();
+    client.headerList = sList_new();
     client.timeout = DEFAULT_TIMEOUT;
     client.retries = DEFAULT_RETRIES;
     
@@ -119,6 +122,8 @@ dcl-proc iv_newHttpClient export;
     client.password = NULL;
     client.location = NULL;
     client.message = NULL;
+    
+    iv_addHeader(pClient : 'User-Agent' : 'ILEvator for IBM i/' + ILEVATOR_VERSION);
     
     return pClient;
 end-proc;
@@ -135,6 +140,8 @@ dcl-proc iv_free export;
       return;
     endif;
     
+    deallocateHeaders(client.headerList);
+    
     teraspace_free(client.method);
     teraspace_free(client.url);
     sockets_free(client.sockets);
@@ -142,6 +149,26 @@ dcl-proc iv_free export;
     teraspace_free(client.authProvider);
     teraspace_free(client.buffer);
     teraspace_free(pClient);
+end-proc;
+
+
+dcl-proc deallocateHeaders;
+  dcl-pi *n;
+    list pointer;
+  end-pi;
+  
+  dcl-ds iterator likeds(SLISTITERATOR_t) inz;
+  dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
+  dcl-ds payload likeds(SLISTKEYVAL_t) based(node.payloadData);
+  
+  iterator = sList_setIterator(list);
+  
+  dow (sList_foreach(iterator));
+    teraspace_free(payload.key.string);
+    teraspace_free(payload.value.string);
+  enddo;
+  
+  sList_free(list);
 end-proc;
 
 
@@ -218,7 +245,7 @@ dcl-proc iv_execute export;
     dcl-pi *n ind;
         pClient pointer value;
         method varchar(10) const;
-        url varchar(URL_SIZE:2) const;
+        url varchar(IV_URL_SIZE:2) const;
         timeout int(10) options(*nopass) value; // In milisec. 30000 is default
         retries int(10) options(*nopass) value; // retry n times. 3 is default        
     end-pi;
@@ -377,15 +404,66 @@ dcl-proc iv_setAuthProvider export;
 end-proc;
 
 
+dcl-proc iv_addHeader export;
+    dcl-pi *n;
+        pClient pointer value;
+        headerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8) value;
+        headerValue varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-s lowerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8);
+    dcl-ds listKey likeds(LVARPUCHAR_t);
+    dcl-ds listValue likeds(LVARPUCHAR_t);
+    
+    if (headerName = *blank);
+      return;
+    endif;
+    
+    // TODO use OS API for proper conversion
+    lowerName = %xlate(UPPER : LOWER : headerName);
+    
+    listKey.length = %len(lowerName);
+    listKey.string = teraspace_alloc(listKey.length + 1);
+    %str(listKey.string : listKey.length + 1) = lowerName;
+    listValue.length = %len(headerValue);
+    listValue.string = teraspace_alloc(listValue.length + 1);
+    %str(listValue.string : listValue.length + 1) = headerValue;
+    sList_pushLVPC(client.headerList : listKey : listValue);
+end-proc;
+
+
+dcl-proc iv_addHeaders export;
+    dcl-pi *n;
+        pClient pointer value;
+        headers pointer value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient); 
+    dcl-ds iterator likeds(SLISTITERATOR_t);
+    dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
+    dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
+    dcl-s headerName varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8);
+    dcl-s headerValue varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+  
+    iterator = sList_setIterator(headers);
+    dow (sList_foreach(iterator));
+        headerName = %str(nodePayload.key.string : nodePayload.key.length);
+        headerValue = %str(nodePayload.value.string : nodePayload.value.length);
+        iv_addHeader(pClient : headerName : headerValue);
+    enddo;
+end-proc;
+
+
 dcl-proc iv_get export;
-    dcl-pi *n varchar(BUFFER_SIZE:4) ccsid(1208) rtnparm;
-        url varchar(URL_SIZE:2) value;
-        acceptMimeType varchar(32766:2) ccsid(1208) value options(*nopass);
+    dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
+        url varchar(IV_URL_SIZE:2) value;
+        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
         headers pointer value options(*nopass);        
     end-pi;
 
     dcl-s client pointer;
-    dcl-s returnBuffer varchar(BUFFER_SIZE:4) ccsid(1208);
+    dcl-s returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
     dcl-s rc ind inz(*off);
     
     client = iv_newHttpClient();
@@ -393,17 +471,17 @@ dcl-proc iv_get export;
     iv_setResponseDataBuffer(
         client :
         %addr(returnBuffer) : 
-        BUFFER_SIZE :
+        IV_BUFFER_SIZE :
         IV_VARCHAR4 :
         IV_CCSID_UTF8
     );
     
     if (%parms() >= 3);
-      // TODO handle acceptMimeType
+      iv_addHeader(client : 'Accept' : acceptMimeType);
     endif;
     
     if (%parms() >= 4);
-      // TODO handle headers
+      iv_addHeaders(client : headers);
     endif;
     
     rc = iv_execute(client : 'GET' : url : DEFAULT_TIMEOUT : NO_RETRIES);

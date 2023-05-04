@@ -21,7 +21,7 @@ The unit tests need the ILEVATOR modules. By default they are expected in the
 library ILEVATOR. You can change the by passing that to the parameter
 ILEVATOR_LIB like this:
 
-    make BIN_LIB=ILEVATORUT ILEVATOR_LIB=MICROSERVR
+    make BIN_LIB=ILEVATORUT ILEVATOR_LIB=MY_LVTR
 
 Note: It is assumed that the ASSERT service program of the unit testing
       framework is in the library list.

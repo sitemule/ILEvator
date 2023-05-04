@@ -4,14 +4,18 @@
 /define VARCHAR
 
 dcl-ds LVARPUCHAR_t qualified template;
-   length uns(10);
-   string pointer;
+    length uns(10);
+    string pointer;
 end-ds;
 
 dcl-ds PLVARCHAR_t qualified template;
-   length int(10);
-   string varchar(1048576:4);
+    length int(10);
+    string char(1048576);
 end-ds;
 
+dcl-ds VARCHAR_t qualified template;
+    length int(5);
+    string char(32767);
+end-ds;
 
 /endif

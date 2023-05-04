@@ -37,6 +37,11 @@ dcl-c IV_STATUS_OK 0;
 dcl-c IV_STATUS_RETRY 1;
 dcl-c IV_STATUS_ERROR 2;
 
+dcl-c IV_URL_SIZE 32766;
+dcl-c IV_BUFFER_SIZE 1048576;
+dcl-c IV_HEADER_NAME_SIZE 1024;
+dcl-c IV_HEADER_VALUE_SIZE 16384;
+
 ///
 // Protocol plain HTTP 
 ///
@@ -471,7 +476,7 @@ end-pr;
 dcl-pr iv_execute ind extproc(*dclcase);
     client pointer value;
     method varchar(10) const;
-    url varchar(32766:2) const;
+    url varchar(IV_URL_SIZE:2) const;
     timeOut int(10) options(*nopass) value; // In milisec. 30000 is default
     retries int(10) options(*nopass) value; // retry n times. 3 is default
 end-pr;
@@ -594,16 +599,27 @@ end-pr;
 //
 ///
 dcl-pr iv_xlateLvc varchar(2097152:4) ccsid(65535) extproc(*CWIDEN : 'iv_xlateLvc') rtnparm;
-  inoutString varchar(2097152:4) ccsid(65535) options(*varsize) const;
-  fromCCSID int(10) value;
-  toCCSID   int(10) value;
+    inoutString varchar(2097152:4) ccsid(65535) options(*varsize) const;
+    fromCCSID int(10) value;
+    toCCSID   int(10) value;
 end-pr;
 
 
-dcl-pr iv_get varchar(1048576:4) ccsid(1208) extproc(*CWIDEN : 'iv_get') rtnparm;
-    url varchar(32766:2) value;
-    acceptMimeType varchar(32766:2) ccsid(1208) value options(*nopass);
+dcl-pr iv_get varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
+    url varchar(IV_URL_SIZE:2) value;
+    acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
     headers pointer value options(*nopass);
 end-pr;
 
 
+dcl-pr iv_addHeader extproc(*dclcase);
+    client pointer value;
+    headerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8) value;
+    headerValue varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8) value;
+end-pr;
+
+
+dcl-pr iv_addHeaders extproc(*dclcase);
+    client pointer value;
+    headers pointer value;
+end-pr;
