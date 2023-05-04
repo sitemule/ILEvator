@@ -26,6 +26,19 @@ ILEVATOR_LIB like this:
 Note: It is assumed that the ASSERT service program of the unit testing
       framework is in the library list.
 
+
+## Request Test Data
+
+The test data for the request unit test are located in the request folder. It
+is important that the line endings are CR + LF. If the test data is edited on a
+Linux box or in PASE then the editor may change the line endings to LF only. The
+line endings can be fixed with the program `unix2dos`.
+
+    unix2dos request/test10-formData.http
+
+Any additionally calls of unix2dos on an already converted file will yield the
+same result. No harm is done in calling it twice or more times.
+
 [iru]: https://irpgunit.sourceforge.net
 [ru]: https://rpgunit.sourceforge.net
 

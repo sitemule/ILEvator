@@ -28,17 +28,6 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_request_setFormBody")
     EXPORT SYMBOL("iv_request_toString")
     
-    EXPORT SYMBOL("iv_stream_hasMore")
-    EXPORT SYMBOL("iv_stream_read")
-    EXPORT SYMBOL("iv_stream_write")
-    EXPORT SYMBOL("iv_stream_setBlockSize")
-    EXPORT SYMBOL("iv_stream_finalize")
-    EXPORT SYMBOL("iv_stream_memory_new")
-    EXPORT SYMBOL("iv_stream_memory_hasMore")
-    EXPORT SYMBOL("iv_stream_memory_read")
-    EXPORT SYMBOL("iv_stream_memory_write")
-    EXPORT SYMBOL("iv_stream_memory_finalize")
-    
     EXPORT SYMBOL("iv_basicauth_new")
     
     EXPORT SYMBOL("iv_bearer_new")

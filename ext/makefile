@@ -26,7 +26,7 @@ OUTPUT=*NONE
 INCLUDE='/QIBM/include' 'headers/'  
 
 # C compile flags
-CCFLAGS=OUTPUT($(OUTPUT)) OPTIMIZE(10) ENUM(*INT) TERASPACE(*YES) STGMDL(*INHERIT) SYSIFCOPT(*IFSIO) INCDIR($(INCLUDE)) DBGVIEW($(DBGVIEW)) DEFINE($(DEFINE)) TGTCCSID($(TARGET_CCSID)) TGTRLS($(TARGET_RLS))
+CCFLAGS=OUTPUT($(OUTPUT)) OPTION(*NOSHOWINC) OPTIMIZE(10) ENUM(*INT) TERASPACE(*YES) STGMDL(*INHERIT) SYSIFCOPT(*IFSIO) INCDIR($(INCLUDE)) DBGVIEW($(DBGVIEW)) DEFINE($(DEFINE)) TGTCCSID($(TARGET_CCSID)) TGTRLS($(TARGET_RLS))
 
 # remove all default suffix rules
 .SUFFIXES:
@@ -36,7 +36,7 @@ CCFLAGS=OUTPUT($(OUTPUT)) OPTIMIZE(10) ENUM(*INT) TERASPACE(*YES) STGMDL(*INHERI
 
 all: compile
 
-compile: xlate.c base64.c message.c teraspace.c simplelist.c strutil.c varchar.c
+compile: xlate.c base64.c message.c stream.c teraspace.c simplelist.c strutil.c varchar.c
 
 %.c:
 	system -q "CHGATR OBJ('src/$*.c') ATR(*CCSID) VALUE(1252)"
