@@ -255,17 +255,8 @@ dcl-proc iv_execute export;
     dcl-s try int(5);
     dcl-s ok int(3);
     
-    if (%len(method) > 0);
-        %str(client.method : %len(method)) = method; 
-    else;
-        %str(client.method : 1) = x'00';    
-    endif;
-    
-    if (%len(url) > 0);
-        %str(client.url : %len(url)) = url;
-    else;
-        %str(client.url : 1) = x'00';
-    endif;
+    %str(client.method : %len(method)+ 1) = method; 
+    %str(client.url : %len(url) + 1) = url;
     
     if (%parms() >= 4);
         client.timeout = timeout;
@@ -356,6 +347,7 @@ dcl-proc iv_setCertificate export;
 
     dcl-ds client likeds(ilevator_t) based(pClient);
     dcl-s c_errno int(10) based(pErrno);
+    dcl-s empty_str char(1) inz(x'00');
     
     if (0 <> access(certificateFile : R_OK));
         pErrno = errno();
@@ -366,6 +358,11 @@ dcl-proc iv_setCertificate export;
         return *off;
     endif;
     
+
+    if %parms < 3;
+        certificatePassword = %addr(empty_str);
+    endif;
+
     sockets_setSSL(
         client.sockets :
         SECURE_HANDSHAKE_IMEDIATE :

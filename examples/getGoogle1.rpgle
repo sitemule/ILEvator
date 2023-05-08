@@ -36,15 +36,15 @@ dcl-proc example1;
     iv_execute (pHttp : 'GET' : 'http://google.com' : 3000); 
     if iv_getStatus(pHttp) <> IV_HTTP_OK; 
         // text = iv_getMessage (pHttp);
-        // iv_joblog ('My request failed ' + text);
+        // // iv_joblog ('My request failed ' + text);
     else;
-        iv_joblog (%subst ( iv_xlateLvc(outbuf: 1252: 0): 1: 256));
+        // iv_joblog (%subst ( iv_xlateLvc(outbuf: 1252: 0): 1: 256));
     endif;
 
     return; // Remember to use return - otherwise the on-exit will not be called
 
 on-exit;
-    iv_delete(pHttp); 
+    // iv_delete(pHttp); 
 end-proc;
 // -----------------------------------------------------------------------------
 // Simple get using https. Cert full defined
@@ -60,15 +60,15 @@ dcl-proc example2;
     iv_execute (pHttp : 'GET' : 'https://google.com' : 3000); 
     if iv_getStatus(pHttp) <> IV_HTTP_OK ; 
         // text = iv_getMessage (pHttp);
-        // iv_joblog ('My request failed ' + text);
+        // // iv_joblog ('My request failed ' + text);
     else;
-        iv_joblog (%subst ( iv_xlateLvc(outbuf: 1252: 0): 1: 256));
+        // iv_joblog (%subst ( iv_xlateLvc(outbuf: 1252: 0): 1: 256));
     endif;
 
     return; // Remember to use return - otherwise the on-exit will not be called
 
 on-exit;
-    iv_delete(pHttp); 
+    // iv_delete(pHttp); 
 end-proc;
 // -----------------------------------------------------------------------------
 // Simple get using https, usages to the cerfiles - 
@@ -85,15 +85,15 @@ dcl-proc example3;
     iv_execute (pHttp : 'GET' : 'https://google.com' : 3000); 
     if iv_getStatus(pHttp) <> IV_HTTP_OK ; 
         // text = iv_getMessage (pHttp);
-        // iv_joblog ('My request failed ' + text);
+        // // iv_joblog ('My request failed ' + text);
     else;
-        iv_joblog (%subst ( iv_xlateLvc(outbuf: 1252: 0): 1: 256));
+        // iv_joblog (%subst ( iv_xlateLvc(outbuf: 1252: 0): 1: 256));
     endif;
 
     return; // Remember to use return - otherwise the on-exit will not be called
 
 on-exit;
-    iv_delete(pHttp); 
+    // iv_delete(pHttp); 
 end-proc;
 // -----------------------------------------------------------------------------
 // 'get' using http. Write output data to response file
@@ -109,13 +109,13 @@ dcl-proc example4;
     iv_execute (pHttp : 'GET' : 'http://google.com' : 3000); 
     if iv_getStatus(pHttp) <> IV_HTTP_OK ; 
         // text = iv_getMessage (pHttp);
-        // iv_joblog ('My request failed ' + text);
+        // // iv_joblog ('My request failed ' + text);
     endif;
 
     return; // Remember to use return - otherwise the on-exit will not be called
 
 on-exit;
-    iv_delete(pHttp); 
+    // iv_delete(pHttp); 
 end-proc;
 // -----------------------------------------------------------------------------
 // Yet to be implemented
@@ -145,5 +145,5 @@ dcl-proc exampleXXX;
     return; // Remember to use return - otherwise the on-exit will not be called
 
 on-exit;
-    iv_delete(pHttp); 
+    //iv_delete(pHttp); 
 end-proc;

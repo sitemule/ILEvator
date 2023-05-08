@@ -58,4 +58,11 @@ LONG  sockets_printf (PSOCKETS ps, PUCHAR Ctlstr , ...);
 LONG  sockets_printfXlate (PSOCKETS ps, PUCHAR Ctlstr , ...);
 LONG  sockets_printfCcsXlate   (PSOCKETS ps, int fromCcsId, int toCcsId, PUCHAR Ctlstr , ...);
 void  sockets_close(PSOCKETS ps);
+
+#define  SOCK_INVALID -1
+
+#define  SOCK_OK 0
+#define  SOCK_ERROR -1
+#define  SOCK_TIMEOUT -2
+
 #endif

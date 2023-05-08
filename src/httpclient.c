@@ -122,7 +122,7 @@ VOID parseHttpParm(PILEVATOR pIv, PUCHAR Parm , PUCHAR Value)
     }
     
     if (strutil_beginsWithAscii (Parm , "location"))  {
-        xlate_translateString(pIv->location , Value , 1252 , 0);
+        xlate_translateString(pIv->location , strutil_firstnonblanka(Value) , 1252 , 0);
     }
     
     // Unpack: "Content-Type: text/html; charset=windows-1252"

@@ -284,6 +284,20 @@ PUCHAR strutil_firstnonblank(PUCHAR in)
    }
 }
 /* ------------------------------------------------------------- *\
+   firstnonblank returns pointer to the string > ' '
+\* ------------------------------------------------------------- */
+#pragma convert 1252
+PUCHAR strutil_firstnonblanka(PUCHAR in)
+{
+// Find first non blank
+   for (;;){
+      if (*in == '\0') return (in);
+      if (*in > ' ')   return (in);
+      in ++;
+   }
+}
+#pragma convert 0
+/* ------------------------------------------------------------- *\
    lastnonblank returns pointer to the last char > ' '
 \* ------------------------------------------------------------- */
 PUCHAR strutil_lastnonblank(PUCHAR in)

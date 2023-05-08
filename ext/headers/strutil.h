@@ -36,6 +36,7 @@ LONG strutil_cpymem (PUCHAR out , PUCHAR in, LONG len);
 
 PUCHAR strutil_trim(PUCHAR in);
 PUCHAR strutil_firstnonblank(PUCHAR in);
+PUCHAR strutil_firstnonblanka(PUCHAR in);
 PUCHAR strutil_lastnonblank(PUCHAR in);
 PUCHAR strutil_righttrim(PUCHAR in);
 PUCHAR strutil_righttrimlen(PUCHAR in , LONG size);
