@@ -17,9 +17,9 @@ ctl-opt main(main);
 // -----------------------------------------------------------------------------     
 dcl-proc main;
 
-    example1();
-    example2();
-    example3();
+    // example1();
+    // example2();
+    // example3();
     example4();
     
 end-proc;
@@ -104,44 +104,13 @@ dcl-proc example4;
     dcl-s pHttp  pointer; 
 
     pHttp = iv_newHttpClient(); 
-    iv_setResponseFile (pHttp : '/tmp/mydata.txt' );
-    // iv_setResponseFile (pHttp : '/tmp/mydata.txt' : iv_getResponseCcsid(pHttp));
-    iv_execute (pHttp : 'GET' : 'http://google.com' : 3000); 
+    iv_setResponseFile (pHttp : '/tmp/flowrate.txt' );
+    iv_execute (pHttp : 'GET' : 'http://www.floatrates.com/daily/dkk.json' : 3000); 
     if iv_getStatus(pHttp) <> IV_HTTP_OK ; 
         // text = iv_getMessage (pHttp);
         // iv_joblog ('My request failed ' + text);
     endif;
 
-    return; // Remember to use return - otherwise the on-exit will not be called
-
-on-exit;
-    iv_delete(pHttp); 
-end-proc;
-// -----------------------------------------------------------------------------
-// Yet to be implemented
-// -----------------------------------------------------------------------------     
-dcl-proc exampleXXX;
-
-    dcl-s pHttp  pointer; 
-    dcl-s outbuf varchar(65000:4) ccsid(1208); 
-
-//    pHttp = iv_newHttpClient(); 
-//    iv_setURL    (pHttp : 'http://google.com'); 
-//    iv_setMethod (pHttp : 'GET'); 
-//    iv_setTimOut (pHttp : 3000); 
-//    iv_setUser   (pHttp : 'john'); 
-//    iv_setPassword  (pHttp : 'mypassword'); 
-//    iv_setTracefile  (pHttp : '/tmp/mytrace.txt'); 
-//    
-//    iv_setResponseBuffer (pHttp : %addr(outbuf) : %size(outbuf) : IV_LONGVARCHAR : IV_TO_UTF_8);
-//    iv_setResponseFile (pHttp : '/tmp/mydata.txt' : iv_getResponseCcsid(pHttp);
-//    iv_setLogFile (pHttp : '/tmp/ILEvator/log.txt');
-//    iv_execute (pHttp); 
-//    if iv_getStatus(pHttp) <> IV_HTTP_OK; 
-//        text = iv_getMessage (pHttp);
-//        iv_log (pHttp : 'My request failed ' + text);
-//    endif;
-//
     return; // Remember to use return - otherwise the on-exit will not be called
 
 on-exit;
