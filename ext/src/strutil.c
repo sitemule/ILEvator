@@ -287,7 +287,7 @@ PUCHAR strutil_firstnonblank(PUCHAR in)
    firstnonblank returns pointer to the string > ' '
 \* ------------------------------------------------------------- */
 #pragma convert 1252
-PUCHAR strutil_firstnonblanka(PUCHAR in)
+PUCHAR strutil_firstnonblankAscii(PUCHAR in)
 {
 // Find first non blank
    for (;;){

@@ -122,7 +122,7 @@ VOID parseHttpParm(PILEVATOR pIv, PUCHAR Parm , PUCHAR Value)
     }
     
     if (strutil_beginsWithAscii (Parm , "location"))  {
-        xlate_translateString(pIv->location , strutil_firstnonblanka(Value) , 1252 , 0);
+        xlate_translateString(pIv->location , strutil_firstnonblankAscii(Value) , 1252 , 0);
     }
     
     // Unpack: "Content-Type: text/html; charset=windows-1252"
@@ -224,9 +224,9 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
         pIv->sockets->asSSL = ( strutil_beginsWith(l_url.protocol.String , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
     }
 
-    strncat(pIv->server , l_url.host.String, l_url.host.Length);
+    strutil_substr(pIv->server , l_url.host.String, l_url.host.Length);
     strutil_itoa(l_url.port, pIv->port, 10);
-    strncat(pIv->host , l_url.host.String, l_url.host.Length);
+    strutil_substr(pIv->host , l_url.host.String, l_url.host.Length);
     strcat(pIv->host , ":");
     strcat(pIv->host , pIv->port);
     
@@ -234,16 +234,16 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
         strcpy(pIv->resource , "/");
     }
     else {
-        strncat(pIv->resource , l_url.path.String, l_url.path.Length);
+        strutil_substr(pIv->resource , l_url.path.String, l_url.path.Length);
     }
     
     if (l_url.query.Length > 0) {
         strcat(pIv->resource , "?");
-        strncat(pIv->resource , l_url.query.String, l_url.query.Length);
+        strutil_substr(pIv->resource + strlen(pIv->resource) , l_url.query.String, l_url.query.Length);
     }
     
-    strncat(pIv->user , l_url.username.String, l_url.username.Length);
-    strncat(pIv->password, l_url.password.String, l_url.password.Length);
+    strutil_substr(pIv->user , l_url.username.String, l_url.username.Length);
+    strutil_substr(pIv->password, l_url.password.String, l_url.password.Length);
     
     // TODO urlEncodeBlanks (resource , pResource);
     // TODO URL encode path and query
@@ -335,6 +335,7 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
 
                 if (pIv->status == 301     // Temporary moved
                 ||  pIv->status == 302) {  // Permanent moved
+
                     parseUrl (
                         pIv,
                         pIv->location // New input !!
