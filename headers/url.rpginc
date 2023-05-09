@@ -1,0 +1,64 @@
+**FREE
+
+/if not defined (ILEVATOR_URL)
+
+/define ILEVATOR_URL
+
+///
+// ILEvator : URL Parser
+//
+// This module provides procedures for parsing and breaking an URL into
+// its components.
+//
+// @author Mihael Schmidt
+// @date 2023-01-12
+// @project ILEvator
+///
+
+dcl-c IV_URL_ASCII 367;
+
+
+///
+// URL template
+///
+dcl-ds iv_url_t qualified template align(*full);
+  protocol varchar(12 : 2) inz('http');
+  username varchar(128 : 2) inz('');
+  password varchar(128 : 2) inz('');
+  host varchar(1024 : 2) inz('localhost');
+  port uns(5) inz(0);
+  path varchar(1048576 : 4) inz('');
+  query varchar(1048576 : 4) inz('');
+  proxy varchar(1024 : 2) inz('');
+  ipv6 ind inz(*off);
+end-ds;
+
+///
+// Parse URL
+//
+// Parses an URL and breaks it down into its components. The path and query
+// part of the URL will be reverse percent encoded.
+//
+// @param URL (string)
+// @return URL (data structure)
+//
+// @info Punycode encoded hostnames are not supported and are left as is
+//       (encoded).
+///
+dcl-pr iv_url_parse likeds(iv_url_t) extproc(*dclcase);
+  url varchar(100000) value;
+end-pr;
+
+///
+// URL to string
+//
+// Returns the passed URL data structure as a string (URL).
+//
+// @param URL (data structure)
+// @return URL as a string
+///
+dcl-pr iv_url_toString varchar(100000) extproc(*dclcase);
+  url likeds(iv_url_t) const;
+end-pr;
+
+/endif

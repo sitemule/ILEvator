@@ -33,7 +33,14 @@
 ///
 dcl-s IV_LONGUTF8VARCHAR varchar(2097152:4) ccsid(*utf8) template;
 
+dcl-c IV_STATUS_OK 0;
+dcl-c IV_STATUS_RETRY 1;
+dcl-c IV_STATUS_ERROR 2;
 
+dcl-c IV_URL_SIZE 32766;
+dcl-c IV_BUFFER_SIZE 1048576;
+dcl-c IV_HEADER_NAME_SIZE 1024;
+dcl-c IV_HEADER_VALUE_SIZE 16384;
 
 ///
 // Protocol plain HTTP 
@@ -339,36 +346,6 @@ dcl-c IV_MEDIA_TYPE_JSON 'application/json';
 dcl-c IV_MEDIA_TYPE_XML 'application/xml';
 
 
-
-///
-// HTTP request
-//
-// This data structure contains the values of the incoming
-// HTTP request. The values can be retrieve by using the
-// iv_getVarcharValue procedure or by using one of the
-// iv_getRequest... procedures.
-///
-// TODO !! dcl-ds iv_request qualified template;
-// TODO !!     config           pointer;
-// TODO !!     method           likeds(iv_varchar);
-// TODO !!     url              likeds(iv_varchar);
-// TODO !!     resource         likeds(iv_varchar);
-// TODO !!     queryString      likeds(iv_varchar);
-// TODO !!     protocol         likeds(iv_varchar);
-// TODO !!     headers          likeds(iv_varchar);
-// TODO !!     content          likeds(iv_varchar);
-// TODO !!     contentType      varchar(256);
-// TODO !!     contentLength    uns(20);
-// TODO !!     completeHeader   likeds(iv_varchar);
-// TODO !!     headerList       pointer;
-// TODO !!     parameterList    pointer;
-// TODO !!     resourceSegments pointer;
-// TODO !!     threadLocal      pointer;
-// TODO !!     routing          pointer;
-// TODO !!     routeId          varchar(256);
-// TODO !! end-ds;
-// TODO !! 
-
 ///
 // create a new  http client 
 //
@@ -376,20 +353,18 @@ dcl-c IV_MEDIA_TYPE_XML 'application/xml';
 //
 // @return pointer to the client
 ///
-//dcl-pr iv_newHttpClient pointer  extproc(*CWIDEN:'iv_newHttpClient') rtnparm;
-//end-pr;
-dcl-pr iv_newHttpClient pointer  extproc(*CWIDEN:'iv_newHttpClient');
+dcl-pr iv_newHttpClient pointer extproc(*dclcase);
 end-pr;
 
 
 ///
-// delete / disconnect and cleanup memry for the client
+// Disconnect and cleanup memory of the client
 //
-// @param pClient pointer to the http client 
+// @param HTTP client 
 //
 ///
-dcl-pr iv_delete  extproc(*CWIDEN:'iv_delete');
-    pClient       pointer value;
+dcl-pr iv_free extproc(*dclcase);
+    client pointer value;
 end-pr;
 
 
@@ -418,7 +393,7 @@ dcl-c IV_CCSID_BINARY  65535;
 // @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
 // @param ccsid   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
 ///
-dcl-pr iv_setRequestHeaderBuffer  extproc(*CWIDEN:'iv_setRequestHeaderBuffer');
+dcl-pr iv_setRequestHeaderBuffer extproc(*dclcase);
     pClient       pointer value;
     pBuffer       pointer value;
     bufferSize    int(10) value;
@@ -436,7 +411,7 @@ end-pr;
 // @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
 // @param ccsid   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
 ///
-dcl-pr iv_setRequestDataBuffer  extproc(*CWIDEN:'iv_setRequestDataBuffer');
+dcl-pr iv_setRequestDataBuffer extproc(*dclcase);
     pClient       pointer value;
     pBuffer       pointer value;
     bufferSize    int(10) value;
@@ -454,7 +429,7 @@ end-pr;
 // @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
 // @param ccsid   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
 ///
-dcl-pr iv_setResponseHeaderBuffer  extproc(*CWIDEN:'iv_setResponseHeaderBuffer');
+dcl-pr iv_setResponseHeaderBuffer extproc(*dclcase);
     pClient       pointer value;
     pBuffer       pointer value;
     bufferSize    int(10) value;
@@ -472,7 +447,7 @@ end-pr;
 // @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
 // @param ccsid   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
 ///
-dcl-pr iv_setResponseDataBuffer  extproc(*CWIDEN:'iv_setResponseDataBuffer');
+dcl-pr iv_setResponseDataBuffer extproc(*dclcase);
     pClient       pointer value;
     pBuffer       pointer value;
     bufferSize    int(10) value;
@@ -488,8 +463,8 @@ end-pr;
 // @param fileName pointer to name of IFS file
 // @param ccsid    optional: file ccsid 
 ///
-dcl-pr iv_setResponseFile  extproc(*CWIDEN:'iv_setResponseFile');
-    pClient       pointer value;
+dcl-pr iv_setResponseFile extproc(*dclcase);
+    client        pointer value;
     fileName      pointer options(*string) value;
     fileCcsid     int(10)  options(*nopass) value;
 end-pr;
@@ -498,12 +473,12 @@ end-pr;
 // run the request 
 // @return *ON if ok 
 ///
-dcl-pr iv_execute ind   extproc(*CWIDEN:'iv_execute');
-    pClient     pointer value;
-    method      pointer options(*string:*nopass) value;
-    url         pointer options(*string:*nopass) value;
-    timeOut     int(10) options(*nopass) value; // In milisec. 30000 is default
-    retries     int(10) options(*nopass) value; // retry n times. 3 is default
+dcl-pr iv_execute ind extproc(*dclcase);
+    client pointer value;
+    method varchar(10) const;
+    url varchar(IV_URL_SIZE:2) const;
+    timeOut int(10) options(*nopass) value; // In milisec. 30000 is default
+    retries int(10) options(*nopass) value; // retry n times. 3 is default
 end-pr;
 
 
@@ -511,8 +486,8 @@ end-pr;
 // Set the certificate for HTTPS 
 // @return *ON if ok 
 ///
-dcl-pr iv_setCertificate ind   extproc(*CWIDEN:'iv_setCertificate');
-    pClient             pointer value;
+dcl-pr iv_setCertificate ind extproc(*dclcase);
+    client              pointer value;
     certificateFile     pointer options(*string) value;
     certificatePassword pointer options(*string:*nopass) value;
 end-pr;
@@ -521,11 +496,35 @@ end-pr;
 // returns the http status code 
 //
 //
-// @param  pClient pointer to the http client 
+// @param  pointer to the http client 
 // @return pointer to the client
 ///
 dcl-pr iv_getStatus int(5) extproc(*CWIDEN:'iv_getStatus');
     pClient       pointer value;
+end-pr;
+
+///
+// returns the http error messages  
+//
+//
+// @param  pointer to the http client 
+// @return message from the http request
+///
+dcl-pr iv_getMessage varchar(256)  extproc(*CWIDEN:'iv_getMessage');
+    pClient       pointer value;
+end-pr;
+
+///
+// Set authentication provider
+//
+// Sets the passed authentication provider on the HTTP client.
+//
+// @param HTTP Client
+// @param Authentication provider
+///
+dcl-pr iv_setAuthProvider extproc(*dclcase);
+  client pointer value;
+  authProvider pointer value;
 end-pr;
 
 
@@ -563,34 +562,22 @@ end-pr;
 // Convenience function: put message in joblog.
 // Works like printf but with strings only like
 //
-//    iv_joblog('This is %s a test' : 'Super');
+//    iv_joblog('This is %s a test' : 'super');
 //
-// @param format string
-// @param Parms : list of strings
-//
+// @param message string
 ///
 dcl-pr iv_joblog extproc(*CWIDEN : 'iv_joblog') ;
-  formatString  pointer  options(*string)  value;
-  string0       pointer  options(*string:*nopass) value;
-  string1       pointer  options(*string:*nopass) value;
-  string2       pointer  options(*string:*nopass) value;
-  string3       pointer  options(*string:*nopass) value;
-  string4       pointer  options(*string:*nopass) value;
-  string5       pointer  options(*string:*nopass) value;
-  string6       pointer  options(*string:*nopass) value;
-  string7       pointer  options(*string:*nopass) value;
-  string8       pointer  options(*string:*nopass) value;
-  string9       pointer  options(*string:*nopass) value;
+  message varchar(512) options(*varsize)  const ;
 end-pr;
 
 
 ///
 //
-// Convenience function: conver varchar ccsid
+// Convenience function: convert varchar ccsid
 //
 ///
 dcl-pr iv_xlateVc varchar(32768:2) ccsid(65535) extproc(*CWIDEN : 'iv_xlateVc') rtnparm;
-  inpoutString varchar(32768:2) ccsid(65535) options(*varsize) const;
+  inoutString varchar(32768:2) ccsid(65535) options(*varsize) const;
   fromCCSID int(10) value;
   toCCSID   int(10) value;
 end-pr;
@@ -598,11 +585,31 @@ end-pr;
 
 ///
 //
-// Convenience function: conver long varchar ccsid
+// Convenience function: convert long varchar ccsid
 //
 ///
 dcl-pr iv_xlateLvc varchar(2097152:4) ccsid(65535) extproc(*CWIDEN : 'iv_xlateLvc') rtnparm;
-  inoutString varchar(2097152:4) ccsid(65535) options(*varsize) const;
-  fromCCSID int(10) value;
-  toCCSID   int(10) value;
+    inoutString varchar(2097152:4) ccsid(65535) options(*varsize) const;
+    fromCCSID int(10) value;
+    toCCSID   int(10) value;
+end-pr;
+
+
+dcl-pr iv_get varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
+    url varchar(IV_URL_SIZE:2) value;
+    acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+    headers pointer value options(*nopass);
+end-pr;
+
+
+dcl-pr iv_addHeader extproc(*dclcase);
+    client pointer value;
+    headerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8) value;
+    headerValue varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8) value;
+end-pr;
+
+
+dcl-pr iv_addHeaders extproc(*dclcase);
+    client pointer value;
+    headers pointer value;
 end-pr;

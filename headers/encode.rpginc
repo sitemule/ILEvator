@@ -1,0 +1,16 @@
+**FREE
+
+/if defined (ILEVATOR_ENCODE)
+/eof
+/endif
+
+/define ILEVATOR_ENCODE
+
+
+dcl-pr iv_encode_url varchar(4194304) ccsid(*utf8) rtnparm extproc(*dclcase);
+  unencodedValue varchar(1048576) ccsid(*utf8) value; 
+end-pr;
+
+dcl-pr iv_encode_formUrl varchar(4194304) ccsid(*utf8) rtnparm extproc(*dclcase);
+  unencodedValue varchar(1048576) ccsid(*utf8) value;
+end-pr;

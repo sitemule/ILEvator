@@ -1,0 +1,203 @@
+**FREE
+
+ctl-opt nomain thread(*concurrent);
+
+
+/include 'encode.rpginc'
+/include 'form.rpginc'
+/include 'libc.rpginc'
+/include 'simpleList.rpginc'
+/include 'teraspace.rpginc'
+/include 'varchar.rpginc'
+
+
+dcl-proc iv_form_ofMap export;
+    dcl-pi *n likeds(LVARPUCHAR_t);
+        p_formDataMap pointer value;
+    end-pi;
+    
+    dcl-ds formData likeds(LVARPUCHAR_t) inz;
+    dcl-s allocatedSize uns(10);
+    dcl-ds formDataMap likeds(SLIST_t) based(p_formDataMap);
+    dcl-ds iterator likeds(SLISTITERATOR_t);
+    dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
+    dcl-ds nodeKeyValue likeds(SLISTKEYVAL_t) based(node.payloadData);
+    dcl-s key varchar(1048576);
+    dcl-s unicodeKey varchar(1048576) ccsid(*utf8);
+    dcl-s value varchar(1048576);
+    dcl-s unicodeValue varchar(1048576) ccsid(*utf8);
+    
+    allocatedSize = 1048576;
+    formData.Length = 0;
+    formData.String = teraspace_alloc(allocatedSize);
+    
+    iterator = sList_setIterator(p_formDataMap);
+
+    dow (sList_foreach(iterator));
+        clear unicodeKey;
+        if (nodeKeyValue.key.Length > 0);
+          %len(key) = nodeKeyValue.key.Length;
+          memcpy(%addr(key : *data) : nodeKeyValue.key.String : nodeKeyValue.key.Length);
+          unicodeKey = key;
+        endif;
+        
+        clear unicodeValue;
+        if (nodeKeyValue.value.Length > 0);
+            %len(value) = nodeKeyValue.value.Length;
+            memcpy(%addr(value : *data) : nodeKeyValue.value.String : nodeKeyValue.value.Length);
+            unicodeValue = value;
+        endif;
+        
+        addFormDataEntry(formData : unicodeKey : unicodeValue : allocatedSize);
+    enddo;
+    
+    // slice off the last &
+    if (formData.Length > 0);
+        formData.Length -= 1;
+    endif;
+    
+    return formData;
+end-proc;
+
+
+dcl-proc iv_form_ofString export;
+    dcl-pi *n likeds(LVARPUCHAR_t);
+        key1 varchar(1000) ccsid(*utf8) const;
+        value1 varchar(1048576) ccsid(*utf8) const;
+        key2 varchar(1000) ccsid(*utf8) const options(*nopass);
+        value2 varchar(1048576) ccsid(*utf8) const options(*nopass);
+        key3 varchar(1000) ccsid(*utf8) const options(*nopass);
+        value3 varchar(1048576) ccsid(*utf8) const options(*nopass);
+        key4 varchar(1000) ccsid(*utf8) const options(*nopass);
+        value4 varchar(1048576) ccsid(*utf8) const options(*nopass);
+        key5 varchar(1000) ccsid(*utf8) const options(*nopass);
+        value5 varchar(1048576) ccsid(*utf8) const options(*nopass);
+        key6 varchar(1000) ccsid(*utf8) const options(*nopass);
+        value6 varchar(1048576) ccsid(*utf8) const options(*nopass);
+        key7 varchar(1000) ccsid(*utf8) const options(*nopass);
+        value7 varchar(1048576) ccsid(*utf8) const options(*nopass);
+        key8 varchar(1000) ccsid(*utf8) const options(*nopass);
+        value8 varchar(1048576) ccsid(*utf8) const options(*nopass);      
+    end-pi;
+
+    dcl-ds formData likeds(LVARPUCHAR_t);
+    dcl-s allocatedSize uns(10);
+
+    allocatedSize += %len(key1) + %len(value1);
+    
+    if (%parms() >= 4);
+        allocatedSize += %len(key2) + %len(value2);
+    endif;
+    if (%parms() >= 6);
+        allocatedSize += %len(key3) + %len(value3);
+    endif;
+    if (%parms() >= 8);
+        allocatedSize += %len(key4) + %len(value4);
+    endif;
+    if (%parms() >= 10);
+        allocatedSize += %len(key5) + %len(value5);
+    endif;
+    if (%parms() >= 12);
+        allocatedSize += %len(key6) + %len(value6);
+    endif;
+    if (%parms() >= 14);
+        allocatedSize += %len(key7) + %len(value7);
+    endif;
+    if (%parms() >= 16);
+        allocatedSize += %len(key8) + %len(value8);
+    endif;
+    
+    // we allocated a little more than needed just to be on the safe side
+    allocatedSize = allocatedSize * 4;
+
+    formData.Length = 0;
+    formData.String = teraspace_alloc(allocatedSize);
+    
+    addFormDataEntry(formData : key1 : value1 : allocatedSize);
+    
+    if (%parms() >= 4);
+        addFormDataEntry(formData : key2 : value2 : allocatedSize);
+    endif;
+    if (%parms() >= 6);
+        addFormDataEntry(formData : key3 : value3 : allocatedSize);
+    endif;
+    if (%parms() >= 8);
+        addFormDataEntry(formData : key4 : value4 : allocatedSize);
+    endif;
+    if (%parms() >= 10);
+        addFormDataEntry(formData : key5 : value5 : allocatedSize);
+    endif;
+    if (%parms() >= 12);
+        addFormDataEntry(formData : key6 : value6 : allocatedSize);
+    endif;
+    if (%parms() >= 14);
+        addFormDataEntry(formData : key7 : value7 : allocatedSize);
+    endif;
+    if (%parms() >= 16);
+        addFormDataEntry(formData : key8 : value8 : allocatedSize);
+    endif;
+    
+    // slice off the last &
+    if (formData.Length > 0);
+        formData.Length -= 1;
+    endif;
+    
+    return formData;
+end-proc;
+
+
+dcl-proc addFormDataEntry;
+    dcl-pi *n;
+        formData likeds(LVARPUCHAR_t);
+        key varchar(1048576) ccsid(*utf8) const;
+        value varchar(1048576) ccsid(*utf8) const;
+        allocatedSize uns(10);
+    end-pi;
+
+    dcl-s formDataChar char(1) ccsid(*utf8) based(formDataCharPtr);
+    dcl-s encodedValue varchar(4194304) ccsid(*utf8);
+    dcl-s dataLength uns(10);
+    
+    dataLength = %len(key) + %len(value) + 2;
+    
+    if (not (allocatedSize >= formData.Length + dataLength));
+        allocatedSize = calculateAllocationSize(allocatedSize : formData.Length : dataLength);
+        teraspace_realloc(formData.String : allocatedSize);
+        dsply %trim('resized to ' + %char(allocatedSize));
+    endif;
+    
+    encodedValue = iv_encode_formUrl(key);
+    if (%len(encodedValue) > 0);
+        memcpy(formData.String + formData.Length : %addr(encodedValue : *data) : %len(encodedValue));
+        formData.Length += %len(encodedValue);
+    endif;
+       
+    formDataCharPtr = formData.String + formData.Length;
+    formDataChar = '=';
+    formData.Length += 1;
+    
+    encodedValue = iv_encode_formUrl(value);
+    if (%len(encodedValue) > 0);
+        memcpy(formData.String + formData.Length : %addr(encodedValue : *data) : %len(encodedValue));
+        formData.Length += %len(encodedValue);
+    endif;
+    
+    formDataCharPtr = formData.String + formData.Length;
+    formDataChar = '&';
+    formData.Length += 1;
+end-proc;
+
+
+dcl-proc calculateAllocationSize;
+    dcl-pi *n uns(10);
+      allocatedSize uns(10) const;
+      currentLength uns(10) const;
+      dataLength uns(10) const;
+    end-pi;
+
+    if (allocatedSize * 2 >= currentLength + dataLength);
+        return allocatedSize * 2;
+    else;
+        return currentLength + dataLength;
+    endif;
+end-proc;

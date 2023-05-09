@@ -1,0 +1,11 @@
+**FREE
+
+/if defined (ILEVATOR_CHUNKED_H)
+/eof
+/endif
+
+/define ILEVATOR_CHUNKED_H
+
+dcl-pr iv_chunked_receive int(10) extproc(*dclcase);
+    client pointer value;
+end-pr;

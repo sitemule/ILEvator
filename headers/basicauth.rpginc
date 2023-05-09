@@ -1,0 +1,16 @@
+**FREE
+
+/if not defined (ILEVATOR_AUTH_BASIC)
+/define ILEVATOR_AUTH_BASIC
+
+dcl-pr iv_basicauth_new pointer extproc(*dclcase);
+    username varchar(1000) ccsid(*utf8) const;
+    password varchar(1000) ccsid(*utf8) const;
+end-pr;
+
+dcl-pr iv_basicauth_processRequest extproc(*dclcase);
+    p_auth pointer value;
+    request pointer value;
+end-pr;
+
+/endif

@@ -1,0 +1,33 @@
+**FREE
+
+/if not defined (TERASPACE_H)
+/define TERASPACE_H
+
+dcl-pr teraspace_alloc pointer extproc(*dclcase);
+  length uns(20) value;
+end-pr;
+
+dcl-pr teraspace_calloc pointer extproc(*dclcase);
+  length uns(20) value;
+end-pr;
+
+dcl-pr teraspace_free extproc(*dclcase);
+  p pointer;
+end-pr;
+
+dcl-pr teraspace_realloc pointer extproc(*dclcase);
+  p pointer;
+  length uns(20) value;
+end-pr;
+
+dcl-pr teraspace_size uns(20) extproc(*dclcase);
+  p pointer;
+end-pr;
+
+dcl-pr teraspace_stat extproc(*dclcase) end-pr;
+
+dcl-pr teraspace_leak ind extproc(*dclcase) end-pr;
+
+dcl-pr teraspace_use uns(20) extproc(*dclcase) end-pr;
+
+/endif

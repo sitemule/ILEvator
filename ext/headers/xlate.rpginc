@@ -1,0 +1,15 @@
+**FREE
+
+/if not defined (XLATE_H)
+/define XLATE_H
+
+// ULONG xlate_translateBuffer(PUCHAR outBuf, PUCHAR inBuf , ULONG length,  LONG fromCCSID,  LONG toCCSID)
+dcl-pr xlate_translateBuffer uns(10) extproc(*dclcase);
+    outBuffer pointer value;
+    inBuffer pointer value;
+    length uns(10) value;
+    fromCcsid int(10) value;
+    toCcsid int(10) value;
+end-pr;
+
+/endif

@@ -1,0 +1,21 @@
+**FREE
+
+/if defined (ILEVATOR_DEBUG)
+/eof
+/endif
+
+/define ILEVATOR_DEBUG
+
+
+dcl-pr iv_debug_init int(10) extproc(*dclcase) end-pr;
+
+dcl-pr iv_debug extproc(*dclcase) opdesc;
+    message pointer value options(*string);
+    replaceValue1 pointer value options(*string : *nopass);
+    replaceValue2 pointer value options(*string : *nopass);
+    replaceValue3 pointer value options(*string : *nopass);
+    replaceValue4 pointer value options(*string : *nopass);
+    replaceValue5 pointer value options(*string : *nopass);
+    replaceValue6 pointer value options(*string : *nopass);
+    replaceValue7 pointer value options(*string : *nopass);
+end-pr;

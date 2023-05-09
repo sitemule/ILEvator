@@ -1,0 +1,500 @@
+**FREE
+
+ctl-opt nomain thread(*concurrent);
+
+/include 'anychar.rpginc'
+/include 'chunked.rpginc'
+/include 'debug.rpginc'
+/include 'httpclient.rpginc'
+/include 'ilevator.rpgle'
+/include 'libc.rpginc'
+/include 'message.rpginc'
+/include 'simpleList.rpginc'
+/include 'sockets.rpginc'
+/include 'teraspace.rpginc'
+
+dcl-pr fopen pointer extproc('_C_IFS_fopen');
+    filename pointer value options(*string);
+    mode pointer value options(*string);
+end-pr;
+
+dcl-pr fclose int(10) extproc('_C_IFS_fclose');
+    stream pointer value;
+end-pr;
+
+dcl-pr unlink int(10) extproc(*dclcase);
+    path pointer value options(*string);
+end-pr;
+
+dcl-pr access int(10) extproc('access');
+    path pointer value options(*string);
+    mode int(10) value;
+end-pr;
+
+//
+// Access mode flags for access() and accessx()
+//
+// F_OK = File Exists
+// R_OK = Read Access
+// W_OK = Write Access
+// X_OK = Execute or Search
+//
+dcl-c F_OK 0;
+dcl-c R_OK 4;
+dcl-c W_OK 2;
+dcl-c X_OK 1;
+
+dcl-c FALSE 0;
+dcl-c TRUE 1;
+dcl-c NULL x'00';
+      
+dcl-ds ilevator_t qualified template align(*full);
+    sockets pointer;
+    method pointer;
+    url pointer;
+    timeout int(5);
+    retries int(5);
+    useProxy int(3);
+    responseHeaderHasContentLength int(3);
+    responseIsChunked int(3);
+    headerList pointer;
+    responseHeaderBuffer likeds(anychar_t);
+    responseDataBuffer likeds(anychar_t);
+    responseDataFile pointer;
+    authProvider pointer;
+    
+    headerLen int(10);
+    contentData pointer;
+    contentLength int(10);
+    contentLengthCalculated int(10);
+    
+    rawResponse pointer;
+    ccsid int(10);
+    status int(10);
+    
+    server char(512);
+    port char(7);
+    resource char(32766);
+    host char(512);
+    user char(256);
+    password char(256);
+    location char(256);
+    message char(256);
+    
+    buffer pointer;
+    bufferSize int(10);
+    bufferTotalLength int(10);
+    bufferEnd pointer;
+end-ds;
+
+dcl-c DEFAULT_TIMEOUT 30000;
+dcl-c DEFAULT_RETRIES 2;
+dcl-c NO_RETRIES 0;
+
+dcl-s UPPER char(26) ccsid(*utf8) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+dcl-s LOWER char(26) ccsid(*utf8) inz('abcdefghijklmnopqrstuvwxyz');
+
+dcl-c ILEVATOR_VERSION '0.1.0';
+
+
+dcl-proc iv_newHttpClient export;
+    dcl-pi *n pointer end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+
+    pClient = teraspace_calloc(%size(ilevator_t));
+    clear client;
+
+    client.method = teraspace_alloc(10);
+    client.url = teraspace_alloc(IV_URL_SIZE+1);
+    client.buffer = teraspace_alloc(IV_BUFFER_SIZE);
+    client.bufferSize = IV_BUFFER_SIZE;
+    client.sockets =  sockets_new();
+    client.headerList = sList_new();
+    client.timeout = DEFAULT_TIMEOUT;
+    client.retries = DEFAULT_RETRIES;
+    
+    client.server = NULL;
+    client.port = NULL;
+    client.resource = NULL;
+    client.host = NULL;
+    client.user = NULL;
+    client.password = NULL;
+    client.location = NULL;
+    client.message = NULL;
+    
+    iv_addHeader(pClient : 'User-Agent' : 'ILEvator for IBM i/' + ILEVATOR_VERSION);
+    
+    return pClient;
+end-proc;
+
+
+dcl-proc iv_free export;
+    dcl-pi *n;
+      pClient pointer value;
+    end-pi;
+    
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    
+    if (pClient = *null);
+      return;
+    endif;
+    
+    deallocateHeaders(client.headerList);
+    
+    teraspace_free(client.method);
+    teraspace_free(client.url);
+    sockets_free(client.sockets);
+    sList_free(client.headerList);
+    teraspace_free(client.authProvider);
+    teraspace_free(client.buffer);
+    teraspace_free(pClient);
+end-proc;
+
+
+dcl-proc deallocateHeaders;
+  dcl-pi *n;
+    list pointer;
+  end-pi;
+  
+  dcl-ds iterator likeds(SLISTITERATOR_t) inz;
+  dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
+  dcl-ds payload likeds(SLISTKEYVAL_t) based(node.payloadData);
+  
+  iterator = sList_setIterator(list);
+  
+  dow (sList_foreach(iterator));
+    teraspace_free(payload.key.string);
+    teraspace_free(payload.value.string);
+  enddo;
+  
+  sList_free(list);
+end-proc;
+
+
+dcl-proc iv_setResponseHeaderBuffer export;
+    dcl-pi *n;
+        pClient pointer value;
+        buffer pointer value;
+        bufferSize int(10) value;
+        bufferType int(5) value;
+        bufferCcsid int(10) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    
+    iv_anychar_set( 
+        %addr(client.responseHeaderBuffer) :
+        buffer :
+        bufferSize :
+        bufferType :
+        bufferCcsid
+    );
+end-proc;
+
+
+dcl-proc iv_setResponseDataBuffer export;
+    dcl-pi *n;
+        pClient pointer value;
+        buffer pointer value;
+        bufferSize int(10) value;
+        bufferType int(5) value;
+        bufferCcsid int(10) value;        
+    end-pi;
+    
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    
+    iv_anychar_set( 
+        %addr(client.responseDataBuffer) :
+        buffer :
+        bufferSize :
+        bufferType :
+        bufferCcsid
+    );
+end-proc;
+
+
+dcl-proc iv_setResponseFile export;
+    dcl-pi *n;
+        pClient       pointer value;
+        fileName      pointer options(*string) value;
+        fileCcsid     int(10)  options(*nopass) value;        
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-s c_errno int(10) based(pErrno);
+    dcl-s mode char(32);
+
+    if (%parms() = 2);
+        mode = 'wb,o_ccsid=1252';
+    else;
+        mode = 'wb,o_ccsid=' + %char(fileCcsid);
+    endif;
+
+	unlink(fileName);
+	
+	client.responseDataFile = fopen(fileName : %addr(mode));
+	if (client.responseDataFile = *null);
+	    pErrno = errno();
+        message_info('Response output open failed: ' + %str(strerror(c_errno):1000));
+	endif;
+end-proc;
+
+
+dcl-proc iv_execute export;
+    dcl-pi *n ind;
+        pClient pointer value;
+        method varchar(10) const;
+        url varchar(IV_URL_SIZE:2) const;
+        timeout int(10) options(*nopass) value; // In milisec. 30000 is default
+        retries int(10) options(*nopass) value; // retry n times. 3 is default        
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-s apiStatus int(10) inz(IV_STATUS_RETRY);
+    dcl-s try int(5);
+    dcl-s ok int(3);
+    
+    %str(client.method : %len(method)+ 1) = method; 
+    %str(client.url : %len(url) + 1) = url;
+    
+    if (%parms() >= 4);
+        client.timeout = timeout;
+    endif;
+    
+    if (%parms() >= 5);
+        client.retries = retries;
+    endif;
+    
+    parseUrl(pClient : url); 
+    iv_debug('Port: %s' : %str(%addr(client.port):10) );
+    iv_debug('Server: %s' : %str(%addr(client.server):200) );
+    iv_debug('Host: %s' : %str(%addr(client.host):200) );
+    iv_debug('Resource: %s' : %str(%addr(client.resource):200) );
+     
+    for try = 0 to client.retries;
+
+        ok = sockets_connect(
+            client.sockets : 
+            %addr(client.server) : 
+            atoi(%addr(client.port)) : 
+            client.timeout
+        );
+        if (ok = TRUE);
+          apiStatus = IV_STATUS_OK;
+        else;
+          apiStatus = IV_STATUS_ERROR;
+          iter;
+        endif;
+
+        apiStatus = sendRequest(pClient);
+        if (apiStatus = IV_STATUS_ERROR);
+            leave; 
+        endif;
+        
+        apiStatus = receiveHeader(pClient);
+        if (apiStatus = IV_STATUS_ERROR);
+            leave; 
+        endif;
+        if (apiStatus = IV_STATUS_RETRY);
+            iter; 
+        endif;
+        
+        iv_debug('HTTP response status: %s' : %char(client.status));
+
+        // Don't try to get data if it was a HEAD request - it is only the header
+        // or status 204 => no content
+        if (%str(client.method:10) = 'HEAD' or client.status = 204);
+            // No content, don't read any longer
+            apiStatus = IV_STATUS_OK;
+        elseif (client.responseIsChunked = TRUE);
+            apiStatus = iv_chunked_receive(pClient);
+        else;
+            apiStatus = receiveData(pClient);
+        endif;
+
+        if (apiStatus = IV_STATUS_OK);
+            leave; 
+        endif;
+        if (apiStatus = IV_STATUS_ERROR);
+            leave; 
+        endif;
+        if (apiStatus = IV_STATUS_RETRY);
+            iter;
+        endif;
+        
+    endfor;
+
+    iv_anychar_finalize(%addr(client.responseHeaderBuffer));
+    iv_anychar_finalize(%addr(client.responseDataBuffer));
+
+    if (client.responseDataFile <> *null);
+        fclose(client.responseDataFile);
+    endif;
+
+    // TODO reset buffers to reuse the client ?
+
+    return (apiStatus = IV_STATUS_OK);
+end-proc;
+
+
+dcl-proc iv_setCertificate export;
+    dcl-pi *n ind;
+        pClient pointer value;
+        certificateFile pointer options(*string) value;
+        certificatePassword pointer options(*string : *nopass) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-s c_errno int(10) based(pErrno);
+    dcl-s empty_str char(1) inz(x'00');
+    
+    if (0 <> access(certificateFile : R_OK));
+        pErrno = errno();
+        message_info('Certificate error: ' +
+            %str(strerror(c_errno) : 1000) + 
+            ' File: ' + %str(certificateFile : 1000)
+        );
+        return *off;
+    endif;
+    
+
+    if %parms < 3;
+        certificatePassword = %addr(empty_str);
+    endif;
+
+    sockets_setSSL(
+        client.sockets :
+        SECURE_HANDSHAKE_IMEDIATE :
+        certificateFile :
+        certificatePassword
+    );
+    
+    return *on;
+end-proc;
+
+
+dcl-proc iv_getStatus export;
+    dcl-pi *n int(5);
+        pClient pointer value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient); 
+    
+    return client.status;
+end-proc;
+
+dcl-proc iv_getMessage export;
+    dcl-pi *n varchar(256);
+        pClient pointer value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient); 
+    
+    return client.message;
+end-proc;
+
+
+dcl-proc iv_setAuthProvider export;
+    dcl-pi *n;
+        pClient pointer value;
+        authProvider pointer value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient); 
+    
+    if (client.authProvider <> *null);
+        teraspace_free(client.authProvider);
+    endif;
+    
+    client.authProvider = authProvider;
+end-proc;
+
+
+dcl-proc iv_addHeader export;
+    dcl-pi *n;
+        pClient pointer value;
+        headerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8) value;
+        headerValue varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-s lowerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8);
+    dcl-ds listKey likeds(LVARPUCHAR_t);
+    dcl-ds listValue likeds(LVARPUCHAR_t);
+    
+    if (headerName = *blank);
+      return;
+    endif;
+    
+    // TODO use OS API for proper conversion
+    lowerName = %xlate(UPPER : LOWER : headerName);
+    
+    listKey.length = %len(lowerName);
+    listKey.string = teraspace_alloc(listKey.length + 1);
+    %str(listKey.string : listKey.length + 1) = lowerName;
+    listValue.length = %len(headerValue);
+    listValue.string = teraspace_alloc(listValue.length + 1);
+    %str(listValue.string : listValue.length + 1) = headerValue;
+    sList_pushLVPC(client.headerList : listKey : listValue);
+end-proc;
+
+
+dcl-proc iv_addHeaders export;
+    dcl-pi *n;
+        pClient pointer value;
+        headers pointer value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient); 
+    dcl-ds iterator likeds(SLISTITERATOR_t);
+    dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
+    dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
+    dcl-s headerName varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8);
+    dcl-s headerValue varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+  
+    iterator = sList_setIterator(headers);
+    dow (sList_foreach(iterator));
+        headerName = %str(nodePayload.key.string : nodePayload.key.length);
+        headerValue = %str(nodePayload.value.string : nodePayload.value.length);
+        iv_addHeader(pClient : headerName : headerValue);
+    enddo;
+end-proc;
+
+
+dcl-proc iv_get export;
+    dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
+        url varchar(IV_URL_SIZE:2) value;
+        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+        headers pointer value options(*nopass);        
+    end-pi;
+
+    dcl-s client pointer;
+    dcl-s returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+    dcl-s rc ind inz(*off);
+    
+    client = iv_newHttpClient();
+    
+    iv_setResponseDataBuffer(
+        client :
+        %addr(returnBuffer) : 
+        IV_BUFFER_SIZE :
+        IV_VARCHAR4 :
+        IV_CCSID_UTF8
+    );
+    
+    if (%parms() >= 3);
+      iv_addHeader(client : 'Accept' : acceptMimeType);
+    endif;
+    
+    if (%parms() >= 4);
+      iv_addHeaders(client : headers);
+    endif;
+    
+    rc = iv_execute(client : 'GET' : url : DEFAULT_TIMEOUT : NO_RETRIES);
+    
+    return returnBuffer;
+        
+    on-exit;
+        iv_free(client);
+end-proc;

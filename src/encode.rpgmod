@@ -1,0 +1,135 @@
+**FREE
+
+ctl-opt nomain thread(*concurrent);
+
+
+dcl-pr cvthc extproc('cvthc');
+   hex pointer value;
+   chars pointer value;
+   hexLength int(10) value;
+end-pr;
+
+/include 'encode.rpginc'
+
+
+dcl-s NOT_RESERVED_CHARS char(65) ccsid(*utf8) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.');
+dcl-c ASCII 850;
+dcl-c IV_ENCODE_TILDE %ucs2('~');
+
+
+dcl-proc iv_encode_url export;
+  dcl-pi *n varchar(4194304) ccsid(*utf8) rtnparm;
+    source varchar(1048576) ccsid(*utf8) value; 
+  end-pi;
+
+  dcl-s sourceLength int(10);
+  dcl-s sourceAddress pointer;
+  dcl-s sourceChar char(1) ccsid(*utf8);
+  dcl-s i int(10);
+  dcl-s x int(10);
+  dcl-s encoded varchar(4194304) ccsid(*utf8);
+  dcl-s encodedChar char(1) ccsid(ASCII) based(encodedPtr);
+  dcl-s encodedChar2 char(2) ccsid(ASCII) based(encodedPtr);
+  dcl-s encodedLength int(10);
+  dcl-s hex char(2);
+  dcl-s hexAscii char(2) ccsid(ASCII);
+  
+  sourceLength = %len(source); // will return the number of bytes used for utf8 varchar fields
+
+  %len(encoded) = 4194304; 
+
+  for i = 1 to sourceLength;
+    if (encodedLength = 0);
+      encodedPtr = %addr(encoded : *data);
+    else;
+      encodedPtr += 1;
+    endif;
+
+    sourceChar = %subst(source : i : 1);
+    x = %scan(sourceChar : NOT_RESERVED_CHARS);
+    if (sourceChar = IV_ENCODE_TILDE or x = 0);
+      // need encoding
+      encodedChar = '%';
+      
+      encodedPtr += 1;
+      cvthc(%addr(hex) : %addr(sourceChar) : 2);
+      hexAscii = hex;  // automatic conversion from ebcdic to ascii
+      encodedChar2 = hexAscii;
+      
+      encodedPtr += 1; // as we have copied 2 bytes previously
+      
+      encodedLength += 3;
+    else;
+      // no encoding needed
+      encodedChar = sourceChar;
+      encodedLength += 1;
+    endif;
+  endfor;
+
+  %len(encoded) = encodedLength;
+
+  return encoded;
+end-proc;
+
+
+dcl-proc iv_encode_formUrl export;
+  dcl-pi *n varchar(4194304) ccsid(*utf8) rtnparm;
+    source varchar(1048576) ccsid(*utf8) value; 
+  end-pi;
+  
+  dcl-s sourceLength int(10);
+  dcl-s sourceAddress pointer;
+  dcl-s sourceChar char(1) ccsid(*utf8);
+  dcl-s i int(10);
+  dcl-s x int(10);
+  dcl-s encoded varchar(4194304) ccsid(*utf8);
+  dcl-s encodedChar char(1) ccsid(ASCII) based(encodedPtr);
+  dcl-s encodedChar2 char(2) ccsid(ASCII) based(encodedPtr);
+  dcl-s encodedLength int(10);
+  dcl-s hex char(2);
+  dcl-s hexAscii char(2) ccsid(ASCII);
+  
+  sourceLength = %len(source); // will return the number of bytes used for utf8 varchar fields
+
+  %len(encoded) = 4194304; 
+
+  for i = 1 to sourceLength;
+    if (encodedLength = 0);
+      encodedPtr = %addr(encoded : *data);
+    else;
+      encodedPtr += 1;
+    endif;
+
+    sourceChar = %subst(source : i : 1);
+    x = %scan(sourceChar : NOT_RESERVED_CHARS);
+    if (sourceChar = IV_ENCODE_TILDE or x = 0);
+    
+      // need encoding
+      
+      if (sourceChar = *blank);
+        encodedChar = '+';
+        encodedLength += 1;
+      else;
+        encodedChar = '%';
+        
+        encodedPtr += 1;
+        cvthc(%addr(hex) : %addr(sourceChar) : 2);
+        hexAscii = hex;  // automatic conversion from ebcdic to ascii
+        encodedChar2 = hexAscii;
+        
+        encodedPtr += 1; // as we have copied 2 bytes previously
+        
+        encodedLength += 3;
+      endif;
+      
+    else;
+      // no encoding needed
+      encodedChar = sourceChar;
+      encodedLength += 1;
+    endif;
+  endfor;
+
+  %len(encoded) = encodedLength;
+
+  return encoded;
+end-proc;

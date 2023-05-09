@@ -1,0 +1,366 @@
+**FREE
+
+///
+// URL Parser : Unit Test
+//
+//
+// @author Mihael Schmidt
+// @date   19.01.2023
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'url.rpginc'
+
+dcl-c BRACKET_OPEN u'005B';
+dcl-c BRACKET_CLOSE u'005D';
+dcl-c UNICODE_AT u'0040';
+dcl-c UNICODE_LESS_THAN u'003C';    // <
+dcl-c UNICODE_GREATER_THAN u'003E'; // >
+
+dcl-pr test_emptyUrl end-pr;
+dcl-pr test_localhost end-pr;
+dcl-pr test_domainOnly end-pr;
+dcl-pr test_https end-pr;
+dcl-pr test_simpleHostname end-pr;
+dcl-pr test_ipv4Host end-pr;
+dcl-pr test_ipv6Host end-pr;
+dcl-pr test_emptyIpv6Host end-pr;
+dcl-pr test_defaultHttpPort end-pr;
+dcl-pr test_defaultHttpsPort end-pr;
+dcl-pr test_path end-pr;
+dcl-pr test_pathAndPort end-pr;
+dcl-pr test_noPath end-pr;
+dcl-pr test_rootPath end-pr;
+dcl-pr test_noQuery end-pr;
+dcl-pr test_emptyQuery end-pr;
+dcl-pr test_emptyQueryWithFragment end-pr;
+dcl-pr test_queryWithoutPath end-pr;
+dcl-pr test_queryWithPortWithoutPath end-pr;
+dcl-pr test_queryKeyOnly end-pr;
+dcl-pr test_queryKeyOnlyWithFragment end-pr;
+dcl-pr test_queryKeyAndValue end-pr;
+dcl-pr test_queryAndFragment end-pr;
+dcl-pr test_proxyPrepended end-pr;
+dcl-pr test_fragmentWithoutPath end-pr;
+dcl-pr test_fragmentWithoutQuery end-pr;
+dcl-pr test_hostWithFragment end-pr;
+dcl-pr test_username end-pr;
+dcl-pr test_password end-pr;
+dcl-pr test_userpass end-pr;
+dcl-pr test_emptyUsername end-pr;
+dcl-pr test_emptyPassword end-pr;
+dcl-pr test_proxyUrl end-pr;
+dcl-pr test_incompleteProxyUrl end-pr;
+
+
+dcl-proc test_emptyUrl export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('');
+  s = iv_url_toString(url);
+  aEqual('' : s);  
+end-proc;
+
+
+dcl-proc test_localhost export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost');
+  s = iv_url_toString(url);
+  aEqual('http://localhost:80' : s);  
+end-proc;
+
+
+dcl-proc test_domainOnly export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://sitemule.com');
+  s = iv_url_toString(url);
+  aEqual('http://sitemule.com:80' : s);  
+end-proc;
+
+
+dcl-proc test_https export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://localhost');
+  s = iv_url_toString(url);
+  aEqual('https://localhost:443' : s);  
+end-proc;
+
+dcl-proc test_simpleHostname export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://www.rpgnextgen.com');
+  s = iv_url_toString(url);
+  aEqual('https://www.rpgnextgen.com:443' : s);  
+end-proc;
+
+
+dcl-proc test_ipv4Host export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://127.0.0.1');
+  s = iv_url_toString(url);
+  aEqual('http://127.0.0.1:80' : s);  
+end-proc;
+
+
+dcl-proc test_ipv6Host export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://' + BRACKET_OPEN + 'cc82:4f5d:da76:7aa8:8ffc:e05c:638e:14bf' + BRACKET_CLOSE);
+  s = iv_url_toString(url);
+  aEqual('https://' + BRACKET_OPEN + 'cc82:4f5d:da76:7aa8:8ffc:e05c:638e:14bf' + BRACKET_CLOSE + ':443' : s);
+  aEqual('cc82:4f5d:da76:7aa8:8ffc:e05c:638e:14bf' : url.host);
+  assert(url.ipv6 : 'ipv6 indicator should be on');
+end-proc;
+
+
+dcl-proc test_emptyIpv6Host export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://' + BRACKET_OPEN + BRACKET_CLOSE);
+  s = iv_url_toString(url);
+  aEqual('https://' : s);
+  aEqual('' : url.host);
+  assert(not url.ipv6 : 'ipv6 indicator should be off');
+end-proc;
+
+
+dcl-proc test_defaultHttpPort export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost');
+  s = iv_url_toString(url);
+  iEqual(80 : url.port);
+end-proc;
+
+
+dcl-proc test_defaultHttpsPort export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://localhost');
+  s = iv_url_toString(url);
+  iEqual(443 : url.port);
+end-proc;
+
+
+dcl-proc test_pathAndPort export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost:8080/index.html');
+  s = iv_url_toString(url);
+  aEqual('/index.html' : url.path);
+  aEqual('' : url.query);
+  iEqual(8080 : url.port);
+end-proc;
+
+
+dcl-proc test_path export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost/index.html');
+  s = iv_url_toString(url);
+  aEqual('/index.html' : url.path);
+  aEqual('' : url.query);
+end-proc;
+
+
+dcl-proc test_noPath export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost');
+  s = iv_url_toString(url);
+  aEqual('' : url.path);
+end-proc;
+
+
+dcl-proc test_noQuery export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost');
+  s = iv_url_toString(url);
+  aEqual('' : url.query);
+end-proc;
+
+
+dcl-proc test_queryAndFragment export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost/index.js?q=hello#/component/123');
+  s = iv_url_toString(url);
+  aEqual('q=hello' : url.query);
+end-proc;
+
+
+dcl-proc test_queryWithoutPath export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost?q=hello#/component/123');
+  s = iv_url_toString(url);
+  aEqual('q=hello' : url.query);
+end-proc;
+
+
+dcl-proc test_emptyQuery export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost?');
+  s = iv_url_toString(url);
+  aEqual('' : url.query);
+end-proc;
+
+
+dcl-proc test_emptyQueryWithFragment export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost?#/component/123');
+  s = iv_url_toString(url);
+  aEqual('' : url.query);
+end-proc;
+
+
+dcl-proc test_queryWithPortWithoutPath export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://ibmi:8181?q=hello');
+  s = iv_url_toString(url);
+  aEqual('ibmi' : url.host);
+  iEqual(8181 : url.port);
+  aEqual('q=hello' : url.query);
+end-proc;
+
+
+dcl-proc test_queryKeyOnly export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost?q');
+  s = iv_url_toString(url);
+  aEqual('q' : url.query);
+end-proc;
+
+
+dcl-proc test_queryKeyOnlyWithFragment export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost?q#/component/123');
+  s = iv_url_toString(url);
+  aEqual('q' : url.query);
+end-proc;
+
+
+dcl-proc test_hostWithFragment export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://ibmi#/component/123');
+  s = iv_url_toString(url);
+  aEqual('ibmi' : url.host);
+end-proc;
+
+
+dcl-proc test_portWithFragment export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://ibmi:8181#/component/123');
+  s = iv_url_toString(url);
+  aEqual('ibmi' : url.host);
+  iEqual(8181 : url.port);
+end-proc;
+
+
+dcl-proc test_usernameOnly export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://myuser' + UNICODE_AT + 'ibmi');
+  s = iv_url_toString(url);
+  aEqual('ibmi' : url.host);
+  aEqual('myuser' : url.username);
+  aEqual('' : url.password);
+end-proc;
+ 
+
+dcl-proc test_emptyUsername export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://:secret' + UNICODE_AT + 'ibmi');
+  s = iv_url_toString(url);
+  aEqual('ibmi' : url.host);
+  aEqual('' : url.username);
+  aEqual('secret' : url.password);
+end-proc;
+
+
+dcl-proc test_emptyPassword export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://myuser:' + UNICODE_AT + 'ibmi');
+  s = iv_url_toString(url);
+  aEqual('ibmi' : url.host);
+  aEqual('myuser' : url.username);
+  aEqual('' : url.password);
+end-proc;
+
+
+dcl-proc test_userpass export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('https://myuser:secret' + UNICODE_AT + 'ibmi');
+  s = iv_url_toString(url);
+  aEqual('ibmi' : url.host);
+  aEqual('myuser' : url.username);
+  aEqual('secret' : url.password);
+end-proc;
+
+
+dcl-proc test_proxyUrl export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse(UNICODE_LESS_THAN + 'http://squid:3128' + UNICODE_GREATER_THAN + 'https://ibmi');
+  s = iv_url_toString(url);
+  aEqual('http://squid:3128' : url.proxy);
+  aEqual('https' : url.protocol);
+  aEqual('ibmi' : url.host);
+end-proc;
+
+
+dcl-proc test_incompleteProxyUrl export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse(UNICODE_LESS_THAN + 'http://squid:3128 https://ibmi');
+  s = iv_url_toString(url);
+  assert(url = *allx'00' : 'Incomplete URL should result in all hex nulls.');
+end-proc;

@@ -1,0 +1,110 @@
+**FREE
+
+///
+// Form Builder Unit Test
+//
+// @author Mihael Schmidt
+// @date   23.03.2023
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'ceeapi.rpginc'
+/include 'form.rpginc'
+/include 'libc.rpginc'
+/include 'simpleList.rpginc'
+/include 'teraspace.rpginc'
+/include 'varchar.rpginc'
+
+dcl-pr test_formMapSingleField end-pr;
+dcl-pr test_formSingleField end-pr;
+dcl-pr test_formMultipleFields end-pr;
+dcl-pr test_formEmptyParts end-pr;
+
+
+dcl-proc test_formMapSingleField export;
+  dcl-ds formData likeds(LVARPUCHAR_t);
+  dcl-s expected varchar(1000) ccsid(*utf8);
+  dcl-s formDataMap pointer;
+  dcl-s userHeapId int(10);
+  dcl-ds key likeds(LVARPUCHAR_t) inz;
+  dcl-ds value likeds(LVARPUCHAR_t) inz;
+  dcl-s s varchar(1000) ccsid(*utf8);
+  
+  cee_createHeap(userHeapId : *omit : *omit : *omit : *omit);
+  formDataMap = sList_new();
+  
+  cee_getStorage(userHeapId : 100 : key.String : *omit);
+  cee_getStorage(userHeapId : 1000 : value.String : *omit);
+  s = 'grant_type';
+  %str(key.String : 100) = s;
+  key.Length = strlen(key.String);
+  s = 'client_credentials';
+  %str(value.String : 1000) = s;
+  value.Length = strlen(value.String);
+  
+  sList_pushLVPC(formDataMap : key : value);
+  
+  expected = 'grant_type=client_credentials';
+  formData = iv_form_of(formDataMap);
+  
+  iEqual(%len(expected) : formData.Length);
+  assert(memcmp(%addr(expected : *data) : formData.String : formData.Length) = 0 : 
+          'Form encoded value is not correctly encoded.');
+  
+  on-exit;
+      teraspace_free(formData.String);
+      cee_discardHeap(userHeapId : *omit);
+end-proc;
+
+
+dcl-proc test_formSingleField export;
+  dcl-ds formData likeds(LVARPUCHAR_t);
+  dcl-s expected varchar(1000) ccsid(*utf8);
+  
+  expected = 'grant_type=client_credentials';
+  formData = iv_form_of('grant_type' : 'client_credentials');
+  
+  iEqual(%len(expected) : formData.Length);
+  assert(memcmp(%addr(expected : *data) : formData.String : formData.Length) = 0 : 
+          'Form encoded value is not correctly encoded.');
+  
+  on-exit;
+      teraspace_free(formData.String);
+end-proc;
+
+
+dcl-proc test_formMultipleFields export;
+  dcl-ds formData likeds(LVARPUCHAR_t);
+  dcl-s expected varchar(1000) ccsid(*utf8);
+  
+  expected = 'grant_type=client_credentials&client_id=mihael&client_secret=uwillneverknow';
+  formData = iv_form_of('grant_type' : 'client_credentials' : 'client_id' : 'mihael' : 'client_secret'  : 'uwillneverknow');
+
+  iEqual(%len(expected) : formData.Length);
+  assert(memcmp(%addr(expected : *data) : formData.String : formData.Length) = 0 : 
+          'Form encoded value is not correctly encoded.');
+  
+  on-exit;
+      teraspace_free(formData.String);
+end-proc;
+
+
+dcl-proc test_formEmptyParts export;
+  dcl-ds formData likeds(LVARPUCHAR_t);
+  dcl-s expected varchar(1000) ccsid(*utf8);
+  
+  expected = 'grant_type=client_credentials&=mihael&client_secret=';
+  formData = iv_form_of('grant_type' : 'client_credentials' : '' : 'mihael' : 'client_secret'  : '');
+  
+  iEqual(%len(expected) : formData.Length);
+  assert(memcmp(%addr(expected : *data) : formData.String : formData.Length) = 0 : 
+          'Form encoded value is not correctly encoded.');
+  
+  on-exit;
+      teraspace_free(formData.String);
+end-proc;
+

@@ -1,0 +1,328 @@
+**FREE
+
+///
+// HTTP Client : MIME Types and Charsets
+//
+// This module provides utility procedures for MIME types and charsets.
+//
+// @author Mihael Schmidt
+// @date   2023-01-05
+// @project ILEvator
+///
+
+
+ctl-opt nomain thread(*concurrent);
+
+
+dcl-c DEFAULT_CCSID 1208;
+
+
+/include 'mime.rpginc'
+
+
+// from http://webcheatsheet.com/html/character_sets_list.php
+dcl-s charsets char(50) dim(122) ctdata;
+// from http://help.dottoro.com/laiuuxpb.php
+// and from IBM Globalization Coded character set identifiers
+// http://www-01.ibm.com/software/globalization/ccsid/ccsid_registered.html
+dcl-s ccsids int(10) dim(122) ctdata;
+
+
+dcl-proc iv_mime_getCcsid export;
+  dcl-pi *N uns(10);
+    mimeType varchar(1000) const;
+  end-pi;
+  
+  dcl-c uppercase 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  dcl-c lowercase 'abcdefghijklmnopqrstuvwxyz';
+  dcl-s value char(50);
+  dcl-s index uns(10);
+  dcl-s charset varchar(50);
+  dcl-s contentType varchar(1000);
+  dcl-s charsetSeparator uns(10);
+  dcl-s x uns(10);
+  
+  charsetSeparator = %scan(';' : mimeType);
+  if (charsetSeparator = 0);
+    contentType = %trim(%xlate(uppercase : lowercase : mimeType));
+    
+    select;
+      when (contentType = 'application/json');
+        return DEFAULT_CCSID;
+      when (contentType = 'text/plain');
+        return 367;
+      other;
+        return DEFAULT_CCSID;
+    endsl;
+    
+  else;
+    contentType = %subst(mimeType : 1 : charsetSeparator-1);
+    monitor;
+      x = %scan('=' : mimeType : charsetSeparator+1);   // TODO "=" = invariant?
+      if (x > 0);
+        charset = %trim(%subst(mimeType : x+1));
+      else;
+        return DEFAULT_CCSID;
+      endif;
+    on-error;
+      return DEFAULT_CCSID;
+    endmon;
+  endif;
+  
+  // we can do a simple lowercase via xlate because HTTP header entries are in ASCII
+  value = %xlate(uppercase : lowercase : charset);
+  index = %lookup(value : charsets);
+  if (index = 0);
+    return DEFAULT_CCSID;
+  else;
+    return ccsids(index);
+  endif;
+end-proc;
+
+
+**CTDATA charsets
+asmo-708
+dos-720
+iso-8859-6
+x-mac-arabic
+windows-1256
+ibm775
+iso-8859-4
+windows-1257
+ibm852
+iso-8859-2
+x-mac-ce
+windows-1250
+euc-cn
+gb2312
+hz-gb-2312
+x-mac-chinesesimp
+big5
+x-chinese-cns
+x-chinese-eten
+x-mac-chinesetrad
+950
+cp866
+iso-8859-5
+koi8-r
+koi8-u
+x-mac-cyrillic
+windows-1251
+x-europa
+x-ia5-german
+ibm737
+iso-8859-7
+x-mac-greek
+windows-1253
+ibm869
+dos-862
+iso-8859-8-i
+iso-8859-8
+x-mac-hebrew
+windows-1255
+x-ebcdic-arabic
+x-ebcdic-cyrillicrussian
+x-ebcdic-cyrillicserbianbulgarian
+x-ebcdic-denmarknorway
+x-ebcdic-denmarknorway-euro
+x-ebcdic-finlandsweden
+x-ebcdic-finlandsweden-euro
+x-ebcdic-france
+x-ebcdic-france-euro
+x-ebcdic-germany
+x-ebcdic-germany-euro
+x-ebcdic-greekmodern
+x-ebcdic-greek
+x-ebcdic-hebrew
+x-ebcdic-icelandic
+x-ebcdic-icelandic-euro
+x-ebcdic-international
+x-ebcdic-international-euro
+x-ebcdic-italy
+x-ebcdic-italy-euro
+x-ebcdic-japaneseandkana
+x-ebcdic-japaneseandjapaneselatin
+x-ebcdic-japaneseanduscanada
+x-ebcdic-japanesekatakana
+x-ebcdic-koreanandkoreanextended
+x-ebcdic-koreanextended
+cp870
+x-ebcdic-simplifiedchinese
+x-ebcdic-spain
+x-ebcdic-spain-euro
+x-ebcdic-thai
+x-ebcdic-traditionalchinese
+cp1026
+x-ebcdic-turkish
+x-ebcdic-uk
+x-ebcdic-uk-euro
+ebcdic-cp-us
+x-ebcdic-cp-us-euro
+ibm861
+x-mac-icelandic
+x-iscii-as
+x-iscii-be
+x-iscii-de
+x-iscii-gu
+x-iscii-ka
+x-iscii-ma
+x-iscii-or
+x-iscii-pa
+x-iscii-ta
+x-iscii-te
+euc-jp
+x-euc-jp
+iso-2022-jp
+iso-2022-jp
+csiso2022jp
+x-mac-japanese
+shift_jis
+ks_c_5601-1987
+euc-kr
+iso-2022-kr
+johab
+x-mac-korean
+iso-8859-3
+iso-8859-15
+x-ia5-norwegian
+ibm437
+x-ia5-swedish
+windows-874
+ibm857
+iso-8859-9
+x-mac-turkish
+windows-1254
+unicode
+unicodefffe
+utf-7
+utf-8
+us-ascii
+windows-1258
+ibm850
+x-ia5
+iso-8859-1
+macintosh
+windows-1252
+**CTDATA ccsids
+         0
+       720
+      1089
+         0
+      1256
+       775
+       914
+      1257
+       852
+       912
+         0
+         0
+         0
+         0
+         0
+         0
+       947
+      5056
+       950
+       950
+         0
+       866
+       915
+      1167
+      1168
+         0
+      1251
+      1252
+         0
+       737
+       813
+         0
+      1253
+       869
+       862
+       916
+       916
+         0
+      1255
+       420
+       880
+      1025
+       277
+      1142
+       278
+      1143
+       297
+      1147
+       273
+      1141
+       875
+       423
+       424
+       871
+      1149
+       500
+      1148
+       280
+      1144
+         0
+      9219
+         0
+       290
+         0
+         0
+       870
+         0
+       284
+      1145
+       838
+         0
+      1026
+       905
+       285
+      1146
+        37
+      1140
+       861
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+         0
+       970
+         0
+         0
+         0
+       913
+       923
+         0
+       437
+         0
+      1162
+       857
+       920
+      1281
+       920
+      1200
+      1201
+         0
+      1208
+       367
+      1258
+       850
+         0
+       819
+         0
+      1252

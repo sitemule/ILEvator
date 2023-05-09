@@ -10,8 +10,27 @@
 #ifndef ILEVATOR_H
 #define ILEVATOR_H
 
+#include "anychar.h"
+#include "ostypes.h"
+#include "simpleList.h"
+#include "sockets.h"
 
 #define BUFFER_SIZE 1048576
+
+//
+// buffer types
+//
+#define IV_BYTES 0
+#define IV_VARCHAR2 1
+#define IV_VARCHAR4 2
+
+//
+// Conversion - named values; more exists
+//
+#define IV_CCSID_JOB     0
+#define IV_CCSID_UTF8    1208
+#define IV_CCSID_WIN1252 1252
+#define IV_CCSID_BINARY  65535
 
 typedef enum _API_STATUS {
     API_OK, 
@@ -19,9 +38,14 @@ typedef enum _API_STATUS {
     API_ERROR
 } API_STATUS , *PAPI_STATUS;
 
+typedef void (* iv_auth_processRequest_t) (PVOID authProvider, PVOID request);
+typedef struct _AUTH_PROVIDER {
+    iv_auth_processRequest_t processRequest;
+} AUTH_PROVIDER, *PAUTH_PROVIDER;
+
 
 typedef struct _ILEVATOR {
-    PSOCKETS  pSockets;
+    PSOCKETS  sockets;
     PUCHAR    method; 
     PUCHAR    url; 
     SHORT     timeOut;
@@ -31,17 +55,11 @@ typedef struct _ILEVATOR {
     BOOL      responseIsChunked;
     PSLIST    headerList;
 
-    ANYCHAR   requestHeaderBuffer; 
-    FILE *    requestHeaderFile;
-    ANYCHAR   requestDataBuffer; 
-    FILE *    requestDataFile;
-    LONG      requestLength;
-
     ANYCHAR   responseHeaderBuffer; 
-    FILE *    responseHeaderFile;
     ANYCHAR   responseDataBuffer; 
     FILE *    responseDataFile;
-    LONG      responseLength;
+
+    PAUTH_PROVIDER authProvider;
 
     // TODO - refactor
     LONG      headLen;
@@ -49,16 +67,9 @@ typedef struct _ILEVATOR {
     LONG      contentLength;
     LONG      contentLengthCalculated;
     
-    PUCHAR    ResponseString;
-    LONG      Ccsid; 
+    PUCHAR    rawResponse;
+    LONG      ccsid; 
     LONG      status;
-
-    PUCHAR    pResBuffer; 
-    ULONG     resBufferSize;
-    IVBUFTYPE resBufferType;
-    IVXLATE   resBufferXlate;
-    FILE *    resFile;
-    FILE *    wstrace;
 
     UCHAR     server    [512];
     UCHAR     port      [7];
@@ -80,7 +91,7 @@ typedef struct _ILEVATOR {
 // Prototypes
 //void iv_newHttpClient(PILEVATOR * ppIv);
 PILEVATOR iv_newHttpClient(void);
-void  iv_delete(PILEVATOR ps);
+void iv_delete(PILEVATOR ps);
 void iv_setResponseBuffer (
     PILEVATOR pIv,
     PUCHAR pBuf,
@@ -96,6 +107,8 @@ LGL iv_execute (
     ULONG  timeOut,
     ULONG  retries
 );
+#pragma descriptor (void iv_execute(void))
 
+void iv_get(PLVARCHAR returnBuffer, VARCHAR url, VARCHAR acceptMimeType, PSLIST headers);
 
 #endif

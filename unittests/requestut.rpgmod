@@ -1,0 +1,312 @@
+**FREE
+
+///
+// HTTP Request Builder : Unit Test
+//
+//
+// @author Mihael Schmidt
+// @date   09.02.2023
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'form.rpginc'
+/include 'request.rpginc'
+/include 'teraspace.rpginc'
+/include 'varchar.rpginc'
+
+
+dcl-c O_RDONLY 1;
+dcl-pr open int(10) extproc('open');
+  path pointer value options(*string);
+  openflags int(10) value;
+  mode uns(10) value options(*nopass);
+  ccsid uns(10) value options(*nopass);
+end-pr;
+
+dcl-pr read int(10) extproc('read');
+  fildes int(10) value;
+  buf pointer value;
+  bytes uns(10) value;
+end-pr;
+
+dcl-pr close int(10) extproc('close');
+  fildes int(10) value;
+end-pr;
+
+dcl-pr memcmp int(10) extproc('memcmp');
+  buffer1 pointer value;
+  buffer2 pointer value;
+  count uns(10) value;
+end-pr;
+
+dcl-pr test_getHeader extproc(*dclcase) end-pr;
+dcl-pr test_getHeaderNonExist extproc(*dclcase) end-pr;
+dcl-pr test_minimum extproc(*dclcase) end-pr;
+dcl-pr test_delete extproc(*dclcase) end-pr;
+dcl-pr test_head extproc(*dclcase) end-pr;
+dcl-pr test_options extproc(*dclcase) end-pr;
+dcl-pr test_path extproc(*dclcase) end-pr;
+dcl-pr test_port extproc(*dclcase) end-pr;
+dcl-pr test_queryNoPath extproc(*dclcase) end-pr;
+dcl-pr test_overrideAccept extproc(*dclcase) end-pr;
+dcl-pr test_formData extproc(*dclcase) end-pr;
+
+
+dcl-proc test_getHeader export;
+  dcl-s request pointer;
+  
+  request = iv_request_new('GET' : 'http://localhost'); 
+  iv_request_addHeader(request : 'Query-Count' : '100');
+  
+  aEqual('100' : iv_request_getHeader(request : 'Query-Count'));
+  
+  on-exit;
+    iv_request_dispose(request);
+end-proc;
+
+
+dcl-proc test_getHeaderNonExist export;
+  dcl-s request pointer;
+  
+  request = iv_request_new('GET' : 'http://localhost'); 
+  
+  aEqual('' : iv_request_getHeader(request : 'Non-Existant'));
+  
+  on-exit;
+    iv_request_dispose(request);
+end-proc;
+
+
+dcl-proc test_minimum export;
+  dcl-s request pointer;
+  dcl-ds buffer likeds(LVARPUCHAR_t);
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  
+  assumedResult = loadFile('unittests/request/test1-minimum.http');
+  
+  request = iv_request_new('GET' : 'http://localhost'); 
+  buffer = iv_request_toString(request);
+  
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+    teraspace_free(buffer.string);
+end-proc;
+
+
+dcl-proc test_delete export;
+  dcl-s request pointer;
+  dcl-ds buffer likeds(LVARPUCHAR_t);
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  
+  assumedResult = loadFile('unittests/request/test2-delete.http');
+  
+  request = iv_request_new('DELETE' : 'http://localhost'); 
+  buffer = iv_request_toString(request);
+  
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+    teraspace_free(buffer.string);
+end-proc;
+
+
+dcl-proc test_options export;
+  dcl-s request pointer;
+  dcl-ds buffer likeds(LVARPUCHAR_t);
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  
+  assumedResult = loadFile('unittests/request/test3-options.http');
+  
+  request = iv_request_new('OPTIONS' : 'http://localhost'); 
+  buffer = iv_request_toString(request);
+  
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+    teraspace_free(buffer.string);
+end-proc;
+
+
+dcl-proc test_head export;
+  dcl-s request pointer;
+  dcl-ds buffer likeds(LVARPUCHAR_t);
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  
+  assumedResult = loadFile('unittests/request/test4-head.http');
+  
+  request = iv_request_new('HEAD' : 'http://localhost'); 
+  buffer = iv_request_toString(request);
+  
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+    teraspace_free(buffer.string);
+end-proc;
+
+
+dcl-proc test_port export;
+  dcl-s request pointer;
+  dcl-ds buffer likeds(LVARPUCHAR_t);
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  
+  assumedResult = loadFile('unittests/request/test5-port.http');
+  
+  request = iv_request_new('GET' : 'http://localhost:8080'); 
+  buffer = iv_request_toString(request);
+  
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+    teraspace_free(buffer.string);
+end-proc;
+
+
+dcl-proc test_path export;
+  dcl-s request pointer;
+  dcl-ds buffer likeds(LVARPUCHAR_t);
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  
+  assumedResult = loadFile('unittests/request/test6-path.http');
+  
+  request = iv_request_new('GET' : 'http://localhost/api/entity/123'); 
+  buffer = iv_request_toString(request);
+  
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+    teraspace_free(buffer.string);
+end-proc;
+
+
+dcl-proc test_queryNoPath export;
+  dcl-s request pointer;
+  dcl-ds buffer likeds(LVARPUCHAR_t);
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  
+  assumedResult = loadFile('unittests/request/test7-queryNoPath.http');
+  
+  request = iv_request_new('GET' : 'http://localhost?q=searchterm'); 
+  buffer = iv_request_toString(request);
+  
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+    teraspace_free(buffer.string);
+end-proc;
+
+
+dcl-proc test_textBody export;
+  dcl-s request pointer;
+  dcl-ds buffer likeds(LVARPUCHAR_t);
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  
+  assumedResult = loadFile('unittests/request/test8-textBody.http');
+  
+  request = iv_request_new('POST' : 'http://localhost'); 
+  iv_request_setTextBody(request : 'The quick brown fox jumps over the fence.');
+  buffer = iv_request_toString(request);
+  
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+    teraspace_free(buffer.string);
+end-proc;
+
+
+dcl-proc test_overrideAccept export;
+  dcl-s request pointer;
+  dcl-ds buffer likeds(LVARPUCHAR_t);
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  
+  assumedResult = loadFile('unittests/request/test9-overrideAccept.http');
+  
+  request = iv_request_new('GET' : 'http://localhost' : 'application/vendor-sitemule-item+json+v2'); 
+  buffer = iv_request_toString(request);
+  
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+    teraspace_free(buffer.string);
+end-proc;
+
+
+dcl-proc test_formData export;
+  dcl-s request pointer;
+  dcl-ds buffer likeds(LVARPUCHAR_t);
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  
+  assumedResult = loadFile('unittests/request/test10-formData.http');
+  
+  request = iv_request_new('POST' : 'http://localhost');
+  iv_request_setContentType(request : 'application/x-www-form-urlencoded');
+  iv_request_setFormBody(request : iv_form_of('name' : 'Mihael Schmidt' : 'role' : 'developer'));
+  buffer = iv_request_toString(request);
+  
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+    teraspace_free(buffer.string);
+end-proc;
+
+
+dcl-proc loadFile;
+  dcl-pi *n varchar(1000000) ccsid(*hex);
+    p_path varchar(1000) const;
+  end-pi;
+
+  dcl-s path varchar(1000);
+  dcl-s content char(1000000) ccsid(*hex);
+  dcl-s returnValue varchar(1000000) ccsid(*hex);
+  dcl-s len int(10);
+  dcl-s fd int(10);
+
+  path = p_path + x'00';
+
+  fd = open(%addr(path : *data) : O_RDONLY);
+  if (fd >= 0);
+    len = read(fd : %addr(content) : 1000000);
+    returnValue = %subst(content : 1 : len);
+  endif;
+
+  return returnValue;
+  
+  on-exit;
+    if (fd >= 0);
+      callp close(fd);
+    endif;
+end-proc;

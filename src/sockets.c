@@ -32,15 +32,16 @@
 
 /* own standart includes */
 #include "ostypes.h"
-#include "teramem.h"
+#include "teraspace.h"
 #include "apierr.h"
 #include "varchar.h"
 //#include "utl100.h"
 //#include "MinMax.h"
 #include "parms.h"
 #include "sockets.h"
-#include "sndpgmmsg.h"
-#include "e2aa2e.h"
+#include "message.h"
+
+// #include "e2aa2e.h"
 #include "xlate.h"
 
 
@@ -48,7 +49,7 @@
 PSOCKETS sockets_new(void)
 {   
     // Get mem and set to zero
-    PSOCKETS ps = memCalloc(sizeof(SOCKETS));
+    PSOCKETS ps = teraspace_calloc(sizeof(SOCKETS));
     return ps;
 }
 
@@ -56,7 +57,7 @@ PSOCKETS sockets_new(void)
 void  sockets_free(PSOCKETS ps)
 {
     sockets_close(ps);
-    memFree(&ps);
+    teraspace_free(&ps);
 }
 /* --------------------------------------------------------------------------- *\
    Define if SSL is used
@@ -96,7 +97,7 @@ void sockets_putTrace(PSOCKETS ps,PUCHAR Ctlstr, ...)
     va_start(arg_ptr, Ctlstr);
     len = vsprintf( temp , Ctlstr, arg_ptr);
     va_end(arg_ptr);
-    xlateBuf (temp2 , temp , len , 0 , 1252);
+    xlate_translateBuffer (temp2 , temp , len , 0 , 1252);
     fputs (temp2 , ps->trace);
 }
 
@@ -136,7 +137,7 @@ void sockets_close(PSOCKETS ps)
 /* --------------------------------------------------------------------------- */
 static void sockets_setSSLmsg(PSOCKETS ps,int rc, PUCHAR txt)
 {
-    iv_joblog( "%s: %d: %s, %s", txt, rc, gsk_strerror(rc), strerror(errno));
+    message_info( "%s: %d: %s, %s", txt, rc, gsk_strerror(rc), strerror(errno));
 }
 /* --------------------------------------------------------------------------- */
 static int sockets_sslCallBack(PUCHAR certChain, int valStatus)
@@ -254,15 +255,17 @@ static BOOL initialize_gsk_environment (PSOCKETS ps)
 
 
     // set Password to the keyring
-    errno = 0;
-    rc = gsk_attribute_set_buffer(ps->my_env_handle,
-                                    GSK_KEYRING_PW,
-                                    ps->keyringPassword,
-                                    strlen(ps->keyringPassword));
-    if (rc != GSK_OK) {
-        sockets_setSSLmsg(ps,rc, "set Password to the keyring");
-        sockets_close(ps);
-        return FALSE;
+    if (strlen(ps->keyringPassword) > 0 ) {
+        errno = 0;
+        rc = gsk_attribute_set_buffer(ps->my_env_handle,
+                                        GSK_KEYRING_PW,
+                                        ps->keyringPassword,
+                                        strlen(ps->keyringPassword));
+        if (rc != GSK_OK) {
+            sockets_setSSLmsg(ps,rc, "set Password to the keyring");
+            sockets_close(ps);
+            return FALSE;
+        }
     }
 
     // If one fails - then return  !!
@@ -284,6 +287,16 @@ static BOOL initialize_gsk_environment (PSOCKETS ps)
         return FALSE;
     }
 
+    // set this side as the client (this is the default)
+    errno = 0;
+    rc = gsk_attribute_set_enum(ps->my_env_handle,
+                                GSK_SESSION_TYPE,
+                                GSK_CLIENT_SESSION);
+    if (rc != GSK_OK) {
+        sockets_setSSLmsg(ps,rc, "set this side as the client");
+        sockets_close(ps);
+        return FALSE;
+    }
 
     // set auth-passthru
     errno = 0;
@@ -373,7 +386,7 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR serverIP, LONG serverPort, LONG timeOut
     ps->socket = socket(AF_INET, SOCK_STREAM, 0);
 
     if (ps->socket == SOCK_INVALID)  {
-        iv_joblog(  "Invalid socket %s" , strerror(errno));
+        message_info(  "Invalid socket %s" , strerror(errno));
         return FALSE;
     }
 
@@ -393,7 +406,7 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR serverIP, LONG serverPort, LONG timeOut
         hostp = gethostbyname(serverIP);
         if (hostp == (struct hostent *)NULL) {
             sockets_close(ps);
-            iv_joblog(  "Invalid host <%s> Error: %s", serverIP , strerror(errno));
+            message_info(  "Invalid host <%s> Error: %s", serverIP , strerror(errno));
             return FALSE;
         }
         memcpy(&serveraddr.sin_addr,  hostp->h_addr, sizeof(serveraddr.sin_addr));
@@ -405,7 +418,7 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR serverIP, LONG serverPort, LONG timeOut
     rc = connect(ps->socket , (struct sockaddr *)&serveraddr , sizeof(serveraddr));
     // rc will be -1 for NON_bloking sockets
     if( (rc != 0) && (errno != EINPROGRESS) ) {
-        iv_joblog(  "Connection failed: %s %s" , serverIP, strerror(errno));
+        message_info(  "Connection failed: %s %s" , serverIP, strerror(errno));
         sockets_close(ps);
         return FALSE;
     }
@@ -420,14 +433,14 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR serverIP, LONG serverPort, LONG timeOut
         int so_error;
         socklen_t len = sizeof(so_error);
         getsockopt(ps->socket, SOL_SOCKET, SO_ERROR, (PUCHAR) &so_error, &len);
-        iv_joblog(  "Connect - poll failed: %s %s" , serverIP, strerror(errno));
+        message_info(  "Connect - poll failed: %s %s" , serverIP, strerror(errno));
         sockets_close(ps);
         return FALSE;
     } else if (rc == 0) { // 0=timeout
         int so_error;
         socklen_t len = sizeof(so_error);
         getsockopt(ps->socket, SOL_SOCKET, SO_ERROR, (PUCHAR) &so_error, &len);
-        iv_joblog(  "Connection - timeout: %s %s" , serverIP, strerror(errno));
+        message_info(  "Connection - timeout: %s %s" , serverIP, strerror(errno));
         sockets_close(ps);
         return FALSE;
     }
@@ -491,11 +504,11 @@ LONG sockets_send (PSOCKETS ps,PUCHAR Buf, LONG Len)
 
     rc = poll( &pdf, 1, 1000);
     if (rc < 0 ) {  // Timeout
-        iv_joblog( "Send poll wait error: %s" , strerror(errno));
+        message_info( "Send poll wait error: %s" , strerror(errno));
         sockets_close(ps);
         return SOCK_ERROR;
     } else if (rc == 0) {  // Timeout
-        iv_joblog( "Send poll timout ");
+        message_info( "Send poll timout ");
         sockets_close(ps);
         return SOCK_TIMEOUT;
     }
@@ -521,7 +534,7 @@ LONG sockets_send (PSOCKETS ps,PUCHAR Buf, LONG Len)
             if (rc == 0) {
                 errno = error;
             }
-            iv_joblog( "Send failed: %s" , strerror(errno));
+            message_info( "Send failed: %s" , strerror(errno));
             sockets_close(ps);
             return SOCK_ERROR ;
         }
@@ -553,11 +566,11 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG timeOut)
         int so_error;
         socklen_t len = sizeof(so_error);
         getsockopt(ps->socket, SOL_SOCKET, SO_ERROR, (PUCHAR) &so_error, &len);
-        iv_joblog(  "Receive - poll failed: %s " , strerror(errno));
+        message_info(  "Receive - poll failed: %s " , strerror(errno));
         sockets_close(ps);
         return SOCK_ERROR;
     } else if (rc == 0) { // 0=timeout
-        iv_joblog(  "Timeout poll receive");
+        message_info(  "Timeout poll receive");
         sockets_close(ps);
         return SOCK_TIMEOUT;
     }
@@ -574,7 +587,7 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG timeOut)
         }
         */
         if (rc == GSK_OS400_ERROR_TIMED_OUT) {  // timeout
-            iv_joblog(  "Receive GSK timeout");
+            message_info(  "Receive GSK timeout");
             sockets_close(ps);
             return SOCK_TIMEOUT;
         }
@@ -589,12 +602,12 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG timeOut)
 
         rc = read(ps->socket, Buf, Len );
         if (rc < 0) {  // error
-            iv_joblog(  "Socket read error: %s" , strerror(errno));
+            message_info(  "Socket read error: %s" , strerror(errno));
             sockets_close(ps);
             return SOCK_ERROR;
 
         } else if (rc == 0) {  // timeout
-            iv_joblog(  "timeout");
+            message_info(  "timeout");
             sockets_close(ps);
             return SOCK_TIMEOUT;
         }

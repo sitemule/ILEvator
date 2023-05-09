@@ -1,0 +1,25 @@
+**FREE
+
+/if defined (ILEVATOR_HTTPCLIENT_H)
+/eof
+/endif
+
+/define ILEVATOR_HTTPCLIENT_H
+
+
+dcl-pr parseUrl extproc(*dclcase);
+    client pointer value;
+    url pointer value options(*string);
+end-pr;
+
+dcl-pr sendRequest int(10) extproc(*dclcase);
+    client pointer value;
+end-pr;
+
+dcl-pr receiveHeader int(10) extproc(*dclcase);
+    client pointer value;
+end-pr;
+
+dcl-pr receiveData int(10) extproc(*dclcase);
+    client pointer value;
+end-pr;

@@ -1,0 +1,30 @@
+**FREE
+
+/if not defined (ILEVATOR_SOCKETS)
+/define ILEVATOR_SOCKETS
+
+dcl-c PLAIN_SOCKET 0;
+dcl-c SECURE_HANDSHAKE_IMEDIATE 1;
+dcl-c SECURE_HANDSHAKE_LATER 2;
+
+dcl-pr sockets_setSSL extproc(*CWIDEN:'sockets_setSSL');
+    sockets pointer value;
+    useSSL int(5) value;
+    certificateFile pointer value;
+    keyringPassword pointer value;
+end-pr;
+
+dcl-pr sockets_new pointer extproc(*CWIDEN:'sockets_new') end-pr;
+
+dcl-pr sockets_free extproc(*CWIDEN:'sockets_free');
+    sockets pointer value;
+end-pr;
+
+dcl-pr sockets_connect int(3) extproc(*CWIDEN:'sockets_connect');
+    client pointer value;
+    server pointer options(*string) value;
+    port int(10) value;
+    timeout int(10) value;
+end-pr;
+
+/endif

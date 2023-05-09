@@ -1,0 +1,38 @@
+**FREE
+
+///
+// Bearer Token Unit Test
+//
+// @author Mihael Schmidt
+// @date   17.03.2023
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'bearer.rpginc'
+/include 'request.rpginc'
+/include 'teraspace.rpginc'
+
+dcl-pr test_bearerToken end-pr;
+
+
+dcl-proc test_bearerToken export;
+  dcl-s request pointer;
+  dcl-s authenticator pointer;
+  dcl-s authHeaderValue varchar(8000) ccsid(*utf8);
+  
+  request = iv_request_new('GET' : 'http://localhost/index.html');
+  authenticator = iv_bearer_new('my_token_value');
+  
+  iv_bearer_processRequest(authenticator : request);
+  authHeaderValue = iv_request_getHeader(request : 'Authorization');
+  
+  aEqual('Bearer my_token_value' : authHeaderValue);
+  
+  on-exit;
+    iv_request_dispose(request);
+    teraspace_free(authenticator);
+end-proc;

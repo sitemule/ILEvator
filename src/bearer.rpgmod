@@ -1,0 +1,42 @@
+**FREE
+
+ctl-opt nomain thread(*concurrent);
+
+
+/include 'bearer.rpginc'
+/include 'request.rpginc'
+/include 'teraspace.rpginc'
+
+
+dcl-ds iv_auth_t qualified template;
+    processRequest pointer(*proc);
+    token varchar(8000) ccsid(*utf8);
+end-ds;
+
+
+dcl-proc iv_bearer_new export;
+    dcl-pi *n pointer;
+        token varchar(8000) ccsid(*utf8) const;    
+    end-pi;
+    
+    dcl-ds auth likeds(iv_auth_t) based(authPtr);
+    
+    authPtr = teraspace_alloc(%size(iv_auth_t));
+    
+    auth.processRequest = %paddr(iv_bearer_processRequest);
+    auth.token = token;
+    
+    return authPtr;
+end-proc;
+
+
+dcl-proc iv_bearer_processRequest export;
+    dcl-pi *n;
+        p_auth pointer value;
+        request pointer value;
+    end-pi;
+
+    dcl-ds auth likeds(iv_auth_t) based(p_auth);
+    
+    iv_request_addHeader(request : 'Authorization' : 'Bearer ' + auth.token);
+end-proc;

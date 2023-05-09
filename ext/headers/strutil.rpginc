@@ -1,0 +1,12 @@
+**FREE
+
+/if not defined (ILEVATOR_STREAM)
+/define ILEVATOR_STREAM
+
+dcl-pr strutil_itoa pointer extproc(*dclcase);
+  value int(10) value;
+  buffer pointer value;
+  base int(10) value;
+end-pr;
+
+/endif

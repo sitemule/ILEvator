@@ -20,90 +20,44 @@
 #include "ostypes.h"
 #include "sockets.h"
 #include "anychar.h"
-#include "simpleList.h"
+#include "sockets.h"
 #include "ilevator.h"
 #include "chunked.h"
-#include "xlate.h"
 #include "base64.h"
-
-
-#include "teramem.h"
+#include "teraspace.h"
 #include "varchar.h"
 #include "strutil.h"
-#include "streamer.h"
 #include "simpleList.h"
-#include "sndpgmmsg.h"
+#include "message.h"
 #include "parms.h"
 #include "httpclient.h"
+#include "debug.h"
 
 static UCHAR EOL [] = {CR, LF , 0};
+#define BUFFER_SIZE 1048576
+#define DEFAULT_TIMEOUT 30000
+#define NO_RETRIES 0
 
 /* --------------------------------------------------------------------------- */
 PILEVATOR iv_newHttpClient(void)
 {
     // Get mem and set to zero
-    PILEVATOR pIv = memCalloc(sizeof(ILEVATOR));
-    pIv->buffer = memAlloc(BUFFER_SIZE);
+    PILEVATOR pIv = teraspace_calloc(sizeof(ILEVATOR));
+    pIv->buffer = teraspace_alloc(BUFFER_SIZE);
     pIv->bufferSize = BUFFER_SIZE;
-    pIv->pSockets =  sockets_new();
+    pIv->sockets =  sockets_new();
     pIv->headerList = sList_new ();
     return (pIv);
 }
-/*
-void  xxx_iv_newHttpClient(PILEVATOR *ppIv)
-{
-    // Get mem and set to zero
-    PILEVATOR pIv = memCalloc(sizeof(ILEVATOR));
-    pIv->buffer = memAlloc(BUFFER_SIZE);
-    pIv->bufferSize = BUFFER_SIZE;
-    pIv->pSockets =  sockets_new();
-    pIv->headerList = sList_new ();
-    ppIv = pIv;
-
-}
-*/ 
 /* --------------------------------------------------------------------------- */
-void iv_delete ( PILEVATOR pIv)
+void iv_free ( PILEVATOR pIv)
 {
     if (pIv == NULL) return;
-    sockets_free (pIv->pSockets);
+    sockets_free (pIv->sockets);
     sList_free (pIv->headerList);
-    memFree (&pIv->buffer);
-    memFree (&pIv);
-}
-/* --------------------------------------------------------------------------- */
-void iv_setRequestHeaderBuffer (
-    PILEVATOR pIv ,
-    PUCHAR pBuf,
-    LONG  bufferSize,
-    SHORT bufferType,
-    LONG  bufferCcsid
-)
-{
-    anyCharSet ( 
-        &pIv->requestHeaderBuffer,
-        pBuf,
-        bufferSize,
-        bufferType,
-        bufferCcsid
-    );
-}
-/* --------------------------------------------------------------------------- */
-void iv_setRequestDataBuffer (
-    PILEVATOR pIv ,
-    PUCHAR pBuf,
-    LONG  bufferSize,
-    SHORT bufferType,
-    LONG  bufferCcsid
-)
-{
-    anyCharSet ( 
-        &pIv->requestDataBuffer,
-        pBuf,
-        bufferSize,
-        bufferType,
-        bufferCcsid
-    );
+    teraspace_free (&pIv->authProvider);
+    teraspace_free (&pIv->buffer);
+    teraspace_free (&pIv);
 }
 /* --------------------------------------------------------------------------- */
 void iv_setResponseHeaderBuffer (
@@ -114,7 +68,7 @@ void iv_setResponseHeaderBuffer (
     LONG  bufferCcsid
 )
 {
-    anyCharSet ( 
+    iv_anychar_set ( 
         &pIv->responseHeaderBuffer,
         pBuf,
         bufferSize,
@@ -131,7 +85,7 @@ void iv_setResponseDataBuffer (
     LONG  bufferCcsid
 )
 {
-    anyCharSet ( 
+    iv_anychar_set ( 
         &pIv->responseDataBuffer,
         pBuf,
         bufferSize,
@@ -152,10 +106,10 @@ void iv_setResponseFile (
     ccsid = (parms >=3) ? parms : 1252;   
 
     sprintf(mode , "wb,o_ccsid=%d", ccsid);
-	unlink  ( righttrim(fileName)); // Just to reset the CCSID which will not change if file exists
-	pIv->responseDataFile  = fopen ( righttrim(fileName) , mode );
+	unlink(strutil_righttrim(fileName)); // Just to reset the CCSID which will not change if file exists
+	pIv->responseDataFile  = fopen ( strutil_righttrim(fileName) , mode );
 	if (pIv->responseDataFile == NULL) {
-        iv_joblog( "Response output open failed: %s" , strerror(errno));
+        message_info("Response output open failed: %s" , strerror(errno));
 	}
 }
 /* --------------------------------------------------------------------------- */
@@ -169,18 +123,22 @@ LGL iv_setCertificate  (
 {
     int parms = _NPMPARMLISTADDR()->OpDescList->NbrOfParms;
 
-    strcpy  (pIv->pSockets->certificateFile, certificateFile);
-    strcpy  (pIv->pSockets->keyringPassword , (parms >=3) ? certificatePassword: "");
-
-    if (0 == access ( pIv->pSockets->certificateFile ,  R_OK)) {
-        return ON;
-    } else {
-        iv_joblog( "Certificate error: %s File: %s:", 
+    if (0 != access(certificateFile, R_OK)) {
+        message_info("Certificate error: %s File: %s:", 
             strerror(errno),
-            pIv->pSockets->certificateFile
+            pIv->sockets->certificateFile
         );
         return OFF;
     }
+    
+    sockets_setSSL(
+        pIv->sockets, 
+        SECURE_HANDSHAKE_IMEDIATE,
+        certificateFile,
+        certificatePassword
+    );
+    
+    return ON;
 }
 /* --------------------------------------------------------------------------- */
 LGL iv_execute (
@@ -193,28 +151,19 @@ LGL iv_execute (
 {
     int parms = _NPMPARMLISTADDR()->OpDescList->NbrOfParms;
     API_STATUS apiStatus = API_RETRY; 
-    SHORT retry;
+    SHORT try;
     
     pIv->method = method; 
     pIv->url = url; 
-    pIv->timeOut = (parms >= 4) ? timeOut : 30000; 
-    pIv->retries = (parms >= 5) ? retries : 3;
+    pIv->timeOut = (parms >= 4) ? timeOut : DEFAULT_TIMEOUT;
+    pIv->retries = (parms >= 5) ? retries : NO_RETRIES;
     
-    parseUrl (
-        pIv,
-        url,
-        pIv->server ,
-        pIv->port ,
-        pIv->resource ,
-        pIv->host ,
-        pIv->user ,
-        pIv->password
-    ); 
+    parseUrl(pIv, url); 
 
-    for (retry = 0; retry < pIv->retries ; retry++) {
+    for (try = 0; try <= pIv->retries ; try++) {
 
         BOOL ok = sockets_connect(
-            pIv->pSockets, 
+            pIv->sockets, 
             pIv->server ,
             atoi (pIv->port) ,
             pIv->timeOut
@@ -222,22 +171,23 @@ LGL iv_execute (
         apiStatus = ( ok? API_OK:API_ERROR);
         if (apiStatus == API_ERROR) break; 
 
-
-        apiStatus = sendHeader (pIv);
+        apiStatus = sendRequest (pIv);
         if (apiStatus == API_ERROR) break; 
 
         apiStatus = receiveHeader (pIv);
         if (apiStatus == API_ERROR) break; 
         if (apiStatus == API_RETRY) continue; 
 
+        iv_debug("HTTP response status: %s", "unknown"); // TODO set response status code
+
         // Dont try to get data if it was a HEAD request - it is only the header
         // or status 204 => no content
-        if (beginsWith(pIv->method , "HEAD")
-        ||  pIv->status == 204 )     {  // No Content, dont read any longer
+        if (strutil_beginsWith(pIv->method , "HEAD")  ||  pIv->status == 204 )  {
+            // No Content, dont read any longer
             apiStatus = API_OK;
         }
         else if (pIv->responseIsChunked) {
-            apiStatus = receiveChunked(pIv);
+            apiStatus = iv_chunked_receive(pIv);
         }
         else {
             apiStatus = receiveData (pIv);
@@ -249,18 +199,16 @@ LGL iv_execute (
 
     }
 
-    anyCharFinalize (&pIv->requestHeaderBuffer);
-    anyCharFinalize (&pIv->requestDataBuffer);
-    anyCharFinalize (&pIv->responseHeaderBuffer);
-    anyCharFinalize (&pIv->responseDataBuffer);
+    iv_anychar_finalize (&pIv->responseHeaderBuffer);
+    iv_anychar_finalize (&pIv->responseDataBuffer);
 
     if (pIv->responseDataFile) {
         fclose(pIv->responseDataFile);
     }
 
-    iv_delete ( pIv);
+    iv_free(pIv);
 
-    return (apiStatus == API_OK ? ON:OFF);
+    return apiStatus == API_OK ? ON : OFF;
 
 }
 
@@ -271,9 +219,9 @@ void iv_addHeader ( PILEVATOR pIv, PVARCHAR headerName, PVARCHAR headerValue)
     PUCHAR p = header;
     LONG len;
 
-    p += cpymem (p, headerName->String, headerName->Length);
-    p += cpystr (p , ": ");
-    p += cpymem (p, headerValue->String, headerValue->Length);
+    p += strutil_cpymem (p, headerName->String, headerName->Length);
+    p += strutil_cpystr (p , ": ");
+    p += strutil_cpymem (p, headerValue->String, headerValue->Length);
 
     *p = '\0';
     p++;
@@ -303,5 +251,45 @@ PUCHAR iv_getFileExtension  (PVARCHAR256 extension, PVARCHAR fileName)
 /* --------------------------------------------------------------------------- */
 SHORT iv_getStatus ( PILEVATOR pIv)
 {
-   return pIv->status; 
+    return pIv->status; 
 }
+/* --------------------------------------------------------------------------- */
+void iv_setAuthProvider(PILEVATOR pIv, PAUTH_PROVIDER authProvider) 
+{
+    if (pIv->authProvider) teraspace_free(&pIv->authProvider);
+    
+    pIv->authProvider = authProvider;
+}
+
+void iv_get(PLVARCHAR returnBuffer, VARCHAR url, VARCHAR acceptMimeType, PSLIST headers) 
+{
+    int parms = _NPMPARMLISTADDR()->OpDescList->NbrOfParms;
+    PILEVATOR pIv = iv_newHttpClient();
+    
+    UCHAR l_url[32767];
+    memcpy(&l_url, &url.String, url.Length);
+    l_url[url.Length] = '\0';
+    
+    iv_setResponseDataBuffer(
+        pIv, 
+        (PVOID) returnBuffer, 
+        BUFFER_SIZE,
+        IV_VARCHAR4,
+        IV_CCSID_UTF8
+    );
+    
+    if (parms >= 3) {
+      // TODO handle acceptMimeType
+    }
+    
+    if (parms >= 4) {
+      // TODO handle headers
+    }
+    
+    LGL rc = iv_execute (pIv, "GET", &l_url[0], DEFAULT_TIMEOUT, NO_RETRIES);
+    // TODO what to do with the result?
+    
+    iv_free(pIv); // TODO catch any error and free the http client instance
+}
+
+

@@ -1,0 +1,422 @@
+**FREE
+
+ctl-opt nomain thread(*concurrent);
+
+// Reference: https://url.spec.whatwg.org/
+// TODO punycode support
+
+/include 'url.rpginc'
+
+dcl-pr memcmp int(10)  extproc('memcmp');
+  buffer1 pointer value;
+  buffer2 pointer value;
+  count uns(10) value;
+end-pr;
+
+dcl-s SCHEME_SEPARATOR char(3) inz('://');
+dcl-c UNICODE_HASH u'0023';
+dcl-c UNICODE_AT u'0040';
+dcl-c UNICODE_SQUARE_BRACKET_OPEN u'005B';
+dcl-c UNICODE_SQUARE_BRACKET_CLOSE u'005D';
+dcl-c UNICODE_LESS_THAN u'003C';    // <
+dcl-c UNICODE_GREATER_THAN u'003E'; // >
+
+
+dcl-proc iv_url_parse export;
+  dcl-pi *n likeds(iv_url_t);
+    pUrl varchar(100000) value;
+  end-pi;
+
+  dcl-ds url likeds(iv_url_t) inz(*likeds);
+  dcl-s c char(1) based(ptr);
+  dcl-s i uns(10) inz(1);
+  dcl-s partStart uns(10);
+  dcl-s lastMarkerChar char(1);
+  dcl-s tmp char(10);
+  dcl-s inIpv6 ind inz(*off);
+  dcl-s inProxy ind inz(*off);
+  dcl-s authData varchar(100) dim(2) inz;
+  
+  // state indicates the last part of the URL which has already been processed
+  dcl-s state uns(3);
+  
+  // proxy URL   | protocol  | username  | password | host | port | path        | query  | fragment
+  // <proxy url>   http     :// my_user  : my_pass  @ host : 8181   /index.html ? q=term # /component/123
+  
+  dcl-c STATE_START 1;
+  dcl-c STATE_PROXY 2;
+  dcl-c STATE_PROTOCOL 3;
+  dcl-c STATE_AUTH 4;
+  dcl-c STATE_HOST 5;
+  dcl-c STATE_PORT 6;
+  dcl-c STATE_PATH 7;
+  dcl-c STATE_QUERY 8;
+
+  if (%len(pUrl) = 0);
+    return *allx'00';
+  endif;
+
+  state = STATE_START;
+  partStart = 1;
+
+  ptr = %addr(pUrl : *data);
+
+  // support path without protocol, host or port
+  // defaults to http, localhost, 80
+  if (c = '/');
+    state = STATE_PORT;
+  endif;
+  
+  // support IceBreak proxy urls
+  if (c = UNICODE_LESS_THAN);
+    inProxy = *on;
+    state = STATE_START;
+  else;
+    state = STATE_PROXY;
+  endif;
+
+  dou (i > %len(pUrl));
+    select;
+     
+      when (state = STATE_START);
+        if (c = UNICODE_GREATER_THAN);
+          url.proxy = %subst(pUrl : partStart + 1 : i - partStart - 1);
+          partStart = i+1;
+          state = STATE_PROXY;
+          lastMarkerChar = UNICODE_GREATER_THAN;
+          inProxy = *off;
+        endif;
+        
+      when (state = STATE_PROXY);
+        select;
+          when (c = UNICODE_SQUARE_BRACKET_OPEN);
+            inIpv6 = *on;
+          when (c = UNICODE_SQUARE_BRACKET_CLOSE and inIpv6);
+            if (partStart + 1 <> i);
+              url.host = %subst(pUrl : partStart + 1 : i - partStart - 1);
+              url.ipv6 = *on;
+            else;
+              url.host = *blank;
+            endif;
+            inIpv6 = *off;
+            partStart = i+1;
+            state = STATE_HOST;
+            lastMarkerChar = UNICODE_SQUARE_BRACKET_CLOSE;
+          when (c = ':');
+            lastMarkerChar = c;
+            if (memcmp(ptr : %addr(SCHEME_SEPARATOR) : 3) = 0);
+              url.protocol = %subst(pUrl : partStart : i - partStart);
+              partStart = i+3; // :// => 3 chars  TODO support mailto: (without //)
+              state = STATE_PROTOCOL;
+              if (%len(pUrl) >= i+3);
+                ptr += 2;
+                i += 2;
+              endif;
+            else; // may be port
+              url.host = %subst(pUrl : partStart : i - partStart);
+              partStart = i+1;
+              state = STATE_PORT;
+            endif;
+          when (c = '/');
+            lastMarkerChar = c;
+            url.host = %subst(pUrl : partStart : i - partStart);
+            partStart = i;
+            state = STATE_PORT;
+        endsl;
+
+      when (state = STATE_PROTOCOL);
+        select;
+          when (c = UNICODE_AT);
+            authData = parseUserPassword(%subst(pUrl : partStart : i - partStart));
+            url.username = authData(1);
+            url.password = authData(2);
+            partStart = i+1;
+            state = STATE_AUTH;
+            lastMarkerChar = UNICODE_AT;
+          when (c = UNICODE_SQUARE_BRACKET_OPEN);
+            inIpv6 = *on;
+          when (c = UNICODE_SQUARE_BRACKET_CLOSE and inIpv6);
+            if (partStart + 1 <> i);
+              url.host = %subst(pUrl : partStart + 1 : i - partStart - 1);
+              url.ipv6 = *on;
+            else;
+              url.host = *blank;
+            endif;
+            inIpv6 = *off;
+            partStart = i+1;
+            state = STATE_HOST;
+            lastMarkerChar = UNICODE_SQUARE_BRACKET_CLOSE;
+          when (c = ':' and not inIpv6);
+            lastMarkerChar = c;
+            url.host = %subst(pUrl : partStart : i - partStart);
+            partStart = i+1;
+            state = STATE_HOST;
+          when (c = '/');
+            lastMarkerChar = c;
+            url.host = %subst(pUrl : partStart : i - partStart);
+            partStart = i;
+            state = STATE_PORT;
+          when (c = '?');
+            lastMarkerChar = c;
+            url.host = %subst(pUrl : partStart : i - partStart);
+            partStart = i+1;
+            state = STATE_PATH;
+          when (c = UNICODE_HASH);
+            lastMarkerChar = c;
+            url.host = %subst(pUrl : partStart : i - partStart);
+            partStart = i+1;
+            state = STATE_QUERY;
+            leave;
+        endsl;
+
+      when (state = STATE_AUTH);
+        select;
+          when (c = UNICODE_SQUARE_BRACKET_OPEN);
+            inIpv6 = *on;
+          when (c = UNICODE_SQUARE_BRACKET_CLOSE and inIpv6);
+            if (partStart + 1 <> i);
+              url.host = %subst(pUrl : partStart + 1 : i - partStart - 1);
+              url.ipv6 = *on;
+            else;
+              url.host = *blank;
+            endif;
+            inIpv6 = *off;
+            partStart = i+1;
+            state = STATE_HOST;
+            lastMarkerChar = UNICODE_SQUARE_BRACKET_CLOSE;
+          when (c = ':' and not inIpv6);
+            lastMarkerChar = c;
+            url.host = %subst(pUrl : partStart : i - partStart);
+            partStart = i+1;
+            state = STATE_HOST;
+          when (c = '/');
+            lastMarkerChar = c;
+            url.host = %subst(pUrl : partStart : i - partStart);
+            partStart = i;
+            state = STATE_PORT;
+        endsl;
+
+      when (state = STATE_HOST);
+        select;
+          when (c = UNICODE_AT and lastMarkerChar = ':');
+            // the username has been scanned as hostname
+            url.username = url.host;
+            url.host = *blank;
+            url.password = %subst(pUrl : partStart : i - partStart);
+            partStart = i+1;
+            state = STATE_AUTH;
+            lastMarkerChar = c;
+          when (c = '/');
+            lastMarkerChar = c;
+            tmp = %subst(pUrl : partStart : i - partStart);
+            url.port = %uns(tmp);
+            partStart = i;
+            state = STATE_PORT;
+          when (c = '?');
+            if (lastMarkerChar = ':');
+              lastMarkerChar = c;
+              tmp = %subst(pUrl : partStart : i - partStart);
+              url.port = %uns(tmp);
+              partStart = i+1;
+              state = STATE_PATH;
+            endif;
+          when (c = UNICODE_HASH);
+            if (lastMarkerChar = ':');
+              lastMarkerChar = c;
+              tmp = %subst(pUrl : partStart : i - partStart);
+              url.port = %uns(tmp);
+              partStart = i;
+              state = STATE_QUERY;
+            elseif (lastMarkerChar = UNICODE_HASH);
+              lastMarkerChar = c;
+              if (i - partStart > 0);
+                url.query = %subst(pUrl : partStart : i - partStart);
+              endif;
+              partStart = i+1;
+              state = STATE_QUERY;
+            else;
+              lastMarkerChar = c;
+              url.path = %subst(pUrl : partStart : i - partStart);
+              partStart = i+1;
+              state = STATE_QUERY;
+            endif;
+            leave;
+        endsl;
+
+      when (state = STATE_PORT);
+        select;
+          when (c = '?');
+            lastMarkerChar = c;
+            url.path = %subst(pUrl : partStart : i - partStart);
+            partStart = i+1;
+            state = STATE_PATH;
+          when (c = UNICODE_HASH);
+            lastMarkerChar = c;
+            url.path = %subst(pUrl : partStart : i - partStart);
+            partStart = i+1;
+            state = STATE_QUERY;
+            leave;
+        endsl;
+        
+      when (state = STATE_PATH);
+        select;
+          when (c = UNICODE_HASH);
+            if (lastMarkerChar = '?');
+              lastMarkerChar = c;
+              if (i - partStart > 0);
+                url.query = %subst(pUrl : partStart : i - partStart);
+              endif;
+              partStart = i+1;
+              state = STATE_QUERY;
+            endif;
+            leave;
+        endsl;
+    endsl;
+
+    i += 1;
+    ptr += 1;
+  enddo;
+
+  select;
+    when (state = STATE_START);
+      url.host = %subst(pUrl : partStart);
+    when (state <= STATE_AUTH);
+      url.host = %subst(pUrl : partStart);
+    when (state = STATE_HOST);
+      if (partStart < %len(pUrl)); 
+        if (lastMarkerChar = ':');
+          tmp = %subst(pUrl : partStart);
+          url.port = %uns(tmp);
+        else;
+          url.path = %subst(pUrl : partStart);
+        endif;
+      endif;
+    when (state = STATE_PORT);
+      if (lastMarkerChar = '/');
+        url.path = %subst(pUrl : partStart);
+      elseif (lastMarkerChar = '?');
+        if (partStart <= %len(pUrl));
+          url.query = %subst(pUrl : partStart);
+        endif;
+      endif;
+    when (state = STATE_PATH);
+      if (lastMarkerChar = '?');
+        if (partStart <= %len(pUrl));
+          url.query = %subst(pUrl : partStart);
+        endif;
+      endif;
+  endsl;
+
+  if (url.port = 0);
+    if (isHttps(url.protocol));
+      url.port = 443;
+    else;
+      url.port = 80;
+    endif;  
+  endif;
+
+  if (inIpv6);
+    // missing closing bracket
+    return *allx'00';
+  endif;
+  
+  if (inProxy);
+    // missing closing bracket
+    return *allx'00';
+  endif;
+
+  // TODO reverse urlencoding in path and query
+
+  return url;
+end-proc;
+
+
+dcl-proc iv_url_toString export;
+  dcl-pi *n varchar(100000);
+    url likeds(iv_url_t) const;
+  end-pi;
+  
+  dcl-s s varchar(100000);
+  
+  if (%len(url.host) = 0);
+    return *blank;
+  endif;
+  
+  if (url.proxy <> *blank);
+    s = UNICODE_LESS_THAN + url.proxy + UNICODE_GREATER_THAN;
+  endif;
+  
+  s += url.protocol + SCHEME_SEPARATOR;
+  
+  if (url.username <> *blank);
+    s += url.username;
+  endif;
+  
+  if (url.password <> *blank);
+    if (url.username <> *blank);
+      s += ':';
+    endif;
+    s += url.password;
+  endif;
+  
+  if (url.username <> *blank or url.password <> *blank);
+    s += UNICODE_AT;
+  endif;
+  
+  if (url.ipv6);
+    s += UNICODE_SQUARE_BRACKET_OPEN + url.host + UNICODE_SQUARE_BRACKET_CLOSE; 
+  else;
+    s += url.host;
+  endif;
+  
+  s += ':' + %char(url.port) + url.path;
+  
+  if (url.query <> *blank);
+    s += '?' + url.query;
+  endif;
+  
+  return s;
+end-proc;
+
+
+dcl-proc isHttps;
+  dcl-pi *n ind;
+    pProtocol varchar(20) const;
+  end-pi;
+  
+  dcl-c UPPER 'HTPS';
+  dcl-c LOWER 'htps';
+  dcl-s protocol varchar(20);
+  
+  protocol = %xlate(UPPER : LOWER : pProtocol);
+  
+  return protocol = 'https';
+end-proc;
+
+
+dcl-proc parseUserPassword;
+  dcl-pi *n varchar(100) dim(2);
+    s varchar(10000) const;
+  end-pi;
+  
+  dcl-s authData varchar(100) dim(2) inz;
+  dcl-s x int(10);
+  
+  x = %scan(':' : s);
+  if (x = 0);
+    // only the username
+    authData(1) = s;
+  elseif (x = 1);
+    // empty user , only password
+    if (%len(s) > x);
+      authData(2) = %subst(s : 2);
+    endif;
+  else;
+    authData(1) = %subst(s : x+1 : x-1);
+    if (%len(s) > x);
+      authData(2) = %subst(s : x+1);
+    endif;
+  endif;
+  
+  return authData;
+end-proc;

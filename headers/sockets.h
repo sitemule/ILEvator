@@ -7,6 +7,7 @@
 /* NL     15.05.2005 0000000 New program                         */
 /* NL     25.02.2007     510 Ignore namespace for WS parameters  */
 /* ------------------------------------------------------------- */
+
 #ifndef SOCKETS_H
 #define SOCKETS_H
 

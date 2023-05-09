@@ -1,4 +1,3 @@
-
 #-----------------------------------------------------------
 # User-defined part start
 #
@@ -11,38 +10,62 @@
 BIN_LIB=ILEVATOR
 DBGVIEW=*ALL
 TARGET_CCSID=*JOB
-TARGET_RLS=*PRV
-
-
-# Do not touch below
-INCLUDE='/QIBM/include' 'headers/'  
-
-CCFLAGS=OPTIMIZE(10) ENUM(*INT) TERASPACE(*YES) STGMDL(*INHERIT) SYSIFCOPT(*IFSIO) INCDIR($(INCLUDE)) DBGVIEW($(DBGVIEW)) DEFINE($(DEFINE)) TGTCCSID($(TARGET_CCSID)) TGTRLS($(TARGET_RLS))
-
-# For current compile:
-CCFLAGS2=OPTION(*STDLOGMSG) OUTPUT(*print) $(CCFLAGS)
+TARGET_RLS=*CURRENT
+OUTPUT=*NONE
 
 #
 # User-defined part end
 #-----------------------------------------------------------
 
+
+#
+# Do not touch below
+#
+
+## OS version dependent defines
+OS_VERSION=$(shell uname -v).$(shell uname -r)
+ifeq ($(shell expr $(OS_VERSION) \>= 7.3), 1)
+DEFINE=RPG_HAS_OVERLOAD
+TGTCCSID=TGTCCSID($(TARGET_CCSID))
+endif
+
+
+INCLUDE='headers/' 'ext/headers' '/QIBM/include'
+
+# C compile flags
+CCFLAGS=OUTPUT($(OUTPUT)) OPTION(*NOSHOWINC *STDLOGMSG) OPTIMIZE(10) ENUM(*INT) TERASPACE(*YES) STGMDL(*INHERIT) SYSIFCOPT(*IFSIO) INCDIR($(INCLUDE)) DBGVIEW($(DBGVIEW)) DEFINE($(DEFINE)) TGTCCSID($(TARGET_CCSID)) TGTRLS($(TARGET_RLS))
+# RPG compile flags
+RCFLAGS=OUTPUT($(OUTPUT)) OPTION(*NOUNREF *SRCSTMT) STGMDL(*INHERIT) INCDIR('headers' 'ext/headers') DBGVIEW(*LIST) TGTRLS($(TARGET_RLS)) DEFINE($(DEFINE)) $(TGTCCSID)
+RCFLAGS2=OUTPUT(*PRINT) OPTION(*NOUNREF *SRCSTMT) STGMDL(*INHERIT) INCDIR('headers' 'ext/headers') DBGVIEW(*LIST) TGTRLS($(TARGET_RLS)) DEFINE($(DEFINE)) $(TGTCCSID)
+
+# For current compile:
+CCFLAGS2=OUTPUT(*print) OPTION(*NOSHOWINC *STDLOGMSG) OPTIMIZE(10) ENUM(*INT) TERASPACE(*YES) STGMDL(*INHERIT) SYSIFCOPT(*IFSIO) INCDIR($(INCLUDE)) DBGVIEW($(DBGVIEW)) DEFINE($(DEFINE)) TGTCCSID($(TARGET_CCSID)) TGTRLS($(TARGET_RLS))
+
+# remove all default suffix rules
+.SUFFIXES:
+
+MODULES=$(BIN_LIB)/ANYCHAR $(BIN_LIB)/API $(BIN_LIB)/BASE64 $(BIN_LIB)/BASICAUTH $(BIN_LIB)/BEARER $(BIN_LIB)/CHUNKED $(BIN_LIB)/DEBUG $(BIN_LIB)/ENCODE $(BIN_LIB)/FORM $(BIN_LIB)/HTTPCLIENT $(BIN_LIB)/INIT $(BIN_LIB)/MESSAGE $(BIN_LIB)/MIME $(BIN_LIB)/REQUEST $(BIN_LIB)/SIMPLELIST $(BIN_LIB)/SOCKETS $(BIN_LIB)/STREAM $(BIN_LIB)/STRUTIL $(BIN_LIB)/TERASPACE $(BIN_LIB)/URL $(BIN_LIB)/VARCHAR  $(BIN_LIB)/XLATE
+
+
 # Dependency list
 
-all:  $(BIN_LIB).lib ilevator.srvpgm  hdr
+all:  $(BIN_LIB).lib ext modules ilevator.srvpgm hdr ilevator.bnd modules.bnd
 
-ilevator.srvpgm: api.c  httpclient.c chunked.c xlate.c base64.c sockets.c anychar.c teramem.c simplelist.c varchar.c strutil.c sndpgmmsg.c ilevator.bnd
-#ilevator.bnd: ilevator.entry ilevator.srvpgm
+ext: .PHONY
+	$(MAKE) -C ext/ $*
+
+modules: anychar.c api.rpgmod basicauth.rpgmod bearer.rpgmod chunked.c debug.rpgmod \
+         encode.rpgmod form.rpgmod httpclient.c init.cpp mime.rpgmod request.rpgmod \
+         sockets.c url.rpgmod
 
 #-----------------------------------------------------------
 
 %.lib:
 	-system -q "CRTLIB $* TYPE(*TEST)"
 
-
 %.bnd: 
 	-system -q "DLTBNDDIR BNDDIR($(BIN_LIB)/$*)"
 	-system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/$*)"
-	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$*) OBJ((*LIBL/ILEVATOR *SRVPGM *IMMED))"
 
 %.entry:
 	# Basically do nothing..
@@ -62,24 +85,37 @@ ilevator.srvpgm: api.c  httpclient.c chunked.c xlate.c base64.c sockets.c anycha
 	system "CPYFRMSTMF FROMSTMF('src/$*.clle') TOMBR('/QSYS.lib/$(BIN_LIB).lib/QCLLESRC.file/$(notdir $*).mbr') MBROPT(*ADD)"
 	system "CRTCLMOD MODULE($(BIN_LIB)/$(notdir $*)) SRCFILE($(BIN_LIB)/QCLLESRC) DBGVIEW($(DBGVIEW)) TGTRLS($(TARGET_RLS))"
 
-%.srvpgm:
+%.rpgmod:
+	system -q "CHGATR OBJ('src/$*.rpgmod') ATR(*CCSID) VALUE(1252)"
+	system -i "CRTRPGMOD MODULE($(BIN_LIB)/$*) SRCSTMF('src/$*.rpgmod') $(RCFLAGS)"
 
+%.srvpgm:
 	-system -q "CRTSRCPF FILE($(BIN_LIB)/QSRVSRC) RCDLEN(200)"
 	system "CPYFRMSTMF FROMSTMF('headers/$*.bnd') TOMBR('/QSYS.lib/$(BIN_LIB).lib/QSRVSRC.file/$*.mbr') MBROPT(*replace)"
-	
-	# You may be wondering what this ugly string is. It's a list of objects created from the dep list that end with .c, .cpp or .clle.
-	$(eval modules := $(patsubst %,$(BIN_LIB)/%,$(basename $(filter %.c %.cpp %.clle,$(notdir $^)))))
-	
-	system -q -kpieb "CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE($(modules)) SRCFILE($(BIN_LIB)/QSRVSRC) ACTGRP(QILE) ALWLIBUPD(*YES) DETAIL(*BASIC) TGTRLS($(TARGET_RLS))"
+	system -q -kpieb "CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE($(MODULES)) SRCFILE($(BIN_LIB)/QSRVSRC) ACTGRP(QILE) ALWLIBUPD(*YES) DETAIL(*BASIC) TGTRLS($(TARGET_RLS))"
 
+# TODO does not work yet
+ilevator.bnd: %.bnd
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$*) OBJ((*LIBL/ILEVATOR *SRVPGM *IMMED))"
+
+# TODO does not work yet
+modules.bnd: %.bnd
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/BASE64 *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/TERASPACE *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/STREAM *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/STREAMMEM *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/MESSAGE *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/URL *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/SIMPLELIST *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/VARCHAR *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/STRUTIL *MODULE))"
 
 hdr:
-
 	-system -q "CRTSRCPF FILE($(BIN_LIB)/QRPGLEREF) RCDLEN(200)"
 	-system -q "CRTSRCPF FILE($(BIN_LIB)/H) RCDLEN(200)"
   
-	system "CPYFRMSTMF FROMSTMF('headers/ILEVATOR.rpgle') TOMBR('/QSYS.lib/$(BIN_LIB).lib/QRPGLEREF.file/ILEVATOR.mbr') MBROPT(*REPLACE)"
-	system "CPYFRMSTMF FROMSTMF('headers/ilevator.h') TOMBR('/QSYS.lib/$(BIN_LIB).lib/H.file/ilevator.mbr') MBROPT(*REPLACE)"
+	system "CPYFRMSTMF FROMSTMF('headers/ilevator.rpgle') TOMBR('/QSYS.LIB/$(BIN_LIB).LIB/QRPGLEREF.FILE/ILEVATOR.MBR') MBROPT(*REPLACE)"
+	system "CPYFRMSTMF FROMSTMF('headers/ilevator.h') TOMBR('/QSYS.LIB/$(BIN_LIB).LIB/H.FILE/ILEVATOR.MBR') MBROPT(*REPLACE)"
 
 all:
 	@echo Build success!
@@ -115,6 +151,12 @@ current:
 	system -i "UPDSRVPGM SRVPGM($(BIN_LIB)/ilevator) MODULE($(BIN_LIB)/*ALL)"  
 endif
 
+ifeq "$(suffix $(SRC))" ".rpgmod"
+current:
+	system -i "CRTRPGMOD MODULE($(BIN_LIB)/$(basename $(notdir $(SRC)))) SRCSTMF('$(SRC)') $(RCFLAGS2) "
+	system -i "UPDSRVPGM SRVPGM($(BIN_LIB)/ilevator) MODULE($(BIN_LIB)/*ALL)"  
+endif
+
 ifeq "$(suffix $(SRC))" ".cpp"
 current:
 	system "CRTCPPMOD MODULE($(BIN_LIB)/$(basename $(notdir $(SRC)))) SRCSTMF('$(SRC)') $(CCFLAGS2) "
@@ -128,3 +170,5 @@ example:
 
 test: 
 	system -i "CRTBNDRPG PGM($(BIN_LIB)/$(SRC)) SRCSTMF('test/$(SRC).rpgle') DBGVIEW(*ALL)" > error.txt
+	
+.PHONY:

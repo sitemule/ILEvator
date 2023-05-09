@@ -15,25 +15,22 @@
 #include <errno.h>
 #include <locale.h>
 
-
-#include "ostypes.h"
-#include "sockets.h"
-
 #include "anychar.h"
-#include "simpleList.h"
-#include "ilevator.h"
-#include "chunked.h"
-#include "xlate.h"
 #include "base64.h"
-
-
-#include "teramem.h"
-#include "varchar.h"
-#include "strutil.h"
-#include "streamer.h"
-#include "sndpgmmsg.h"
-#include "parms.h"
+#include "debug.h"
 #include "httpclient.h"
+#include "ilevator.h"
+#include "message.h"
+#include "mime.h"
+#include "ostypes.h"
+#include "parms.h"
+#include "request.h"
+#include "strutil.h"
+#include "simpleList.h"
+#include "teraspace.h"
+#include "url.h"
+#include "varchar.h"
+#include "xlate.h"
 
 static UCHAR EOL [] = {CR, LF , 0};
 
@@ -44,7 +41,7 @@ LONG urlEncodeBlanks  (PUCHAR outBuf , PUCHAR inBuf)
 {
     PUCHAR start = outBuf;
     UCHAR c;
-    LONG len = strTrimLen(inBuf);
+    LONG len = strutil_strTrimLen(inBuf);
 
     while (len--) {
         c = *inBuf;
@@ -57,39 +54,6 @@ LONG urlEncodeBlanks  (PUCHAR outBuf , PUCHAR inBuf)
     }
     *outBuf = '\0';
     return (outBuf - start);
-}
-
-/* --------------------------------------------------------------------------- *\
-  wrapper for the message and trace to  the message log
-\* --------------------------------------------------------------------------- */
-void putWsTrace(PILEVATOR pIv, PUCHAR ctlStr, ...)
-{
-    va_list arg_ptr;
-    UCHAR   temp[4096];
-    UCHAR   temp2[4096];
-    LONG    len;
-    SHORT   l,i;
-    if (pIv->wstrace == NULL) return;
-
-    va_start(arg_ptr, ctlStr);
-    len = vsprintf( temp , ctlStr, arg_ptr);
-    va_end(arg_ptr);
-    xlateBuf (temp2 , temp , len+1, 0 , 1252); // Incl the null termination
-    fputs (temp2 , pIv->wstrace);
-}
-/* --------------------------------------------------------------------------- *\
-  wrapper for the message and trace to  the message log
-\* --------------------------------------------------------------------------- */
-void xsetmsg(PILEVATOR pIv , PUCHAR msgid , PUCHAR Ctlstr, ...)
-{
-    va_list arg_ptr;
-    LONG    len;
-    SHORT   l,i;
-    va_start(arg_ptr, Ctlstr);
-    len = vsprintf( pIv->message , Ctlstr, arg_ptr);
-    va_end(arg_ptr);
-
-    putWsTrace(pIv ,"%s" , pIv->message);
 }
 /* -------------------------------------------------------------------------- */
 PUCHAR findEOL(PUCHAR p)
@@ -104,56 +68,23 @@ PUCHAR findEOL(PUCHAR p)
         p ++;
    }
 }
-/* -------------------------------------------------------------------------- */
-int charset2ccsid(PUCHAR charset)
-{
 
+/* --------------------------------------------------------------------------- */
+int getCcsid(PUCHAR mimeType)
+{
     int ccsid;
-    if (charset == NULL
-    ||  beginsWith(charset, "*NONE")
-    ||  beginsWith(charset, "0")) {
-        ccsid     = 0;
-    } else if (beginsWith(charset, "*UTF8")
-    ||         beginsWith(charset, "UTF-8")) {
-        ccsid     = 1208;
-    } else if (beginsWith(charset, "*ISO8859")
-    ||         beginsWith(charset, "ISO8859")
-    ||         beginsWith(charset, "ISO-8859")) {
-        ccsid   = 819;
-    } else if (beginsWith(charset , "*WIN1252")
-    ||         beginsWith(charset , "WINDOWS-1252")) {
-        ccsid   = 1252;
-    } else {
-        ccsid   = 1252;
-    }
+    
+    UCHAR valueXlated[100];
+    xlate_translateString(valueXlated, mimeType, 1252, 0);
+    
+    PVARCHAR contentType = teraspace_calloc(sizeof(VARCHAR));
+    str2vc(contentType, valueXlated);
+    ccsid = iv_mime_getCcsid(contentType);
+    teraspace_free(&contentType);
+
     return ccsid;
 }
 
-/* --------------------------------------------------------------------------- */
-int getCcsid(PUCHAR base , PUCHAR charsetStr, BOOL isASCII)
-{
-    PUCHAR charset  = stristr(base, charsetStr);
-
-    if (charset) {
-        charset += strlen(charsetStr);  // Length of "charset=" without zeroterm
-        if (isASCII) {
-            UCHAR tempcharSet[32];
-            xlateStr (tempcharSet , charset  , 1252 , 0);
-            return charset2ccsid(tempcharSet);
-        } else {
-            return charset2ccsid(charset);
-        }
-    }
-    return 0;
-}
-
-/* --------------------------------------------------------------------------- */
-BOOL isNewLineAscii(UCHAR c)
-{
-   if (c == 0x0d) return(TRUE);
-   if (c == 0x0a) return(TRUE);
-   return(FALSE);
-}
 /* -------------------------------------------------------------------------- */
 BOOL lookForHeader(PUCHAR Buf, LONG totlen, PUCHAR * contentData)
 {
@@ -181,20 +112,22 @@ BOOL lookForHeader(PUCHAR Buf, LONG totlen, PUCHAR * contentData)
 #pragma convert(1252)
 VOID parseHttpParm(PILEVATOR pIv, PUCHAR Parm , PUCHAR Value)
 {
-    if (beginsWithAscii (Parm , "Content-Length"))  {
-        pIv->contentLength = a2i(Value);
+    if (strutil_beginsWithAscii (Parm , "Content-Length"))  {
+        pIv->contentLength = strutil_a2i(Value);
         pIv->responseHeaderHasContentLength = true;
     }
-    if (beginsWithAscii (Parm , "Transfer-Encoding"))  {
+    
+    if (strutil_beginsWithAscii (Parm , "Transfer-Encoding"))  {
         pIv->responseIsChunked = strstr (Value, "chunked") > NULL; //!! TODO striastr 
     }
-    if (beginsWithAscii (Parm , "location"))  {
-        xlateStr(pIv->location , Value , 1252 , 0);
+    
+    if (strutil_beginsWithAscii (Parm , "location"))  {
+        xlate_translateString(pIv->location , strutil_firstnonblankAscii(Value) , 1252 , 0);
     }
+    
     // Unpack: "Content-Type: text/html; charset=windows-1252"
-
-    if (beginsWithAscii (Parm , "Content-Type"))  {
-        pIv->Ccsid = getCcsid(Value, "charset=", /*IsASCII=*/ TRUE);
+    if (strutil_beginsWithAscii (Parm , "Content-Type"))  {
+        pIv->ccsid = getCcsid(Value);
     }
 }
 #pragma convert(0)
@@ -226,11 +159,11 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
         if (s2) {
             UCHAR temp [26];
             strncpy(temp , s1  , s2-s1);
-            pIv->status = a2i(temp);
+            pIv->status = strutil_a2i(temp);
         }
     }
 
-    pIv->ResponseString = start;
+    pIv->rawResponse = start;
     end = findEOL(start);
 
     while(*end) {
@@ -246,38 +179,14 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
         if (p && end) {
             UCHAR  parmName[256];
             UCHAR  parmValue[65535];
-            substr(parmName , start , p - start);
-            substr(parmValue, p +1  , end - p - 1 );
+            strutil_substr(parmName , start , p - start);
+            strutil_substr(parmValue, p +1  , end - p - 1 );
             parseHttpParm(pIv , parmName, parmValue);
         }
     }
     return SOCK_OK ; // OK
 }
 #pragma convert(0)
-/* --------------------------------------------------------------------------- *\
-   Authentications is base64 encoded userid in ascii
-\* --------------------------------------------------------------------------- */
-LONG addRealmLogin (PUCHAR pReq, PUCHAR user , PUCHAR password)
-{
-   UCHAR userAndPasseord [256];
-   ULONG pw1Len, pw2Len, pw3Len, len;
-   UCHAR pw1 [256];
-   UCHAR pw2 [256];
-   UCHAR pw3 [256];
-
-   if (*user == '\0' ||  *password == '\0') return 0;
-
-   sprintf(userAndPasseord , "%s:%s" , user , password);
-   pw1Len  = xlateBuf(pw1 , userAndPasseord , strlen(userAndPasseord) , 0 , 1252);
-   pw2Len = iv_base64EncodeBuf(pw2 , pw1, pw1Len);
-   pw2[pw2Len] = '\0';
-   pw3Len = xlateBuf(pw3 , pw2 , strlen(pw2) , 1252, 0);
-   pw3[pw3Len] = '\0';
-
-   len = sprintf(pReq, "Authorization: Basic %s%s" , pw3, EOL);
-
-   return len;
-}
 /* -------------------------------------------------------------------------- *\
    returns @ in current CCSID
 \* -------------------------------------------------------------------------- */
@@ -286,7 +195,7 @@ UCHAR masterspace ()
     UCHAR  masterspace;
 
     #pragma convert(1252)
-    xlateBuf(&masterspace , "@" , 1  , 1252, 0);
+    xlate_translateBuffer(&masterspace , "@" , 1  , 1252, 0);
     #pragma convert(0)
     return masterspace;
 }
@@ -297,192 +206,69 @@ UCHAR masterspace ()
    http://userid:password@www.google.com:1234/any.asp&parm1=value1
 
 \* -------------------------------------------------------------------------- */
-void parseUrl (
-    PILEVATOR pIv,
-    PUCHAR url, 
-    PUCHAR server , 
-    PUCHAR port , 
-    PUCHAR resource, 
-    PUCHAR host, 
-    PUCHAR user, 
-    PUCHAR password)
+void parseUrl (PILEVATOR pIv, PUCHAR url)
 {
-    PUCHAR pProtocol;
-    PUCHAR pServer;
-    PUCHAR pPort;
-    PUCHAR pResource;
-    PUCHAR pProxy = NULL;
-    PUCHAR pProxyEnd = NULL;
-    PUCHAR pTemp;
-    PUCHAR pUrlParm;
+    PUCHAR temp;
+    URL l_url;
+    LVARCHAR s;
+    
+    str2lvc(&s, url);
+    l_url = iv_url_parse(s);
+    
+    pIv->sockets->asSSL = ( strutil_beginsWith(l_url.protocol.String , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
 
-    pIv->pSockets->asSSL =  PLAIN_SOCKET;
-    pIv->useProxy = FALSE;
-    strcpy (user, "");
-    strcpy (password, "");
-
-    // Skip blanks
-    for (; *url == ' '; url++);
-
-    // No remote server was given ... just use loopback
-    /* 
-    if (url[0] == '/') {
-        int PortNum = pSvr->SVPORT;
-        sprintf(Port, "%d" , PortNum);
-        strcpy(Server, "127.0.0.1");
-        UrlEncodeBlanks (Resource , url );
-        sprintf(Host , "%s:%d" , Server , PortNum);
-        AsHttps = pSvr->SVPROT == 1;
-        return;
+    strutil_substr(pIv->server , l_url.host.String, l_url.host.Length);
+    strutil_itoa(l_url.port, pIv->port, 10);
+    strutil_substr(pIv->host , l_url.host.String, l_url.host.Length);
+    strcat(pIv->host , ":");
+    strcat(pIv->host , pIv->port);
+    
+    if(l_url.path.Length == 0) {
+        strcpy(pIv->resource , "/");
     }
-    */ 
-
-    // Skip the parm for now, so they dont interrupt the parsing
-    pUrlParm  = strchr (url, '?');
-    if (pUrlParm) {
-        *pUrlParm = '\0';
-    }
-
-    // Detect if a proxy parameter is given
-    if (url[0] == '<') {
-        pProxyEnd = strstr(url , ">");  // Skip until > is found
-        if (pProxyEnd == NULL) return; // TODO Log invalid proxy syntax missing > after proxy name
-        pProxy = url + 1;
-        url = pProxyEnd + 1; // Skip the proxy from the url
-        for (; *url == ' '; url++); // Skip the leading blanks in url
-    }
-
-    pProtocol = strstr(url , "://");
-    if (pProtocol) {
-        pIv->pSockets->asSSL = ( beginsWith(url , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
-        pServer = pProtocol + 3;
-    } else {
-        pServer = url;
+    else {
+        strutil_substr(pIv->resource , l_url.path.String, l_url.path.Length);
     }
     
-
-    pTemp = strchr(pServer , masterspace());
-    if (pTemp) {
-        UCHAR userPassword [256];
-        PUCHAR pPassword;
-        substr(userPassword , pServer , pTemp - pServer);
-        pPassword  = strchr(userPassword  , ':');
-        if (pPassword) {
-            substr(user, userPassword ,  pPassword - userPassword );
-            strcpy (password, pPassword+1);
-        }
-        pServer = pTemp +1;
+    if (l_url.query.Length > 0) {
+        strcat(pIv->resource , "?");
+        strutil_substr(pIv->resource + strlen(pIv->resource) , l_url.query.String, l_url.query.Length);
     }
-
-    pPort      = strstr(pServer , ":");
-    pResource  = strstr(pServer , "/");
-
-    // Now put the parms back
-    if (pUrlParm) {
-        *pUrlParm = '?';
-    }
-
-    if (pResource) {
-        urlEncodeBlanks (resource , pResource);
-    } else {
-        strcpy(resource , "/");
-    }
-
-    // Pick up the port
-    if (pPort) {
-        if (pResource) {
-            substr (port, pPort + 1, pResource - pPort -1);
-        } else {
-            strcpy (port, pPort + 1);
-        }
-    } else {
-        if (pIv->pSockets->asSSL == PLAIN_SOCKET) {
-            strcpy (port, "80");
-        } else {
-            strcpy (port , "443");
-        }
-    }
-
-    // Pick up the server
-    if (pPort) {
-        substr ( server , pServer , pPort - pServer);
-    } else if (pResource) {
-        substr ( server , pServer , pResource - pServer);
-    } else if (pUrlParm) {
-        substr ( server , pServer , pUrlParm - pServer);
-    } else {
-        strrighttrimcpy(server , pServer);
-    }
-
-    // Pick up host (server + port)
-    if (pPort) {
-        sprintf(host , "%s:%s" , server , port);
-    } else {
-        strcpy (host , server);
-    }
-
-    // pick up the non standart proxy was given between a < and a >
-    if (pProxy) {
-        UCHAR  proxy [256];
-        pIv->useProxy = TRUE;
-        pIv->pSockets->asSSL = PLAIN_SOCKET;
-        substr(proxy, pProxy , pProxyEnd - pProxy);
-        pPort  = strstr(proxy , ":");
-        if (pPort) {
-            strcpy ( port , pPort + 1);
-            substr ( server , proxy , pPort - proxy);
-        } else {
-            strcpy ( port   , "8080");
-            strcpy ( server , proxy);
-        }
-        urlEncodeBlanks (resource , pProxyEnd  + 1);
-    }
+    
+    strutil_substr(pIv->user , l_url.username.String, l_url.username.Length);
+    strutil_substr(pIv->password, l_url.password.String, l_url.password.Length);
+    
+    // TODO urlEncodeBlanks (resource , pResource);
+    // TODO URL encode path and query
 }
 /* --------------------------------------------------------------------------- */
-API_STATUS sendHeader (PILEVATOR pIv) 
+API_STATUS sendRequest (PILEVATOR pIv) 
 {
+    PVOID request;
+    VARCHAR12 method;
+    VARCHAR1024 acceptMimeType; 
+    VARCHAR url;
+    LVARPUCHAR requestString;
+    LONG rc;
 
-    UCHAR buffer [65535];
-    PUCHAR pReq;
-    LONG len, rc;
-    SLISTITERATOR iterator;
+    str2vc(&method, pIv->method);
 
-    pReq = buffer;
-    pReq += sprintf(pReq, "%s %s HTTP/1.1%s", pIv->method , pIv->useProxy ? pIv->url : pIv->resource , EOL);
+    xlate_translateBuffer(url.String , pIv->url , strlen(pIv->url) , 0, 1252);
+    url.Length = strlen(pIv->url);
+    
+    request = iv_request_new(method, url, acceptMimeType);
+    iv_request_addHeaders(request, pIv->headerList);
+    
+    if (pIv->authProvider)
+      pIv->authProvider->processRequest(pIv->authProvider, request);
+    
+    requestString = iv_request_toString(&request);
+    iv_request_dispose(request);
+    
+    rc = sockets_send (pIv->sockets, requestString.String, requestString.Length); 
+    teraspace_free((PVOID) requestString.String);
 
-    if (*pIv->user > ' ') {
-        pReq += addRealmLogin (pReq, pIv->user , pIv->password);
-    }
-    if (pIv->requestLength > 0) {
-        pReq += sprintf(pReq, "Content-Length: %d%s" , pIv->requestLength , EOL);
-    }
-    pReq += sprintf(pReq, "User-Agent: ILEvator%s", EOL);
-    pReq += sprintf(pReq, "Host: %s%s", pIv->host, EOL);
-    //pReq += sprintf(pReq, "Connection: Close%s", EOL);
-    pReq += sprintf(pReq, "Connection: keep-alive%s", EOL);
-
-    // Todo !! Headers;
-    iterator = sList_setIterator(pIv-> headerList);
-    while (sList_foreach(&iterator) == ON) {
-        PSLISTNODE node = iterator.this;
-        pReq += sprintf(pReq, "%s%s", iterator.this->payloadData , EOL);
-    }
-
-    len = pReq - buffer;
-    len = xlateBuf(buffer , buffer , len , 0 , 1252); // simple SBCS conversion !! Perhaps UTF-8
-
-    if (isNewLineAscii( * (pReq -1))) {
-        pReq += sprintf(pReq, "%c%c", 0x0d , 0x0a);
-    } else {
-        pReq += sprintf(pReq, "%c%c", 0x0d , 0x0a);
-        pReq += sprintf(pReq, "%c%c", 0x0d , 0x0a);
-    }
-    len = pReq - buffer;
-
-    rc = sockets_send (pIv->pSockets, buffer, len); 
-
-    return (rc == len ? API_OK : API_ERROR); 
-
+    return (rc == requestString.Length ? API_OK : API_ERROR); 
 }
 
 /* --------------------------------------------------------------------------- */
@@ -501,13 +287,13 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
         LONG bufferRemain = pIv->bufferSize - pIv->bufferTotalLength;
          // Protocol error
         if  (bufferRemain < 0) {  
-            sockets_close(pIv->pSockets);
-            iv_joblog ("Buffer overrun ");
+            sockets_close(pIv->sockets);
+            message_info("Buffer overrun ");
             return API_ERROR;
         }
 
         // Append to the current buffer
-        len = sockets_receive (pIv->pSockets, pIv->bufferEnd, bufferRemain , pIv->timeOut);
+        len = sockets_receive (pIv->sockets, pIv->bufferEnd, bufferRemain , pIv->timeOut);
         
         // timeout
         if  (len == SOCK_TIMEOUT) {  
@@ -519,7 +305,7 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
             return API_ERROR;
         }
 
-        // "Connection close" - end of transmission and no "Content-Length" provided, the we are done
+        // "Connection close" - end of transmission and no "Content-Length" provided, then we are done
         if (len == 0 && pIv->responseHeaderHasContentLength == false) {
             return API_OK;
         }
@@ -534,35 +320,31 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
             if (headFound) {
                 int err = parseResponse(pIv , pIv->buffer, pIv->contentData);
                 if (err) {
-                    sockets_close(pIv->pSockets);
-                    iv_joblog ("Invalid response header: %d" , err);
+                    sockets_close(pIv->sockets);
+                    message_info("Invalid response header: %d" , err);
                     return API_ERROR;
                 }
 
                 if (pIv->status == 301     // Temporary moved
-                ||  pIv->status == 302) {  // Permanent moved
+                ||  pIv->status == 302     // Permanent moved
+                ||  pIv->status == 307) {  // Temporary moved
+
                     parseUrl (
                         pIv,
-                        pIv->location, // New input !!
-                        pIv->server ,
-                        pIv->port ,
-                        pIv->resource ,
-                        pIv->host ,
-                        pIv->user ,
-                        pIv->password
+                        pIv->location // New input !!
                     ); 
-                    sockets_close(pIv->pSockets);
-                    putWsTrace( pIv, "\r\n redirected to %s\r\n",  pIv->location );
+                    sockets_close(pIv->sockets);
+                    iv_debug("redirected to %s", pIv->location);
                     return API_RETRY;
                 }
                 
                 if (pIv->status == 100) {  // Continue is was a proxy
-                    putWsTrace( pIv, "\r\n-- Proxy continue received --\r\n");
+                    iv_debug("-- Proxy continue received --");
                     return API_RETRY; // Found but start over again - it was a proxy
                 }
 
                 pIv->contentLengthCalculated = pIv->bufferTotalLength - pIv->headLen;
-                anyCharAppend ( &pIv->responseHeaderBuffer , pIv->buffer , pIv->headLen);
+                iv_anychar_append ( &pIv->responseHeaderBuffer , pIv->buffer , pIv->headLen);
 
                 return API_OK; // Got what we came for + perhaps more 
 
@@ -577,15 +359,21 @@ API_STATUS receiveData ( PILEVATOR pIv)
     LONG  len;
 
     // TODO !! Move this together with the file write; 
-    anyCharAppend ( &pIv->responseDataBuffer ,pIv->contentData , pIv->contentLengthCalculated);
+    iv_anychar_append ( &pIv->responseDataBuffer ,pIv->contentData , pIv->contentLengthCalculated);
 
     // Received data for "non chunked" !!! TODO Move to reveice data --- this is not the place
     if (pIv->responseDataFile && pIv->contentLength) {
         fwrite (pIv->contentData , 1, pIv->contentLengthCalculated , pIv->responseDataFile);
     }
 
-    for (;;) { // repeat until a header is received
-        len = sockets_receive (pIv->pSockets, buffer , sizeof(buffer) , pIv->timeOut);
+    // Was everything in the first socket I/O? 
+    if (pIv->responseHeaderHasContentLength == true
+    &&  pIv->contentLength == pIv->contentLengthCalculated) {
+        return API_OK;
+    }
+
+    for (;;) { // repeat until all data is complete
+        len = sockets_receive (pIv->sockets, buffer , sizeof(buffer) , pIv->timeOut);
         
         // timeout
         if  (len == SOCK_TIMEOUT) {  
@@ -602,7 +390,7 @@ API_STATUS receiveData ( PILEVATOR pIv)
             return API_OK;
         }
 
-        anyCharAppend ( &pIv->responseDataBuffer, buffer, len);
+        iv_anychar_append ( &pIv->responseDataBuffer, buffer, len);
 
         if (pIv->responseDataFile) {
             fwrite (buffer  , 1, len , pIv->responseDataFile);
