@@ -384,6 +384,16 @@ dcl-proc iv_getStatus export;
     return client.status;
 end-proc;
 
+dcl-proc iv_getMessage export;
+    dcl-pi *n varchar(256);
+        pClient pointer value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient); 
+    
+    return client.message;
+end-proc;
+
 
 dcl-proc iv_setAuthProvider export;
     dcl-pi *n;

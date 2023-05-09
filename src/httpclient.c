@@ -215,14 +215,7 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
     str2lvc(&s, url);
     l_url = iv_url_parse(s);
     
-    pIv->sockets->asSSL = PLAIN_SOCKET;
-    pIv->useProxy = FALSE;
-    strcpy(pIv->user, "");
-    strcpy(pIv->password, "");
-
-    if (l_url.protocol.Length > 0) {
-        pIv->sockets->asSSL = ( strutil_beginsWith(l_url.protocol.String , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
-    }
+    pIv->sockets->asSSL = ( strutil_beginsWith(l_url.protocol.String , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
 
     strutil_substr(pIv->server , l_url.host.String, l_url.host.Length);
     strutil_itoa(l_url.port, pIv->port, 10);
@@ -259,7 +252,6 @@ API_STATUS sendRequest (PILEVATOR pIv)
     LONG rc;
 
     str2vc(&method, pIv->method);
-    method.Length = strlen(method.String);
 
     xlate_translateBuffer(url.String , pIv->url , strlen(pIv->url) , 0, 1252);
     url.Length = strlen(pIv->url);
@@ -334,7 +326,8 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
                 }
 
                 if (pIv->status == 301     // Temporary moved
-                ||  pIv->status == 302) {  // Permanent moved
+                ||  pIv->status == 302     // Permanent moved
+                ||  pIv->status == 307) {  // Temporary moved
 
                     parseUrl (
                         pIv,
@@ -373,7 +366,13 @@ API_STATUS receiveData ( PILEVATOR pIv)
         fwrite (pIv->contentData , 1, pIv->contentLengthCalculated , pIv->responseDataFile);
     }
 
-    for (;;) { // repeat until a header is received
+    // Was everything in the first socket I/O? 
+    if (pIv->responseHeaderHasContentLength == true
+    &&  pIv->contentLength == pIv->contentLengthCalculated) {
+        return API_OK;
+    }
+
+    for (;;) { // repeat until all data is complete
         len = sockets_receive (pIv->sockets, buffer , sizeof(buffer) , pIv->timeOut);
         
         // timeout

@@ -503,6 +503,16 @@ dcl-pr iv_getStatus int(5) extproc(*CWIDEN:'iv_getStatus');
     pClient       pointer value;
 end-pr;
 
+///
+// returns the http error messages  
+//
+//
+// @param  pointer to the http client 
+// @return message from the http request
+///
+dcl-pr iv_getMessage varchar(256)  extproc(*CWIDEN:'iv_getMessage');
+    pClient       pointer value;
+end-pr;
 
 ///
 // Set authentication provider
@@ -554,30 +564,10 @@ end-pr;
 //
 //    iv_joblog('This is %s a test' : 'super');
 //
-// @param format string
-// @param Replacement value
-// @param Replacement value
-// @param Replacement value
-// @param Replacement value
-// @param Replacement value
-// @param Replacement value
-// @param Replacement value
-// @param Replacement value
-// @param Replacement value
-// @param Replacement value
+// @param message string
 ///
 dcl-pr iv_joblog extproc(*CWIDEN : 'iv_joblog') ;
-  formatString  pointer  options(*string)  value;
-  string0       pointer  options(*string:*nopass) value;
-  string1       pointer  options(*string:*nopass) value;
-  string2       pointer  options(*string:*nopass) value;
-  string3       pointer  options(*string:*nopass) value;
-  string4       pointer  options(*string:*nopass) value;
-  string5       pointer  options(*string:*nopass) value;
-  string6       pointer  options(*string:*nopass) value;
-  string7       pointer  options(*string:*nopass) value;
-  string8       pointer  options(*string:*nopass) value;
-  string9       pointer  options(*string:*nopass) value;
+  message varchar(512) options(*varsize)  const ;
 end-pr;
 
 

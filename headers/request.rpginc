@@ -189,10 +189,13 @@ dcl-pr iv_request_setBinaryBody extproc(*dclcase);
   size uns(10) value;
 end-pr;
 
+/if defined (RPG_HAS_OVERLOAD )
 dcl-pr iv_request_setBody overload(
   iv_request_setTextBody :
   iv_request_setBinaryBody
 );
+/endif
+
 
 dcl-pr iv_request_setStream extproc(*dclcase);
   request pointer const;

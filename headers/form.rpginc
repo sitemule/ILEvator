@@ -26,9 +26,11 @@ dcl-pr iv_form_ofString likeds(LVARPUCHAR_t) extproc(*dclcase);
     value8 varchar(1048576) ccsid(*utf8) const options(*nopass);
 end-pr;
 
+/if defined (RPG_HAS_OVERLOAD )
 dcl-pr iv_form_of likeds(LVARPUCHAR_t) overload(
   iv_form_ofMap :
   iv_form_ofString
 );
+/endif
 
 /endif

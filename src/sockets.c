@@ -255,15 +255,17 @@ static BOOL initialize_gsk_environment (PSOCKETS ps)
 
 
     // set Password to the keyring
-    errno = 0;
-    rc = gsk_attribute_set_buffer(ps->my_env_handle,
-                                    GSK_KEYRING_PW,
-                                    ps->keyringPassword,
-                                    strlen(ps->keyringPassword));
-    if (rc != GSK_OK) {
-        sockets_setSSLmsg(ps,rc, "set Password to the keyring");
-        sockets_close(ps);
-        return FALSE;
+    if (strlen(ps->keyringPassword) > 0 ) {
+        errno = 0;
+        rc = gsk_attribute_set_buffer(ps->my_env_handle,
+                                        GSK_KEYRING_PW,
+                                        ps->keyringPassword,
+                                        strlen(ps->keyringPassword));
+        if (rc != GSK_OK) {
+            sockets_setSSLmsg(ps,rc, "set Password to the keyring");
+            sockets_close(ps);
+            return FALSE;
+        }
     }
 
     // If one fails - then return  !!
