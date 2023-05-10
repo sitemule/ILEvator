@@ -37,6 +37,7 @@ dcl-c IV_STATUS_OK 0;
 dcl-c IV_STATUS_RETRY 1;
 dcl-c IV_STATUS_ERROR 2;
 
+dcl-c IV_METHOD_SIZE 10;
 dcl-c IV_URL_SIZE 32766;
 dcl-c IV_BUFFER_SIZE 1048576;
 dcl-c IV_HEADER_NAME_SIZE 1024;
@@ -475,7 +476,7 @@ end-pr;
 ///
 dcl-pr iv_execute ind extproc(*dclcase);
     client pointer value;
-    method varchar(10) const;
+    method varchar(IV_METHOD_SIZE) const;
     url varchar(IV_URL_SIZE:2) const;
     timeOut int(10) options(*nopass) value; // In milisec. 30000 is default
     retries int(10) options(*nopass) value; // retry n times. 3 is default

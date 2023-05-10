@@ -105,7 +105,7 @@ dcl-proc iv_newHttpClient export;
     pClient = teraspace_calloc(%size(ilevator_t));
     clear client;
 
-    client.method = teraspace_alloc(10);
+    client.method = teraspace_alloc(IV_METHOD_SIZE+1);
     client.url = teraspace_alloc(IV_URL_SIZE+1);
     client.buffer = teraspace_alloc(IV_BUFFER_SIZE);
     client.bufferSize = IV_BUFFER_SIZE;
@@ -244,7 +244,7 @@ end-proc;
 dcl-proc iv_execute export;
     dcl-pi *n ind;
         pClient pointer value;
-        method varchar(10) const;
+        method varchar(IV_METHOD_SIZE) const;
         url varchar(IV_URL_SIZE:2) const;
         timeout int(10) options(*nopass) value; // In milisec. 30000 is default
         retries int(10) options(*nopass) value; // retry n times. 3 is default        
