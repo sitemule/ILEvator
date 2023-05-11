@@ -18,6 +18,8 @@ ILEVATOR_LIB=$(BIN_LIB)
 
 OUTPUT=*NONE
 
+DEFINE=RPG_HAS_OVERLOAD
+
 #
 # User-defined part end
 #-------------------------------------------------------------------------------
@@ -33,7 +35,7 @@ INCLUDE='/QIBM/include' '../headers/' '../ext/headers'
 CCFLAGS=OUTPUT($(OUTPUT)) OPTIMIZE(10) TGTCCSID(37) TGTRLS($(TARGET_RLS)) ENUM(*INT) TERASPACE(*YES) STGMDL(*INHERIT) SYSIFCOPT(*IFSIO) INCDIR($(INCLUDE)) DBGVIEW(*ALL)
 
 # RPG compiler parameter
-RCFLAGS=INCDIR('.' '../headers' '../ext/headers') dbgview(*source) output($(OUTPUT)) stgmdl(*SNGLVL)
+RCFLAGS=INCDIR('.' '../headers' '../ext/headers') DBGVIEW(*source) OUTPUT($(OUTPUT)) STGMDL(*SNGLVL) DEFINE($(DEFINE))
 
 # Bind options
 BINDFLAGS=STGMDL(*SNGLVL) BNDSRVPGM($(SRVPGMS)) BNDDIR($(ILEVATOR_LIB)/MODULES) EXPORT(*ALL) OPTION(*DUPPROC)
@@ -51,14 +53,17 @@ all: clean compile
 compile: $(OBJECTS)
 
 REQUESTUT:
+	system -i "CHGATR OBJ('requestut.rpgmod') ATR(*CCSID) VALUE(1252)"
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/REQUESTUT) SRCSTMF('requestut.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/REQUESTUT MODULE(($(BIN_LIB)/REQUESTUT)) $(BINDFLAGS)"
 
 STRUTILUT:
+	system -i "CHGATR OBJ('strutilut.rpgmod') ATR(*CCSID) VALUE(1252)"
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/STRUTILUT) SRCSTMF('strutilut.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/STRUTILUT MODULE(($(BIN_LIB)/STRUTILUT)) $(BINDFLAGS)"
 
 URLPARSEUT:
+	system -i "CHGATR OBJ('urlparseut.rpgmod') ATR(*CCSID) VALUE(1252)"
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/URLPARSEUT) SRCSTMF('urlparseut.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/URLPARSEUT MODULE(($(BIN_LIB)/URLPARSEUT)) $(BINDFLAGS)"
 
