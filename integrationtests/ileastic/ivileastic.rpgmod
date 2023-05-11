@@ -1,0 +1,29 @@
+**FREE
+
+///
+// ILEvator : ILEastic Integration Test Backend
+//
+// This module contains the main method for the web service and registers all
+// endpoints.
+///
+
+
+/include 'ileastic.rpgle'
+
+
+main();
+*inlr = *on;
+
+
+dcl-proc main;
+  dcl-ds config likeds(IL_CONFIG);
+
+  config.port = 35801;
+  config.host = '*ANY';
+
+  il_addRoute(config : %paddr('sayHello') : IL_GET : '/api/hello');
+  il_addRoute(config : %paddr('getHeaderValue') : IL_GET : '/api/headers/{header}');
+  il_addRoute(config : %paddr('listHeaders') : IL_GET : '/api/headers');
+
+  il_listen (config);
+end-proc;

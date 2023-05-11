@@ -1,0 +1,74 @@
+**FREE
+
+///
+// ILEvator : ILEastic GET Integration Test Backend
+//
+// This module contains the backend web services for the ILEvator integration
+// tests for the GET HTTP method.
+//
+///
+
+ctl-opt nomain;
+
+
+/include 'ileastic.rpgle'
+
+dcl-pr sayHello extproc(*dclcase);
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+end-pr;
+
+dcl-pr getHeaderValue extproc(*dclcase);
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+end-pr;
+
+dcl-pr listHeaders extproc(*dclcase);
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+end-pr;
+
+
+dcl-proc sayHello export;
+  dcl-pi *n;
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+  end-pi;
+
+  dcl-s query varchar(100);
+
+  query = il_getQueryParameter(request : 'q' : 'World');
+
+  response.contentType = 'text/plain';
+  il_responseWrite(response : 'Hello ' + query);
+end-proc;
+
+
+dcl-proc getHeaderValue export;
+  dcl-pi *n;
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+  end-pi;
+
+  dcl-s headerName varchar(100);
+  dcl-s headerValue varchar(1000);
+
+  headerName = il_getPathParameter(request : 'header');
+  headerName += x'00';
+
+  headerValue = il_getRequestHeader(request : %addr(headerName : *data));
+
+  response.contentType = 'text/plain';
+  il_responseWrite(response : headerName + ' : ' + headerValue);
+end-proc;
+
+
+dcl-proc listHeaders export;
+  dcl-pi *n;
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+  end-pi;
+
+  response.contentType = 'text/plain';
+  il_responseWrite(response : il_getRequestHeaders(request));
+end-proc;

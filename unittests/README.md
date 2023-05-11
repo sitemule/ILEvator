@@ -7,11 +7,6 @@ You can compile the unit tests with the make tool.
 
     make
 
-The unit tests need access to the ASSERT copy book from the iRPGUNIT or RPGUNIT.
-You need to pass this as a parameter to the make command:
-
-    make RUINCDIR=/usr/local/include/irpgunit
-
 By default the unit tests are placed in the ILEVATOR library. You can change
 that by passing your custom library to the BIN_LIB parameter like this:
 
@@ -23,9 +18,14 @@ ILEVATOR_LIB like this:
 
     make BIN_LIB=ILEVATORUT ILEVATOR_LIB=MY_LVTR
 
-Note: It is assumed that the ASSERT service program of the unit testing
-      framework is in the library list.
+The service programs of the unit testing framework are assumed to be on the 
+library list. You can specify a library by passing it to the _make_ command.
 
+    make BIN_LIB=ILEVATORUT ILEVATOR_LIB=MY_LVTR RU_LIB=MY_RPGUNIT
+
+To execute a unit test just call the RUCALLTST command.
+
+    RUCALLTST BASICAUTUT
 
 ## Request Test Data
 

@@ -66,7 +66,7 @@ modules: anychar.c api.rpgmod basicauth.rpgmod bearer.rpgmod chunked.c debug.rpg
 
 %.bnd: 
 	-system -q "DLTBNDDIR BNDDIR($(BIN_LIB)/$*)"
-	-system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/$*)"
+	system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/$*)"
 
 %.entry:
 	# Basically do nothing..
@@ -95,21 +95,34 @@ modules: anychar.c api.rpgmod basicauth.rpgmod bearer.rpgmod chunked.c debug.rpg
 	system "CPYFRMSTMF FROMSTMF('headers/$*.bnd') TOMBR('/QSYS.lib/$(BIN_LIB).lib/QSRVSRC.file/$*.mbr') MBROPT(*replace)"
 	system -q -kpieb "CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE($(MODULES)) SRCFILE($(BIN_LIB)/QSRVSRC) ACTGRP(QILE) ALWLIBUPD(*YES) DETAIL(*BASIC) TGTRLS($(TARGET_RLS))"
 
-# TODO does not work yet
-ilevator.bnd: %.bnd
-	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/$*) OBJ((*LIBL/ILEVATOR *SRVPGM *IMMED))"
+ilevator.bnd:
+	-system -q "DLTBNDDIR BNDDIR($(BIN_LIB)/ILEVATOR)"
+	system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/ILEVATOR)"
+	system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/ILEVATOR) OBJ(($(BIN_LIB)/ILEVATOR *SRVPGM *IMMED))"
 
-# TODO does not work yet
-modules.bnd: %.bnd
+modules.bnd:
+	-system -q "DLTBNDDIR BNDDIR($(BIN_LIB)/MODULES)"
+	system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/MODULES)"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/ANYCHAR *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/API *MODULE))"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/BASE64 *MODULE))"
-	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/TERASPACE *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/BASICAUTH *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/BEARER *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/CHUNKED *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/DEBUG *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/ENCODE *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/FORM *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/HTTPCLIENT *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/MIME *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/REQUEST *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/SOCKETS *MODULE))"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/STREAM *MODULE))"
-	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/STREAMMEM *MODULE))"
-	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/MESSAGE *MODULE))"
-	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/URL *MODULE))"
-	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/SIMPLELIST *MODULE))"
-	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/VARCHAR *MODULE))"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/STRUTIL *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/SIMPLELIST *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/TERASPACE *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/URL *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/VARCHAR *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/XLATE *MODULE))"
 
 hdr:
 	-system -q "CRTSRCPF FILE($(BIN_LIB)/QRPGLEREF) RCDLEN(200)"
@@ -122,10 +135,39 @@ all:
 	@echo Build success!
 
 clean:
-	-system -q "DLTOBJ OBJ($(BIN_LIB)/*ALL) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/ANYCHAR) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/API) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/BASICAUTH) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/BEARER) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/CHUNKED) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/DEBUG) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/ENCODE) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/FORM) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/HTTPCLIENT) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/INIT) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/MIME) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/REQUEST) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/SOCKETS) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/URL) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/ILEVATOR) OBJTYPE(*SRVPGM)"
+
+purge: clean
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/H) OBJTYPE(*FILE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/QRPGLEREF) OBJTYPE(*FILE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/QSRVSRC) OBJTYPE(*FILE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/ILEVATOR) OBJTYPE(*BNDDIR)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/MODULES) OBJTYPE(*BNDDIR)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/EVFEVENT)  OBJTYPE(*file)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/RELEASE)   OBJTYPE(*file)"
+	$(MAKE) -C ext/ clean
+	$(MAKE) -C integrationtests/ clean
+	$(MAKE) -C unittests/ clean
 
+unittests: .PHONY
+	$(MAKE) -C unittests/ $*
+
+itests: .PHONY
+	$(MAKE) -C integrationtests/ $*
 	
 release: clean
 	@echo " -- Creating ilevator release. --"

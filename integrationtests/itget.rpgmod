@@ -1,0 +1,54 @@
+**FREE
+
+///
+// Integration Test GET Method
+//
+// This module tests the GET HTTP requests with the ILEastic integration test
+// backend.
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'ilevator.rpgle'
+
+
+dcl-pr test_get_success end-pr;
+dcl-pr test_getWithQuery_success end-pr;
+dcl-pr test_getWithSpacesInQuery_success end-pr;
+dcl-pr test_getWithUmlautInQuery_success end-pr;
+
+
+dcl-proc test_get_success export;
+    dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+  
+    string = iv_get('http://localhost:35801/api/hello');
+    aEqual('Hello World' : string); 
+end-proc;
+
+
+dcl-proc test_getWithQuery_success export;
+    dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+  
+    string = iv_get('http://localhost:35801/api/hello?q=me');
+    aEqual('Hello me' : string); 
+end-proc;
+
+
+dcl-proc test_getWithSpacesInQuery_success export;
+    dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+  
+    string = iv_get('http://localhost:35801/api/hello?q=my fair lady');
+    aEqual('Hello my fair lady' : string); 
+end-proc;
+
+
+dcl-proc test_getWithUmlautInQuery_success export;
+    dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+  
+    string = iv_get('http://localhost:35801/api/hello?q=J”rg');
+    aEqual('Hello J”rg' : string); 
+end-proc;
+
