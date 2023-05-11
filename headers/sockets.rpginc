@@ -9,9 +9,9 @@ dcl-c SECURE_HANDSHAKE_LATER 2;
 
 dcl-pr sockets_setSSL extproc(*CWIDEN:'sockets_setSSL');
     sockets pointer value;
-    useSSL int(5) value;
-    certificateFile pointer value;
-    keyringPassword pointer value;
+    useSSL  int(3)  value;
+    certificateFile pointer options(*string) value;
+    keyringPassword pointer options(*string) value;
 end-pr;
 
 dcl-pr sockets_new pointer extproc(*CWIDEN:'sockets_new') end-pr;
@@ -21,10 +21,16 @@ dcl-pr sockets_free extproc(*CWIDEN:'sockets_free');
 end-pr;
 
 dcl-pr sockets_connect int(3) extproc(*CWIDEN:'sockets_connect');
-    client pointer value;
+    sockets  pointer value;
     server pointer options(*string) value;
-    port int(10) value;
+    port    int(10) value;
     timeout int(10) value;
+end-pr;
+
+
+dcl-pr sockets_setTrace extproc(*CWIDEN:'sockets_setTrace');
+    sockets  pointer value;
+    traceFile  pointer options(*string) value;
 end-pr;
 
 /endif

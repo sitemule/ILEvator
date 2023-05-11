@@ -56,7 +56,15 @@ PSOCKETS sockets_new(void)
 /* --------------------------------------------------------------------------- */
 void  sockets_free(PSOCKETS ps)
 {
+
     sockets_close(ps);
+
+    if (ps->trace) {
+        sockets_putTrace(ps, "\r\n---  End of Communcation ---\r\n");
+        fclose(ps->trace);
+        ps->trace = NULL;
+    }
+
     teraspace_free(&ps);
 }
 /* --------------------------------------------------------------------------- *\
@@ -97,7 +105,7 @@ void sockets_putTrace(PSOCKETS ps,PUCHAR Ctlstr, ...)
     va_start(arg_ptr, Ctlstr);
     len = vsprintf( temp , Ctlstr, arg_ptr);
     va_end(arg_ptr);
-    xlate_translateBuffer (temp2 , temp , len , 0 , 1252);
+    xlate_translateBuffer (temp2 , temp , len + 1 , 0 , 1252); // +1 zero term
     fputs (temp2 , ps->trace);
 }
 
@@ -110,9 +118,9 @@ void sockets_close(PSOCKETS ps)
     if (ps == NULL ) return;
     
     if (ps->trace) {
-        sockets_putTrace(ps, "\r\n---  End of Communcation ---\r\n");
-        fclose(ps->trace);
-        ps->trace = NULL;
+        sockets_putTrace(ps, "\r\n---  Close socket  ---\r\n");
+        // fclose(ps->trace);
+        // ps->trace = NULL;
     }
     // disable SSL support for the socket
     if (ps->my_session_handle != NULL) {

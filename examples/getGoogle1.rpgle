@@ -34,11 +34,12 @@ dcl-proc example1;
     
 
     pHttp = iv_newHttpClient(); 
+    iv_setTrace (pHttp :    );
     iv_setResponseDataBuffer (pHttp : %addr(outbuf) : %size(outbuf) : IV_VARCHAR4 : IV_CCSID_UTF8);
     iv_setCertificate (pHttp : '/prj/ILEvator/ilevator.kdb':'ilevator');
 
     //iv_execute (pHttp : 'GET' : 'http://google.com' : 3000); 
-    iv_execute (pHttp : 'GET' : 'https://system-metode.dk' : 3000); 
+    iv_execute (pHttp : 'GET' : 'http://system-method.com' : 3000); 
     if iv_getStatus(pHttp) <> IV_HTTP_OK; 
         text = iv_getMessage (pHttp);
         iv_joblog ('My request failed ' + text);

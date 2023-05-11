@@ -13,6 +13,8 @@ ctl-opt nomain thread(*concurrent);
 /include 'sockets.rpginc'
 /include 'teraspace.rpginc'
 
+
+
 dcl-pr fopen pointer extproc('_C_IFS_fopen');
     filename pointer value options(*string);
     mode pointer value options(*string);
@@ -31,6 +33,8 @@ dcl-pr access int(10) extproc('access');
     mode int(10) value;
 end-pr;
 
+
+
 //
 // Access mode flags for access() and accessx()
 //
@@ -44,6 +48,7 @@ dcl-c R_OK 4;
 dcl-c W_OK 2;
 dcl-c X_OK 1;
 
+dcl-s ENUM int(3) template;
 dcl-c FALSE 0;
 dcl-c TRUE 1;
 dcl-c NULL x'00';
@@ -54,16 +59,16 @@ dcl-ds ilevator_t qualified template align(*full);
     url pointer;
     timeout int(5);
     retries int(5);
-    useProxy int(3);
-    responseHeaderHasContentLength int(3);
-    responseIsChunked int(3);
+    useProxy ind ;
+    responseHeaderHasContentLength ind ;
+    responseIsChunked ind ;
     headerList pointer;
     responseHeaderBuffer likeds(anychar_t);
     responseDataBuffer likeds(anychar_t);
     responseDataFile pointer;
     authProvider pointer;
     
-    headerLen int(10);
+    headerLen    int(10);
     contentData pointer;
     contentLength int(10);
     contentLengthCalculated int(10);
@@ -72,14 +77,14 @@ dcl-ds ilevator_t qualified template align(*full);
     ccsid int(10);
     status int(10);
     
-    server char(512);
-    port char(7);
-    resource char(32766);
-    host char(512);
-    user char(256);
-    password char(256);
-    location char(256);
-    message char(256);
+    server    char(512);
+    port      int(10);
+    resource  char(32766);
+    host      char(512);
+    user      char(256);
+    password  char(256);
+    location  char(256);
+    message   char(256);
     
     buffer pointer;
     bufferSize int(10);
@@ -102,20 +107,22 @@ dcl-proc iv_newHttpClient export;
 
     dcl-ds client likeds(ilevator_t) based(pClient);
 
-    pClient = teraspace_calloc(%size(ilevator_t));
+    pClient = teraspace_alloc(%size(ilevator_t));
     clear client;
 
-    client.method = teraspace_alloc(IV_METHOD_SIZE+1);
-    client.url = teraspace_alloc(IV_URL_SIZE+1);
+    client.method = *NULL;
+    client.url = *NULL;
+    
     client.buffer = teraspace_alloc(IV_BUFFER_SIZE);
     client.bufferSize = IV_BUFFER_SIZE;
+
     client.sockets =  sockets_new();
     client.headerList = sList_new();
     client.timeout = DEFAULT_TIMEOUT;
     client.retries = DEFAULT_RETRIES;
     
     client.server = NULL;
-    client.port = NULL;
+    client.port = 0;
     client.resource = NULL;
     client.host = NULL;
     client.user = NULL;
@@ -184,7 +191,7 @@ dcl-proc iv_setResponseHeaderBuffer export;
     dcl-ds client likeds(ilevator_t) based(pClient);
     
     iv_anychar_set( 
-        %addr(client.responseHeaderBuffer) :
+        %addr( client.responseHeaderBuffer)  :
         buffer :
         bufferSize :
         bufferType :
@@ -241,11 +248,23 @@ dcl-proc iv_setResponseFile export;
 end-proc;
 
 
+dcl-proc iv_setTrace export;
+    dcl-pi *n;
+        pClient         pointer value;
+        traceFileName   pointer options(*string) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+
+    sockets_setTrace(client.sockets : traceFileName);
+
+end-proc;
+
 dcl-proc iv_execute export;
     dcl-pi *n ind;
         pClient pointer value;
-        method varchar(IV_METHOD_SIZE) const;
-        url varchar(IV_URL_SIZE:2) const;
+        method pointer options(*string) value;
+        url pointer options(*string) value; 
         timeout int(10) options(*nopass) value; // In milisec. 30000 is default
         retries int(10) options(*nopass) value; // retry n times. 3 is default        
     end-pi;
@@ -253,10 +272,10 @@ dcl-proc iv_execute export;
     dcl-ds client likeds(ilevator_t) based(pClient);
     dcl-s apiStatus int(10) inz(IV_STATUS_RETRY);
     dcl-s try int(5);
-    dcl-s ok int(3);
+    dcl-s ok like(ENUM)  ;
     
-    %str(client.method : %len(method)+ 1) = method; 
-    %str(client.url : %len(url) + 1) = url;
+    client.method = teraspace_strTrimDup (method);
+    client.url    = teraspace_strTrimDup (url);
     
     if (%parms() >= 4);
         client.timeout = timeout;
@@ -267,6 +286,7 @@ dcl-proc iv_execute export;
     endif;
     
     parseUrl(pClient : url); 
+    
     iv_debug('Port: %s' : %str(%addr(client.port):10) );
     iv_debug('Server: %s' : %str(%addr(client.server):200) );
     iv_debug('Host: %s' : %str(%addr(client.host):200) );
@@ -276,8 +296,8 @@ dcl-proc iv_execute export;
 
         ok = sockets_connect(
             client.sockets : 
-            %addr(client.server) : 
-            atoi(%addr(client.port)) : 
+            client.server : 
+            client.port : 
             client.timeout
         );
         if (ok = TRUE);
@@ -307,7 +327,7 @@ dcl-proc iv_execute export;
         if (%str(client.method:10) = 'HEAD' or client.status = 204);
             // No content, don't read any longer
             apiStatus = IV_STATUS_OK;
-        elseif (client.responseIsChunked = TRUE);
+        elseif (client.responseIsChunked);
             apiStatus = iv_chunked_receive(pClient);
         else;
             apiStatus = receiveData(pClient);
@@ -433,9 +453,11 @@ dcl-proc iv_addHeader export;
     listKey.length = %len(lowerName);
     listKey.string = teraspace_alloc(listKey.length + 1);
     %str(listKey.string : listKey.length + 1) = lowerName;
+    
     listValue.length = %len(headerValue);
     listValue.string = teraspace_alloc(listValue.length + 1);
     %str(listValue.string : listValue.length + 1) = headerValue;
+    
     sList_pushLVPC(client.headerList : listKey : listValue);
 end-proc;
 
@@ -495,6 +517,6 @@ dcl-proc iv_get export;
     
     return returnBuffer;
         
-    on-exit;
-        iv_free(client);
+on-exit;
+    iv_free(client);
 end-proc;

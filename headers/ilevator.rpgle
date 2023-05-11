@@ -475,9 +475,9 @@ end-pr;
 // @return *ON if ok 
 ///
 dcl-pr iv_execute ind extproc(*dclcase);
-    client pointer value;
-    method varchar(IV_METHOD_SIZE) const;
-    url varchar(IV_URL_SIZE:2) const;
+    client  pointer value;
+    method  pointer options(*string) value;
+    url     pointer options(*string) value;
     timeOut int(10) options(*nopass) value; // In milisec. 30000 is default
     retries int(10) options(*nopass) value; // retry n times. 3 is default
 end-pr;
@@ -563,7 +563,7 @@ end-pr;
 // Convenience function: put message in joblog.
 // Works like printf but with strings only like
 //
-//    iv_joblog('This is %s a test' : 'super');
+//    iv_joblog('This is %s a test' : 'super');cl
 //
 // @param message string
 ///
@@ -571,6 +571,11 @@ dcl-pr iv_joblog extproc(*CWIDEN : 'iv_joblog') ;
   message varchar(512) options(*varsize)  const ;
 end-pr;
 
+dcl-pr iv_setTrace extproc(*dclcase) ;
+    client    pointer value;
+    traceFile pointer options(*string) value;
+end-pr;
+    
 
 ///
 //
