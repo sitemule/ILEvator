@@ -43,6 +43,11 @@ dcl-pr memcmp int(10) extproc('memcmp');
   count uns(10) value;
 end-pr;
 
+dcl-pr getenv pointer extproc('getenv');
+    envvar pointer value options(*string : *trim);
+end-pr;
+
+
 dcl-pr test_getHeader extproc(*dclcase) end-pr;
 dcl-pr test_getHeaderNonExist extproc(*dclcase) end-pr;
 dcl-pr test_minimum extproc(*dclcase) end-pr;
@@ -54,6 +59,20 @@ dcl-pr test_port extproc(*dclcase) end-pr;
 dcl-pr test_queryNoPath extproc(*dclcase) end-pr;
 dcl-pr test_overrideAccept extproc(*dclcase) end-pr;
 dcl-pr test_formData extproc(*dclcase) end-pr;
+dcl-pr test_textBody extproc(*dclcase) end-pr;
+
+
+dcl-s projectSourceDir varchar(1000);
+
+
+dcl-proc setUpSuite export;
+    dcl-s value pointer;
+    
+    value = getenv('ILEVATOR_SOURCE_DIR');
+    if (value <> *null);
+        projectSourceDir = %str(value : %size(projectSourceDir));
+    endif;
+end-proc;
 
 
 dcl-proc test_getHeader export;
@@ -295,7 +314,7 @@ dcl-proc loadFile;
   dcl-s len int(10);
   dcl-s fd int(10);
 
-  path = p_path + x'00';
+  path = projectSourceDir + p_path + x'00';
 
   fd = open(%addr(path : *data) : O_RDONLY);
   if (fd >= 0);
