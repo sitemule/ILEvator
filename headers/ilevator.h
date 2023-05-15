@@ -50,9 +50,9 @@ typedef struct _ILEVATOR {
     PUCHAR    url; 
     SHORT     timeOut;
     SHORT     retries;
-    BOOL      useProxy;
-    BOOL      responseHeaderHasContentLength;
-    BOOL      responseIsChunked;
+    LGL       useProxy;
+    LGL       responseHeaderHasContentLength;
+    LGL       responseIsChunked;
     PSLIST    headerList;
 
     ANYCHAR   responseHeaderBuffer; 
@@ -72,7 +72,7 @@ typedef struct _ILEVATOR {
     LONG      status;
 
     UCHAR     server    [512];
-    UCHAR     port      [7];
+    LONG      port      ;
     UCHAR     resource  [32766];
     UCHAR     host      [512];
     UCHAR     user      [256];

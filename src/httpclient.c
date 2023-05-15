@@ -114,11 +114,11 @@ VOID parseHttpParm(PILEVATOR pIv, PUCHAR Parm , PUCHAR Value)
 {
     if (strutil_beginsWithAscii (Parm , "Content-Length"))  {
         pIv->contentLength = strutil_a2i(Value);
-        pIv->responseHeaderHasContentLength = true;
+        pIv->responseHeaderHasContentLength = ON;
     }
     
     if (strutil_beginsWithAscii (Parm , "Transfer-Encoding"))  {
-        pIv->responseIsChunked = strstr (Value, "chunked") > NULL; //!! TODO striastr 
+        pIv->responseIsChunked = strstr (Value, "chunked") > NULL ? ON:OFF; //!! TODO striastr 
     }
     
     if (strutil_beginsWithAscii (Parm , "location"))  {
@@ -218,10 +218,9 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
     pIv->sockets->asSSL = ( strutil_beginsWith(l_url.protocol.String , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
 
     strutil_substr(pIv->server , l_url.host.String, l_url.host.Length);
-    strutil_itoa(l_url.port, pIv->port, 10);
-    strutil_substr(pIv->host , l_url.host.String, l_url.host.Length);
-    strcat(pIv->host , ":");
-    strcat(pIv->host , pIv->port);
+    pIv->port = l_url.port;
+    // sprintf(pIv->host,  "%s:%d" , pIv->server,  pIv->port);
+    sprintf(pIv->host,  "%s" , pIv->server);
     
     if(l_url.path.Length == 0) {
         strcpy(pIv->resource , "/");
@@ -306,7 +305,7 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
         }
 
         // "Connection close" - end of transmission and no "Content-Length" provided, then we are done
-        if (len == 0 && pIv->responseHeaderHasContentLength == false) {
+        if (len == 0 && pIv->responseHeaderHasContentLength == OFF) {
             return API_OK;
         }
 
@@ -333,6 +332,10 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
                         pIv,
                         pIv->location // New input !!
                     ); 
+
+                    // MEGA HACK !! The parsurl is called twice ( WHY WHY WHY !!!) and brigs back the original url 
+                    strcpy (pIv->url , pIv->location);
+
                     sockets_close(pIv->sockets);
                     iv_debug("redirected to %s", pIv->location);
                     return API_RETRY;
@@ -367,7 +370,7 @@ API_STATUS receiveData ( PILEVATOR pIv)
     }
 
     // Was everything in the first socket I/O? 
-    if (pIv->responseHeaderHasContentLength == true
+    if (pIv->responseHeaderHasContentLength == ON 
     &&  pIv->contentLength == pIv->contentLengthCalculated) {
         return API_OK;
     }

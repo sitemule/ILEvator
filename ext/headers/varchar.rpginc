@@ -18,4 +18,9 @@ dcl-ds VARCHAR_t qualified template;
     string char(32767);
 end-ds;
 
+dcl-pr vc2str  pointer extproc(*CWIDEN:'vc2str');
+    input_varchar varchar(32760:2) options(*varsize);
+end-pr;
+
+
 /endif

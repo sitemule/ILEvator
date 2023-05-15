@@ -36,6 +36,7 @@ INCLUDE='headers/' 'ext/headers' '/QIBM/include'
 CCFLAGS=OUTPUT($(OUTPUT)) OPTION(*NOSHOWINC *STDLOGMSG) OPTIMIZE(10) ENUM(*INT) TERASPACE(*YES) STGMDL(*INHERIT) SYSIFCOPT(*IFSIO) INCDIR($(INCLUDE)) DBGVIEW($(DBGVIEW)) DEFINE($(DEFINE)) TGTCCSID($(TARGET_CCSID)) TGTRLS($(TARGET_RLS))
 # RPG compile flags
 RCFLAGS=OUTPUT($(OUTPUT)) OPTION(*NOUNREF *SRCSTMT) STGMDL(*INHERIT) INCDIR('headers' 'ext/headers') DBGVIEW(*LIST) TGTRLS($(TARGET_RLS)) DEFINE($(DEFINE)) $(TGTCCSID)
+
 RCFLAGS2=OUTPUT(*PRINT) OPTION(*NOUNREF *SRCSTMT) STGMDL(*INHERIT) INCDIR('headers' 'ext/headers') DBGVIEW(*LIST) TGTRLS($(TARGET_RLS)) DEFINE($(DEFINE)) $(TGTCCSID)
 
 # For current compile:
@@ -189,19 +190,19 @@ release: clean
 # For vsCode / single file then i.e.: gmake current sqlio.c  
 ifeq "$(suffix $(SRC))" ".c"
 current:
-	system -i "CRTCMOD MODULE($(BIN_LIB)/$(basename $(notdir $(SRC)))) SRCSTMF('$(SRC)') $(CCFLAGS2) "
+	system -i "CRTCMOD MODULE($(BIN_LIB)/$(basename $(notdir $(SRC)))) SRCSTMF('$(SRC)') $(CCFLAGS2) " > error.txt
 	system -i "UPDSRVPGM SRVPGM($(BIN_LIB)/ilevator) MODULE($(BIN_LIB)/*ALL)"  
 endif
 
 ifeq "$(suffix $(SRC))" ".rpgmod"
 current:
-	system -i "CRTRPGMOD MODULE($(BIN_LIB)/$(basename $(notdir $(SRC)))) SRCSTMF('$(SRC)') $(RCFLAGS2) "
+	system -i "CRTRPGMOD MODULE($(BIN_LIB)/$(basename $(notdir $(SRC)))) SRCSTMF('$(SRC)') $(RCFLAGS2) " > error.txt
 	system -i "UPDSRVPGM SRVPGM($(BIN_LIB)/ilevator) MODULE($(BIN_LIB)/*ALL)"  
 endif
 
 ifeq "$(suffix $(SRC))" ".cpp"
 current:
-	system "CRTCPPMOD MODULE($(BIN_LIB)/$(basename $(notdir $(SRC)))) SRCSTMF('$(SRC)') $(CCFLAGS2) "
+	system "CRTCPPMOD MODULE($(BIN_LIB)/$(basename $(notdir $(SRC)))) SRCSTMF('$(SRC)') $(CCFLAGS2) " > error.txt
 	system "UPDSRVPGM SRVPGM($(BIN_LIB)/ilevator) MODULE($(BIN_LIB)/*ALL)"  
 endif
 

@@ -186,7 +186,7 @@ LGL iv_execute (
             // No Content, dont read any longer
             apiStatus = API_OK;
         }
-        else if (pIv->responseIsChunked) {
+        else if (pIv->responseIsChunked == ON ) {
             apiStatus = iv_chunked_receive(pIv);
         }
         else {

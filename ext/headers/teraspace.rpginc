@@ -15,6 +15,14 @@ dcl-pr teraspace_free extproc(*dclcase);
   p pointer;
 end-pr;
 
+dcl-pr teraspace_strdup pointer extproc(*dclcase);
+  p pointer options(*string) value;
+end-pr;
+
+dcl-pr teraspace_strTrimDup pointer extproc(*dclcase);
+  p pointer options(*string) value;
+end-pr;
+
 dcl-pr teraspace_realloc pointer extproc(*dclcase);
   p pointer;
   length uns(20) value;
