@@ -127,8 +127,7 @@ dcl-proc iv_request_toString export;
     data += UTF8_QUESTION_MARK + request.url.query;
   endif;
   data += ' HTTP/1.1' + CRLF;
-  //data += 'Host: ' + request.url.host + UTF8_COLON + %char(request.url.port) + CRLF;
-  data += 'Host: ' + request.url.host  + CRLF;
+  data += 'Host: ' + request.url.host + UTF8_COLON + %char(request.url.port) + CRLF;
   data += 'Connection: keep-alive' + CRLF;
 
   iterator = sList_setIterator(request.headers);
