@@ -245,7 +245,6 @@ API_STATUS sendRequest (PILEVATOR pIv)
 {
     PVOID request;
     VARCHAR12 method;
-    VARCHAR1024 acceptMimeType; 
     LVARPUCHAR requestString;
     LONG rc;
 
@@ -256,8 +255,7 @@ API_STATUS sendRequest (PILEVATOR pIv)
         &pIv->host[0],
         pIv->port,
         &pIv->resource[0],
-        "",
-        acceptMimeType
+        ""
     );
     iv_request_addHeaders(request, pIv->headerList);
     
