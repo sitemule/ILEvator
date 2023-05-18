@@ -37,7 +37,7 @@ dcl-ds iv_request_t qualified template;
 end-ds;
 
 
-dcl-proc iv_request_new export;
+dcl-proc iv_request_new_packedUrl export;
   dcl-pi *n pointer;
     method varchar(12) value;
     url varchar(IV_REQUEST_URL_SIZE) ccsid(*utf8) value;
@@ -45,7 +45,7 @@ dcl-proc iv_request_new export;
   end-pi;
 
   dcl-ds request likeds(iv_request_t) based(ptr);
-  
+
   ptr = teraspace_alloc(%size(iv_request_t));
 
   clear request;
@@ -54,6 +54,36 @@ dcl-proc iv_request_new export;
   request.headers = sList_new();
 
   if (%parms() >= 3 and %addr(acceptMimeType) <> *null and %len(acceptMimeType) > 0);
+    iv_request_addHeader(ptr : 'accept' : acceptMimeType);
+  endif;
+
+  return ptr;
+end-proc;
+
+
+dcl-proc iv_request_new_unpackedUrl export;
+  dcl-pi *n pointer;
+    method varchar(12) value;
+    host pointer value options(*string);
+    port int(10) value;
+    path pointer value options(*string);
+    query pointer value options(*string);
+    acceptMimeType varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) value options(*nopass);
+  end-pi;
+
+  dcl-ds request likeds(iv_request_t) based(ptr);
+
+  ptr = teraspace_alloc(%size(iv_request_t));
+
+  clear request;
+  request.method = method;
+  request.url.host = %str(host : %size(request.url.host));
+  request.url.port = port;
+  request.url.path = %str(path : %size(request.url.path));
+  request.url.query = %str(query : %size(request.url.query));
+  request.headers = sList_new();
+
+  if (%parms() >= 6 and %addr(acceptMimeType) <> *null and %len(acceptMimeType) > 0);
     iv_request_addHeader(ptr : 'accept' : acceptMimeType);
   endif;
 
@@ -88,12 +118,12 @@ dcl-proc iv_request_toString export;
   dcl-pi *n likeds(LVARPUCHAR_t);
     p_request pointer const;
   end-pi;
-  
+
   dcl-c SERIALIZED_INIT_SIZE 1048576;
   dcl-ds serialized likeds(LVARPUCHAR_t);
   dcl-s sizeAllocated uns(10);
   dcl-s sizeUsed uns(10);
-  
+
   dcl-ds request likeds(iv_request_t) based(p_request);
   dcl-ds iterator likeds(SLISTITERATOR_t);
   dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
@@ -105,7 +135,7 @@ dcl-proc iv_request_toString export;
   dcl-s translatedLength uns(10);
   dcl-s hasContentTypeHeader ind inz(*off);
   dcl-s hasAcceptHeader ind inz(*off);
-  
+
   if (request.contentSize > SERIALIZED_INIT_SIZE);
       sizeAllocated = SERIALIZED_INIT_SIZE + request.contentSize;
   else;
@@ -137,24 +167,24 @@ dcl-proc iv_request_toString export;
     // TODO encode header names and values (only ASCII allowed)
     // TODO need to check that we have enough space for the headers when adding them
     data+= headerName + UTF8_COLON + headerValue + CRLF;
-    
+
     if (headerName = 'content-type');
       hasContentTypeHeader = *on;
     endif;
-    
+
     if (headerName = 'accept');
       hasAcceptHeader = *on;
     endif;
   enddo;
-  
+
   if (not hasAcceptHeader);
     data += 'Accept: */*' + CRLF;
   endif;
-  
+
   if (request.content <> *null);
-    // request.contentSize may not be the real size after char conversion    
+    // request.contentSize may not be the real size after char conversion
     data+= 'content-length' + UTF8_COLON + %char(request.contentSize) + CRLF;
-    
+
     if (not hasContentTypeHeader);
       if (request.binaryContent);
         data += 'content-type: application/octet-stream' + CRLF;
@@ -163,12 +193,12 @@ dcl-proc iv_request_toString export;
       endif;
     endif;
   endif;
-  
+
   data += CRLF;
-  
+
   serialized.length = %len(data);
   memcpy(serialized.string : %addr(data : *data) : %len(data));
-  
+
   if (request.content <> *null and request.contentSize > 0);
     if (request.binaryContent);
       memcpy(serialized.string + serialized.length : request.content : request.contentSize);
@@ -178,21 +208,21 @@ dcl-proc iv_request_toString export;
       tmpSerializedContent.length = request.contentSize * 4;
       tmpSerializedContent.string = teraspace_alloc(tmpSerializedContent.length);
       translatedLength = serializeContent(tmpSerializedContent : p_request);
-      
+
       if (serialized.length + translatedLength > sizeAllocated);
         sizeAllocated = serialized.length + translatedLength;
         serialized.string = teraspace_realloc(serialized.string : sizeAllocated);
       endif;
-      
+
       if (translatedLength > 0);
         memcpy(serialized.string + serialized.length : tmpSerializedContent.string : translatedLength);
         serialized.length += translatedLength;
       endif;
-      
+
       teraspace_free(tmpSerializedContent.string);
     endif;
   endif;
-  
+
   // Note: no ending CRLF after body !!!
 
   return serialized;
@@ -210,14 +240,14 @@ dcl-proc iv_request_addHeader export;
   dcl-s lowerName varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8);
   dcl-ds listKey likeds(LVARPUCHAR_t);
   dcl-ds listValue likeds(LVARPUCHAR_t);
-  
+
   if (name = *blank);
     return;
   endif;
-  
+
   // TODO use OS API for proper conversion
   lowerName = %xlate(UPPER : LOWER : name);
-  
+
   listKey.length = %len(lowerName);
   listKey.string = teraspace_alloc(listKey.length + 1);
   %str(listKey.string : listKey.length + 1) = lowerName;
@@ -240,7 +270,7 @@ dcl-proc iv_request_addHeaders export;
     dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
     dcl-s headerName varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8);
     dcl-s headerValue varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8);
-  
+
     iterator = sList_setIterator(headers);
     dow (sList_foreach(iterator));
         headerName = %str(nodePayload.key.string : nodePayload.key.length);
@@ -263,19 +293,19 @@ dcl-proc iv_request_getHeader export;
   dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
   dcl-s lowerName varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8);
   dcl-s headerName varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8);
-  
+
   lowerName = %xlate(UPPER : LOWER : name);
-  
+
   iterator = sList_setIterator(request.headers);
   dow (sList_foreach(iterator));
     headerName = %str(nodePayload.key.string : nodePayload.key.length);
-    
+
     if (headerName = lowerName);
       value = %str(nodePayload.value.string : nodePayload.value.length);
       leave;
     endif;
   enddo;
-  
+
   return value;
 end-proc;
 
@@ -350,15 +380,15 @@ dcl-proc iv_request_setFormBody export;
   end-pi;
 
   dcl-ds request likeds(iv_request_t) based(p_request);
-  
+
   // we use binary content here because the form data is already in ASCII and
   // should not be converted to any other CCSID
   request.binaryContent = *on;
-  
+
   request.contentSize = formData.Length;
   request.content = teraspace_alloc(formData.Length);
   memcpy(request.content : formData.String : formData.Length);
-  
+
   teraspace_free(formData.String);
 end-proc;
 
@@ -412,18 +442,18 @@ dcl-proc deallocateHeaders;
   dcl-pi *n;
     list pointer;
   end-pi;
-  
+
   dcl-ds iterator likeds(SLISTITERATOR_t) inz;
   dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
   dcl-ds payload likeds(SLISTKEYVAL_t) based(node.payloadData);
-  
+
   iterator = sList_setIterator(list);
-  
+
   dow (sList_foreach(iterator));
     teraspace_free(payload.key.string);
     teraspace_free(payload.value.string);
   enddo;
-  
+
   sList_free(list);
 end-proc;
 
@@ -438,21 +468,21 @@ dcl-proc serializeContent;
   dcl-s outLength uns(10);
   dcl-s ccsid int(10);
   dcl-s contentTypeHeader varchar(1000) ccsid(*utf8);
-  
+
   if (request.content = *null or request.contentSize = 0);
     return 0;
   endif;
-  
+
   contentTypeHeader = getContentTypeHeader(request.headers);
   ccsid = iv_mime_getCcsid(contentTypeHeader);
   if (ccsid = 0);
     ccsid = 1208; // default to utf-8
   endif;
-  
-  outLength = xlate_translateBuffer(serialized.string  : 
+
+  outLength = xlate_translateBuffer(serialized.string  :
       request.content : request.contentSize : 0 : ccsid);
   serialized.length = outLength;
-  
+
   return outLength;
 end-proc;
 
@@ -461,19 +491,18 @@ dcl-proc getContentTypeHeader;
   dcl-pi *n varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8);
     list pointer;
   end-pi;
-  
+
   dcl-ds iterator likeds(SLISTITERATOR_t) inz;
   dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
   dcl-ds payload likeds(SLISTKEYVAL_t) based(node.payloadData);
-  
+
   iterator = sList_setIterator(list);
-  
+
   dow (sList_foreach(iterator));
     if (%str(payload.key.string : payload.key.length) = 'content-type');
       return %str(payload.value.string : payload.value.length);
     endif;
   enddo;
-  
+
   return *blank;
 end-proc;
-

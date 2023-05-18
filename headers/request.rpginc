@@ -37,9 +37,38 @@ end-ds;
 // @info The caller needs to free the allocated memory of the request by
 //       calling <code>iv_request_dispose</code>.
 ///
-dcl-pr iv_request_new pointer extproc(*dclcase);
+dcl-pr iv_request_new_packedUrl pointer extproc(*dclcase);
   method varchar(12) value;
   url varchar(IV_REQUEST_URL_SIZE:2) ccsid(*utf8) value;
+  mimeType varchar(IV_REQUEST_HEADER_VALUE_SIZE:2) ccsid(*utf8) value options(*nopass);
+end-pr;
+
+///
+// Create new HTTP request
+//
+// Creates a new URL request with the given HTTP method, URL and optional
+// the given Accept MIME type.
+// <br/><br/>
+// The url has been unpacked to its parts and are passed as separate parameters.
+//
+// @param HTTP method
+// @param Host name
+// @param Port
+// @param Path
+// @param Query
+// @param Accept HTTP header MIME type
+//
+// @return Request
+// 
+// @info The caller needs to free the allocated memory of the request by
+//       calling <code>iv_request_dispose</code>.
+///
+dcl-pr iv_request_new_unpackedUrl pointer extproc(*dclcase);
+  method varchar(12) value;
+  host pointer value options(*string);
+  port int(10) value;
+  path pointer value options(*string);
+  query pointer value options(*string);
   mimeType varchar(IV_REQUEST_HEADER_VALUE_SIZE:2) ccsid(*utf8) value options(*nopass);
 end-pr;
 
@@ -189,14 +218,6 @@ dcl-pr iv_request_setBinaryBody extproc(*dclcase);
   size uns(10) value;
 end-pr;
 
-/if defined (RPG_HAS_OVERLOAD )
-dcl-pr iv_request_setBody overload(
-  iv_request_setTextBody :
-  iv_request_setBinaryBody
-);
-/endif
-
-
 dcl-pr iv_request_setStream extproc(*dclcase);
   request pointer const;
   stream pointer const;
@@ -221,5 +242,17 @@ end-pr;
 dcl-pr iv_request_hasBody ind extproc(*dclcase);
   request pointer const;
 end-pr;
+
+/if defined (RPG_HAS_OVERLOAD)
+dcl-pr iv_request_setBody overload(
+  iv_request_setTextBody :
+  iv_request_setBinaryBody
+);
+
+dcl-pr iv_request_new pointer overload(
+    iv_request_new_packedUrl :
+    iv_request_new_unpackedUrl
+);
+/endif
 
 /endif

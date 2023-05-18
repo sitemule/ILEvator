@@ -246,16 +246,19 @@ API_STATUS sendRequest (PILEVATOR pIv)
     PVOID request;
     VARCHAR12 method;
     VARCHAR1024 acceptMimeType; 
-    VARCHAR url;
     LVARPUCHAR requestString;
     LONG rc;
 
     str2vc(&method, pIv->method);
 
-    xlate_translateBuffer(url.String , pIv->url , strlen(pIv->url) , 0, 1252);
-    url.Length = strlen(pIv->url);
-    
-    request = iv_request_new(method, url, acceptMimeType);
+    request = iv_request_new(
+        method, 
+        &pIv->host[0],
+        pIv->port,
+        &pIv->resource[0],
+        "",
+        acceptMimeType
+    );
     iv_request_addHeaders(request, pIv->headerList);
     
     if (pIv->authProvider)
