@@ -24,7 +24,7 @@ end-proc;
 //  Example #1 - Fetch currency exhange rate from www.floatrates.com
 //  ----------------------------------------------------------------------------
 //  1: Fetch from data (3000 bytes)
-//  2: Fetch EUR 'InverRate'
+//  2: Fetch EUR 'InverseRate'
 //  3: Write Result to JobLog - dspjob + F10 + F18
 // -----------------------------------------------------------------------------     
 dcl-proc example1;
