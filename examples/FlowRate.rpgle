@@ -17,14 +17,17 @@ ctl-opt main(main);
 // -----------------------------------------------------------------------------     
 dcl-proc main;
 
-    example4();
+    example1();
     
 end-proc;
 // -----------------------------------------------------------------------------
-// 'get' using http. Write output data to response file
-//  ccsid default to the resource on the net
+//  Example #1 - Fetch currency exhange rate from www.floatrates.com
+//  ----------------------------------------------------------------------------
+//  1: Fetch from data (3000 bytes)
+//  2: Fetch EUR 'InverRate'
+//  3: Write Result to JobLog - dspjob + F10 + F18
 // -----------------------------------------------------------------------------     
-dcl-proc example4;
+dcl-proc example1;
 
     dcl-s pHttp  pointer; 
     dcl-s pflow  pointer; 
@@ -32,14 +35,13 @@ dcl-proc example4;
     dcl-s outbuf varchar(65000:4);
 
     pHttp = iv_newHttpClient(); 
-    // iv_setResponseFile (pHttp : '/tmp/flowrate.json' );
     
     iv_setResponseDataBuffer (pHttp : %addr(outbuf) : %size(outbuf) : IV_VARCHAR4 : IV_CCSID_JOB);
     iv_execute (pHttp : 'GET' : 'http://www.floatrates.com/daily/dkk.json' : 3000); 
     if iv_getStatus(pHttp) = IV_HTTP_OK ; 
         pflow = json_parsestring(outbuf); 
         eur = json_getnum(pflow:'eur.inverseRate');
-        json_joblog('eur' + %char(eur));
+        json_joblog('DKK to EUR: ' + %char(eur));
     endif;
 
     return; // Remember to use return - otherwise the on-exit will not be called
