@@ -13,7 +13,7 @@
 # BIN_LIB is the destination library for the demo programs.
 # NOTE: LIBLIST can be overwritten from the commandline, but defaults to the BIN_LIB
 BIN_LIB=ILEVATOR
-LIBLIST=$(BIN_LIB)
+LIBLIST=$(BIN_LIB) NOXDB
 
 # The shell we use
 SHELL=/QOpenSys/usr/bin/qsh
