@@ -240,7 +240,7 @@ dcl-proc iv_setResponseFile export;
 
 	unlink(fileName);
 	
-	client.responseDataFile = fopen(fileName : %addr(mode));
+	client.responseDataFile = fopen(fileName : mode);
 	if (client.responseDataFile = *null);
 	    pErrno = errno();
         message_info('Response output open failed: ' + %str(strerror(c_errno):1000));
