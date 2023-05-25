@@ -104,9 +104,7 @@ void iv_setResponseBuffer (
 LGL iv_execute (
     PILEVATOR pIv,
     PUCHAR method,
-    PUCHAR url,
-    ULONG  timeOut,
-    ULONG  retries
+    PUCHAR url
 );
 #pragma descriptor (void iv_execute(void))
 

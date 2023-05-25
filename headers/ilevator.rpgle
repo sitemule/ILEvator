@@ -459,8 +459,6 @@ dcl-pr iv_execute ind extproc(*dclcase);
     client  pointer value;
     method  pointer options(*string) value;
     url     pointer options(*string) value;
-    timeOut int(10) options(*nopass) value; // In milisec. 30000 is default
-    retries int(10) options(*nopass) value; // retry n times. 3 is default
 end-pr;
 
 ///
@@ -615,3 +613,14 @@ dcl-pr iv_addHeaders extproc(*dclcase);
     client pointer value;
     headers pointer value;
 end-pr;
+
+dcl-pr iv_setTimeout extproc(*dclcase);
+    client pointer value;
+    timeout int(5) value;
+end-pr;
+
+dcl-pr iv_setRetries extproc(*dclcase);
+    client pointer value;
+    retries int(5) value;
+end-pr;
+

@@ -287,9 +287,7 @@ dcl-proc iv_execute export;
     dcl-pi *n ind;
         pClient pointer value;
         method pointer options(*string) value;
-        url pointer options(*string) value; 
-        timeout int(10) options(*nopass) value; // In milisec. 30000 is default
-        retries int(10) options(*nopass) value; // retry n times. 3 is default        
+        url pointer options(*string) value;     
     end-pi;
 
     dcl-ds client likeds(ilevator_t) based(pClient);
@@ -299,14 +297,6 @@ dcl-proc iv_execute export;
     
     client.method = teraspace_strTrimDup (method);
     client.url    = teraspace_strTrimDup (url);
-    
-    if (%parms() >= 4);
-        client.timeout = timeout;
-    endif;
-    
-    if (%parms() >= 5);
-        client.retries = retries;
-    endif;
     
     parseUrl(pClient : url); 
     
@@ -536,7 +526,7 @@ dcl-proc iv_get export;
         iv_addHeaders(client : headers);
     endif;
     
-    rc = iv_execute(client : 'GET' : url : DEFAULT_TIMEOUT : NO_RETRIES);
+    rc = iv_execute(client : 'GET' : url);
     
     return returnBuffer;
         
@@ -589,9 +579,12 @@ dcl-proc iv_post_text export;
         iv_addHeaders(client : headers);
     endif;
     
-    rc = iv_execute(client : 'POST' : url : DEFAULT_TIMEOUT : NO_RETRIES);
+    rc = iv_execute(client : 'POST' : url);
     
     return returnBuffer;
+    
+    on-exit;
+        iv_free(client);
 end-proc;
 
 
@@ -613,5 +606,31 @@ dcl-proc iv_post_binary export;
     // TODO
     
     return returnBuffer;
+    
+    on-exit;
+        iv_free(client);
 end-proc;
 
+
+dcl-proc iv_setTimeout export;
+    dcl-pi *n;
+        pClient pointer value;
+        timeout int(5) value;
+    end-pi;
+    
+    dcl-ds client likeds(ilevator_t) based(pClient); 
+    
+    client.timeout = timeout;
+end-proc;
+
+
+dcl-proc iv_setRetries export;
+    dcl-pi *n;
+        pClient pointer value;
+        retries int(5) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient); 
+
+    client.retries = retries;
+end-proc;
