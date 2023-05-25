@@ -1,0 +1,28 @@
+**FREE
+
+///
+// Integration Test POST Method
+//
+// This module tests the POST HTTP requests with an integration test backend.
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'ilevator.rpgle'
+
+
+dcl-pr test_post_echo_success end-pr;
+
+
+dcl-proc test_post_echo_success export;
+    dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+    dcl-s messageBody varchar(IV_BUFFER_SIZE:4);
+  
+    messageBody = 'Hello ILEvator!';
+  
+    string = iv_post('http://localhost:35801/api/post' : messageBody);
+    aEqual(messageBody : string); 
+end-proc;

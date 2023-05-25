@@ -3,8 +3,7 @@
 ///
 // Integration Test GET Method
 //
-// This module tests the GET HTTP requests with the ILEastic integration test
-// backend.
+// This module tests the GET HTTP requests with integration test backend.
 ///
 
 

@@ -25,7 +25,7 @@ DEFINE=RPG_HAS_OVERLOAD
 #-------------------------------------------------------------------------------
 
 
-OBJECTS = ITGET
+OBJECTS = ITGET ITPOST
 SRVPGMS = $(RU_LIB)/RUTESTCASE $(ILEVATOR_LIB)/ILEVATOR
 
 # system and application include folder
@@ -51,10 +51,16 @@ start_ileastic: .PHONY
 ITGET:
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITGET) SRCSTMF('itget.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/ITGET MODULE(($(BIN_LIB)/ITGET)) $(BINDFLAGS)"
+	
+ITPOST:
+	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITPOST) SRCSTMF('itpost.rpgmod') $(RCFLAGS)"
+	system -i "CRTSRVPGM $(BIN_LIB)/ITPOST MODULE(($(BIN_LIB)/ITPOST)) $(BINDFLAGS)"
 
 clean:
 	-system -i "DLTMOD $(BIN_LIB)/ITGET"
+	-system -i "DLTMOD $(BIN_LIB)/ITPOST"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITGET"
+	-system -i "DLTSRVPGM $(BIN_LIB)/ITPOST"
 	$(MAKE) -C ileastic/ clean
 
 .PHONY:
