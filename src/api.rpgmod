@@ -63,6 +63,8 @@ dcl-ds ilevator_t qualified template align(*full);
     responseHeaderHasContentLength ind ;
     responseIsChunked ind ;
     headerList pointer;
+    
+    requestDataBuffer likeds(anychar_t);
     responseHeaderBuffer likeds(anychar_t);
     responseDataBuffer likeds(anychar_t);
     responseDataFile pointer;
@@ -213,6 +215,27 @@ dcl-proc iv_setResponseDataBuffer export;
     
     iv_anychar_set( 
         %addr(client.responseDataBuffer) :
+        buffer :
+        bufferSize :
+        bufferType :
+        bufferCcsid
+    );
+end-proc;
+
+
+dcl-proc iv_setRequestDataBuffer export;
+    dcl-pi *n;
+        pClient pointer value;
+        buffer pointer value;
+        bufferSize int(10) value;
+        bufferType int(5) value;
+        bufferCcsid int(10) value;        
+    end-pi;
+    
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    
+    iv_anychar_set( 
+        %addr(client.requestDataBuffer) :
         buffer :
         bufferSize :
         bufferType :
@@ -506,11 +529,11 @@ dcl-proc iv_get export;
     );
     
     if (%parms() >= 3);
-      iv_addHeader(client : 'Accept' : acceptMimeType);
+        iv_addHeader(client : 'Accept' : acceptMimeType);
     endif;
     
     if (%parms() >= 4);
-      iv_addHeaders(client : headers);
+        iv_addHeaders(client : headers);
     endif;
     
     rc = iv_execute(client : 'GET' : url : DEFAULT_TIMEOUT : NO_RETRIES);
@@ -520,3 +543,75 @@ dcl-proc iv_get export;
 on-exit;
     iv_free(client);
 end-proc;
+
+
+dcl-proc iv_post_text export;
+    dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
+        url varchar(IV_URL_SIZE:2) value;
+        messageBody pointer value options(*string);
+        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+        headers pointer value options(*nopass);
+    end-pi;
+    
+    dcl-s client pointer;
+    dcl-ds clientDs likeds(ilevator_t) based(client);
+    dcl-s returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+    dcl-s rc ind inz(*off);
+    dcl-s messageBodyLength uns(10);
+    
+    client = iv_newHttpClient();
+    
+    iv_setResponseDataBuffer(
+        client :
+        %addr(returnBuffer) : 
+        IV_BUFFER_SIZE :
+        IV_VARCHAR4 :
+        IV_CCSID_UTF8
+    );
+    
+    messageBodyLength = strlen(messageBody);
+    if (messageBodyLength > 0);
+        iv_setRequestDataBuffer(
+            client :
+            messageBody : 
+            messageBodyLength :
+            IV_BYTES :
+            IV_CCSID_UTF8
+        );
+        clientDs.requestDataBuffer.length = messageBodyLength;
+    endif;
+    
+    if (%parms() >= 4);
+        iv_addHeader(client : 'Accept' : acceptMimeType);
+    endif;
+    
+    if (%parms() >= 5);
+        iv_addHeaders(client : headers);
+    endif;
+    
+    rc = iv_execute(client : 'POST' : url : DEFAULT_TIMEOUT : NO_RETRIES);
+    
+    return returnBuffer;
+end-proc;
+
+
+dcl-proc iv_post_binary export;
+    dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
+        url varchar(IV_URL_SIZE:2) value;
+        messageBody pointer value;
+        messageBodyLength uns(10) value;
+        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+        headers pointer value options(*nopass);
+    end-pi;
+    
+    dcl-s client pointer;
+    dcl-s returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+    dcl-s rc ind inz(*off);
+    
+    client = iv_newHttpClient();
+    
+    // TODO
+    
+    return returnBuffer;
+end-proc;
+

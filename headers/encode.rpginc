@@ -8,9 +8,18 @@
 
 
 dcl-pr iv_encode_url varchar(4194304) ccsid(*utf8) rtnparm extproc(*dclcase);
-  unencodedValue varchar(1048576) ccsid(*utf8) value; 
+    unencodedValue varchar(1048576) ccsid(*utf8) value; 
+end-pr;
+
+dcl-pr iv_encode_path varchar(4194304) ccsid(*utf8) rtnparm extproc('iv_encode_url');
+    unencodedValue varchar(1048576) ccsid(*utf8) value; 
 end-pr;
 
 dcl-pr iv_encode_formUrl varchar(4194304) ccsid(*utf8) rtnparm extproc(*dclcase);
-  unencodedValue varchar(1048576) ccsid(*utf8) value;
+    unencodedValue varchar(1048576) ccsid(*utf8) value;
+end-pr;
+
+dcl-pr iv_encode_query varchar(32766) ccsid(*utf8) extproc(*dclcase);
+    key varchar(1000) ccsid(*utf8) value;
+    value varchar(32766) ccsid(*utf8) value;
 end-pr;

@@ -357,7 +357,6 @@ dcl-c IV_MEDIA_TYPE_XML 'application/xml';
 dcl-pr iv_newHttpClient pointer extproc(*dclcase);
 end-pr;
 
-
 ///
 // Disconnect and cleanup memory of the client
 //
@@ -367,7 +366,6 @@ end-pr;
 dcl-pr iv_free extproc(*dclcase);
     client pointer value;
 end-pr;
-
 
 ///
 // buffer types
@@ -384,23 +382,6 @@ dcl-c IV_CCSID_UTF8    1208;
 dcl-c IV_CCSID_WIN1252 1252;
 dcl-c IV_CCSID_BINARY  65535;
 
-///
-// Set the buffer where the header buffer is placed
-//
-//
-// @param pClient pointer to the http client 
-// @param pointer to buffer
-// @param size    size of buffer ( bytes in total)
-// @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
-// @param ccsid   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
-///
-dcl-pr iv_setRequestHeaderBuffer extproc(*dclcase);
-    pClient       pointer value;
-    pBuffer       pointer value;
-    bufferSize    int(10) value;
-    bufferType    int(5) value;
-    bufferCcsid   int(10) value;
-end-pr;
 
 ///
 // Set the buffer where the header data (POST)  is placed
@@ -482,7 +463,6 @@ dcl-pr iv_execute ind extproc(*dclcase);
     retries int(10) options(*nopass) value; // retry n times. 3 is default
 end-pr;
 
-
 ///
 // Set the certificate for HTTPS 
 // @return *ON if ok 
@@ -527,7 +507,6 @@ dcl-pr iv_setAuthProvider extproc(*dclcase);
   client pointer value;
   authProvider pointer value;
 end-pr;
-
 
 ///
 // Base64 decode value
@@ -576,7 +555,6 @@ dcl-pr iv_setTrace extproc(*dclcase) ;
     traceFile pointer options(*string) value;
 end-pr;
     
-
 ///
 //
 // Convenience function: convert varchar ccsid
@@ -587,7 +565,6 @@ dcl-pr iv_xlateVc varchar(32768:2) ccsid(65535) extproc(*CWIDEN : 'iv_xlateVc') 
   fromCCSID int(10) value;
   toCCSID   int(10) value;
 end-pr;
-
 
 ///
 //
@@ -600,20 +577,39 @@ dcl-pr iv_xlateLvc varchar(2097152:4) ccsid(65535) extproc(*CWIDEN : 'iv_xlateLv
     toCCSID   int(10) value;
 end-pr;
 
-
 dcl-pr iv_get varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
     acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
     headers pointer value options(*nopass);
 end-pr;
 
+dcl-pr iv_post_text varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
+    url varchar(IV_URL_SIZE:2) value;
+    messageBody pointer value options(*string);
+    acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+    headers pointer value options(*nopass);
+end-pr;
+
+dcl-pr iv_post_binary varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
+    url varchar(IV_URL_SIZE:2) value;
+    messageBody pointer value;
+    messageBodyLength uns(10) value;
+    acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+    headers pointer value options(*nopass);
+end-pr;
+
+/if defined (RPG_HAS_OVERLOAD)
+dcl-pr iv_post varchar(IV_BUFFER_SIZE:4) ccsid(1208) overload(
+  iv_post_binary :
+  iv_post_text
+);
+/endif
 
 dcl-pr iv_addHeader extproc(*dclcase);
     client pointer value;
     headerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8) value;
     headerValue varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8) value;
 end-pr;
-
 
 dcl-pr iv_addHeaders extproc(*dclcase);
     client pointer value;

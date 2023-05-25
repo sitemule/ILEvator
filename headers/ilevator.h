@@ -55,6 +55,7 @@ typedef struct _ILEVATOR {
     LGL       responseIsChunked;
     PSLIST    headerList;
 
+    ANYCHAR   requestDataBuffer; 
     ANYCHAR   responseHeaderBuffer; 
     ANYCHAR   responseDataBuffer; 
     FILE *    responseDataFile;
