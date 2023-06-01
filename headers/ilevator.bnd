@@ -20,6 +20,7 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_post_binary")
     EXPORT SYMBOL("iv_delete")
     EXPORT SYMBOL("iv_head")
+    EXPORT SYMBOL("iv_options")
     
     EXPORT SYMBOL("iv_request_addHeader")
     EXPORT SYMBOL("iv_request_addHeaders")

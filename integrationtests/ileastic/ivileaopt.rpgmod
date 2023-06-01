@@ -1,0 +1,52 @@
+**FREE
+
+///
+// ILEvator : ILEastic OPTIONS Integration Test Backend
+//
+// This module contains the backend web services for the ILEvator integration
+// tests for the OPTIONS HTTP method.
+//
+///
+
+ctl-opt nomain;
+
+
+/include 'ileastic.rpgle'
+
+
+dcl-pr options_success extproc(*dclcase);
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+end-pr;
+
+dcl-pr options_failed extproc(*dclcase);
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+end-pr;
+
+
+dcl-proc options_success export;
+  dcl-pi *n;
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+  end-pi;
+
+  dcl-s query varchar(100);
+
+  response.contentType = 'text/plain';
+  response.status = IL_HTTP_OK;
+  il_responseWrite(response : 'GET,HEAD');    
+end-proc;
+
+dcl-proc options_failed export;
+  dcl-pi *n;
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+  end-pi;
+
+  dcl-s query varchar(100);
+
+  response.contentType = 'text/plain';
+  response.status = IL_HTTP_METHOD_NOT_ALLOWED;
+  il_responseWrite(response : 'OPTIONS is not allowed');    
+end-proc;

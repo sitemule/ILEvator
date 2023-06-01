@@ -1,0 +1,39 @@
+**FREE
+
+///
+// Integration Test OPTIONS Method
+//
+// This module tests the OPTIONS HTTP requests with integration test backend.
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'ilevator.rpgle'
+
+
+dcl-pr test_options_success end-pr;
+dcl-pr test_options_failed end-pr;
+
+
+dcl-proc test_options_success export;
+    dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+  
+    string = iv_options('http://localhost:35801/api/entry/success');
+    aEqual('GET,HEAD' : string); 
+end-proc;
+
+
+dcl-proc test_options_failed export;
+    dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+  
+    monitor;
+        string = iv_options('http://localhost:35801/api/entry/failed');
+        fail('This OPTIONS request should have triggered an escape message.');
+    on-error;
+        // TODO check error : HTTP status 415
+        aEqual('OPTIONS is not allowed' : string); 
+    endmon;
+end-proc;

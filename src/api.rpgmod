@@ -694,3 +694,41 @@ dcl-proc iv_head export;
 on-exit;
     iv_free(client);
 end-proc;
+
+
+dcl-proc iv_options export;
+    dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
+        url varchar(IV_URL_SIZE:2) value;
+        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+        headers pointer value options(*nopass);        
+    end-pi;
+
+    dcl-s client pointer;
+    dcl-s returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+    dcl-s rc ind inz(*off);
+    
+    client = iv_newHttpClient();
+    
+    iv_setResponseDataBuffer(
+        client :
+        %addr(returnBuffer) : 
+        IV_BUFFER_SIZE :
+        IV_VARCHAR4 :
+        IV_CCSID_UTF8
+    );
+    
+    if (%parms() >= 3);
+        iv_addHeader(client : 'Accept' : acceptMimeType);
+    endif;
+    
+    if (%parms() >= 4);
+        iv_addHeaders(client : headers);
+    endif;
+    
+    rc = iv_execute(client : 'OPTIONS' : url);
+    
+    return returnBuffer;
+        
+on-exit;
+    iv_free(client);
+end-proc;

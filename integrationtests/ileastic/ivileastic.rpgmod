@@ -28,6 +28,8 @@ dcl-proc main;
   il_addRoute(config : %paddr('delete_notAllowed') : IL_DELETE : '/api/entry/notallowed');
   il_addRoute(config : %paddr('head_success') : IL_HEAD : '/api/entry/success');
   il_addRoute(config : %paddr('head_failed') : IL_HEAD : '/api/entry/failed');
-
+  il_addRoute(config : %paddr('options_success') : IL_OPTIONS : '/api/entry/success');
+  il_addRoute(config : %paddr('options_failed') : IL_OPTIONS : '/api/entry/failed');
+  
   il_listen (config);
 end-proc;
