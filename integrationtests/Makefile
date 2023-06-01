@@ -25,7 +25,7 @@ DEFINE=RPG_HAS_OVERLOAD
 #-------------------------------------------------------------------------------
 
 
-OBJECTS = ITGET ITPOST
+OBJECTS = ITGET ITPOST ITDELETE
 SRVPGMS = $(RU_LIB)/RUTESTCASE $(ILEVATOR_LIB)/ILEVATOR
 
 # system and application include folder
@@ -55,6 +55,10 @@ ITGET:
 ITPOST:
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITPOST) SRCSTMF('itpost.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/ITPOST MODULE(($(BIN_LIB)/ITPOST)) $(BINDFLAGS)"
+
+ITDELETE:
+	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITDELETE) SRCSTMF('itdelete.rpgmod') $(RCFLAGS)"
+	system -i "CRTSRVPGM $(BIN_LIB)/ITDELETE MODULE(($(BIN_LIB)/ITDELETE)) $(BINDFLAGS)"
 
 clean:
 	-system -i "DLTMOD $(BIN_LIB)/ITGET"

@@ -1,0 +1,34 @@
+**FREE
+
+///
+// Integration Test DELETE Method
+//
+// This module tests the DELETE HTTP requests with integration test backend.
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'ilevator.rpgle'
+
+
+dcl-pr test_delete_success end-pr;
+dcl-pr test_delete_failed end-pr;
+
+
+dcl-proc test_delete_success export;
+    dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+  
+    string = iv_delete('http://localhost:35801/api/entry/success');
+    aEqual('' : string); 
+end-proc;
+
+
+dcl-proc test_delete_failed export;
+    dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+  
+    string = iv_delete('http://localhost:35801/api/entry/success');
+    aEqual('' : string); 
+end-proc;

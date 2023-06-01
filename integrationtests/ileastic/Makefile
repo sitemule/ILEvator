@@ -31,14 +31,14 @@ RCFLAGS=OUTPUT($(OUTPUT)) OPTION(*NOUNREF *SRCSTMT) STGMDL(*INHERIT) INCDIR($(IN
 # remove all default suffix rules
 .SUFFIXES:
 
-MODULES=$(BIN_LIB)/IVILEASTIC $(BIN_LIB)/IVILEAGET 
+MODULES=$(BIN_LIB)/IVILEASTIC $(BIN_LIB)/IVILEAGET $(BIN_LIB)/IVILEADEL 
 
 
 # Dependency list
 
 all:  modules ivileastic.pgm
 
-modules: ivileastic.rpgmod ivileaget.rpgmod
+modules: ivileastic.rpgmod ivileaget.rpgmod ivileadel.rpgmod
 
 start:
 	system "SBMJOB CMD(CALL PGM(IVILEASTIC)) JOB(IVILEASTIC) JOBQ(QUSRNOMAX) CURLIB($(BIN_LIB)) INLLIBL($(ILEASTIC_LIB)) ALWMLTTHD(*YES)"
@@ -47,6 +47,7 @@ clean:
 	-system -i "DLTMOD $(BIN_LIB)/IVILEASTIC"
 	-system -i "DLTPGM $(BIN_LIB)/IVILEASTIC"
 	-system -i "DLTMOD $(BIN_LIB)/IVILEAGET"
+	-system -i "DLTMOD $(BIN_LIB)/IVILEADEL"
 
 #-----------------------------------------------------------
 

@@ -21,9 +21,11 @@ dcl-proc main;
   config.port = 35801;
   config.host = '*ANY';
 
-  il_addRoute(config : %paddr('sayHello') : IL_GET : '/api/hello');
-  il_addRoute(config : %paddr('getHeaderValue') : IL_GET : '/api/headers/{header}');
-  il_addRoute(config : %paddr('listHeaders') : IL_GET : '/api/headers');
+  il_addRoute(config : %paddr('get_sayHello') : IL_GET : '/api/hello');
+  il_addRoute(config : %paddr('get_getHeaderValue') : IL_GET : '/api/headers/{header}');
+  il_addRoute(config : %paddr('get_listHeaders') : IL_GET : '/api/headers');
+  il_addRoute(config : %paddr('delete_success') : IL_DELETE : '/api/entry/success');
+  il_addRoute(config : %paddr('delete_notAllowed') : IL_DELETE : '/api/entry/notallowed');
 
   il_listen (config);
 end-proc;

@@ -1,0 +1,52 @@
+**FREE
+
+///
+// ILEvator : ILEastic DELETE Integration Test Backend
+//
+// This module contains the backend web services for the ILEvator integration
+// tests for the DELETE HTTP method.
+//
+///
+
+ctl-opt nomain;
+
+
+/include 'ileastic.rpgle'
+
+
+dcl-pr delete_success extproc(*dclcase);
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+end-pr;
+
+dcl-pr delete_notAllowed extproc(*dclcase);
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+end-pr;
+
+
+dcl-proc delete_success export;
+  dcl-pi *n;
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+  end-pi;
+
+  dcl-s query varchar(100);
+
+  response.contentType = 'text/plain';
+  response.status = IL_HTTP_NO_CONTENT;
+  il_responseWrite(response : '');    
+end-proc;
+
+dcl-proc delete_notAllowed export;
+  dcl-pi *n;
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+  end-pi;
+
+  dcl-s query varchar(100);
+
+  response.contentType = 'text/plain';
+  response.status = IL_HTTP_METHOD_NOT_ALLOWED;
+  il_responseWrite(response : 'DELETE is not allowed');    
+end-proc;
