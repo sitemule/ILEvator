@@ -32,6 +32,8 @@ dcl-proc main;
   il_addRoute(config : %paddr('options_failed') : IL_OPTIONS : '/api/entry/failed');
   il_addRoute(config : %paddr('put_success') : IL_PUT : '/api/entry/success');
   il_addRoute(config : %paddr('put_failed') : IL_PUT : '/api/entry/failed');
+  il_addRoute(config : %paddr('patch_success') : IL_PATCH : '/api/entry/success');
+  il_addRoute(config : %paddr('patch_failed') : IL_PATCH : '/api/entry/failed');
   
   il_listen (config);
 end-proc;

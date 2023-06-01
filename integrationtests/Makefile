@@ -25,7 +25,7 @@ DEFINE=RPG_HAS_OVERLOAD
 #-------------------------------------------------------------------------------
 
 
-OBJECTS = ITGET ITPOST ITDELETE ITHEAD ITOPTIONS ITPUT
+OBJECTS = ITGET ITPOST ITDELETE ITHEAD ITOPTIONS ITPUT ITPATCH
 SRVPGMS = $(RU_LIB)/RUTESTCASE $(ILEVATOR_LIB)/ILEVATOR
 
 # system and application include folder
@@ -72,6 +72,10 @@ ITPUT:
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITPUT) SRCSTMF('itput.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/ITPUT MODULE(($(BIN_LIB)/ITPUT)) $(BINDFLAGS)"
 
+ITPATCH:
+	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITPATCH) SRCSTMF('itpatch.rpgmod') $(RCFLAGS)"
+	system -i "CRTSRVPGM $(BIN_LIB)/ITPATCH MODULE(($(BIN_LIB)/ITPATCH)) $(BINDFLAGS)"
+
 clean:
 	-system -i "DLTMOD $(BIN_LIB)/ITGET"
 	-system -i "DLTMOD $(BIN_LIB)/ITPOST"
@@ -79,12 +83,14 @@ clean:
 	-system -i "DLTMOD $(BIN_LIB)/ITHEAD"
 	-system -i "DLTMOD $(BIN_LIB)/ITOPTIONS"
 	-system -i "DLTMOD $(BIN_LIB)/ITPUT"
+	-system -i "DLTMOD $(BIN_LIB)/ITPATCH"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITGET"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITPOST"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITDELETE"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITHEAD"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITOPTIONS"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITPUT"
+	-system -i "DLTSRVPGM $(BIN_LIB)/ITPATCH"
 	$(MAKE) -C ileastic/ clean
 
 .PHONY:

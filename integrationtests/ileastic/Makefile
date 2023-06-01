@@ -31,14 +31,14 @@ RCFLAGS=OUTPUT($(OUTPUT)) OPTION(*NOUNREF *SRCSTMT) STGMDL(*INHERIT) INCDIR($(IN
 # remove all default suffix rules
 .SUFFIXES:
 
-MODULES=$(BIN_LIB)/IVILEASTIC $(BIN_LIB)/IVILEAGET $(BIN_LIB)/IVILEADEL $(BIN_LIB)/IVILEAHEAD $(BIN_LIB)/IVILEAOPT $(BIN_LIB)/IVILEAPUT
+MODULES=$(BIN_LIB)/IVILEASTIC $(BIN_LIB)/IVILEAGET $(BIN_LIB)/IVILEADEL $(BIN_LIB)/IVILEAHEAD $(BIN_LIB)/IVILEAOPT $(BIN_LIB)/IVILEAPUT $(BIN_LIB)/IVILEAPAT
 
 
 # Dependency list
 
 all:  modules ivileastic.pgm
 
-modules: ivileastic.rpgmod ivileaget.rpgmod ivileadel.rpgmod ivileahead.rpgmod ivileaopt.rpgmod ivileaput.rpgmod
+modules: ivileastic.rpgmod ivileaget.rpgmod ivileadel.rpgmod ivileahead.rpgmod ivileaopt.rpgmod ivileaput.rpgmod ivileapat.rpgmod
 
 start:
 	system "SBMJOB CMD(CALL PGM(IVILEASTIC)) JOB(IVILEASTIC) JOBQ(QUSRNOMAX) CURLIB($(BIN_LIB)) INLLIBL($(ILEASTIC_LIB)) ALWMLTTHD(*YES)"
@@ -51,6 +51,7 @@ clean:
 	-system -i "DLTMOD $(BIN_LIB)/IVILEAHEAD"
 	-system -i "DLTMOD $(BIN_LIB)/IVILEAOPT"
 	-system -i "DLTMOD $(BIN_LIB)/IVILEAPUT"
+	-system -i "DLTMOD $(BIN_LIB)/IVILEAPAT"
 
 #-----------------------------------------------------------
 

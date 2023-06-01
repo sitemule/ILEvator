@@ -1,0 +1,52 @@
+**FREE
+
+///
+// ILEvator : ILEastic PATCH Integration Test Backend
+//
+// This module contains the backend web services for the ILEvator integration
+// tests for the PATCH HTTP method.
+//
+///
+
+ctl-opt nomain;
+
+
+/include 'ileastic.rpgle'
+
+
+dcl-pr patch_success extproc(*dclcase);
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+end-pr;
+
+dcl-pr patch_failed extproc(*dclcase);
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+end-pr;
+
+
+dcl-proc patch_success export;
+  dcl-pi *n;
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+  end-pi;
+
+  dcl-s query varchar(100);
+
+  response.contentType = 'text/plain';
+  response.status = IL_HTTP_OK;
+  il_responseWrite(response : 'ok');
+end-proc;
+
+dcl-proc patch_failed export;
+  dcl-pi *n;
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+  end-pi;
+
+  dcl-s query varchar(100);
+
+  response.contentType = 'text/plain';
+  response.status = IL_HTTP_BAD_REQUEST;
+  il_responseWrite(response : 'bad request');    
+end-proc;
