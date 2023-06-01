@@ -26,6 +26,8 @@ dcl-proc main;
   il_addRoute(config : %paddr('get_listHeaders') : IL_GET : '/api/headers');
   il_addRoute(config : %paddr('delete_success') : IL_DELETE : '/api/entry/success');
   il_addRoute(config : %paddr('delete_notAllowed') : IL_DELETE : '/api/entry/notallowed');
+  il_addRoute(config : %paddr('head_success') : IL_HEAD : '/api/entry/success');
+  il_addRoute(config : %paddr('head_failed') : IL_HEAD : '/api/entry/failed');
 
   il_listen (config);
 end-proc;

@@ -672,3 +672,25 @@ dcl-proc iv_delete export;
 on-exit;
     iv_free(client);
 end-proc;
+
+
+dcl-proc iv_head export;
+    dcl-pi *n;
+        url varchar(IV_URL_SIZE:2) value;
+        headers pointer value options(*nopass);        
+    end-pi;
+
+    dcl-s client pointer;
+    dcl-s rc ind inz(*off);
+    
+    client = iv_newHttpClient();
+    
+    if (%parms() >= 2);
+        iv_addHeaders(client : headers);
+    endif;
+    
+    rc = iv_execute(client : 'HEAD' : url);
+        
+on-exit;
+    iv_free(client);
+end-proc;

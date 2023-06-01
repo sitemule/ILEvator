@@ -587,6 +587,11 @@ dcl-pr iv_delete varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm
     headers pointer value options(*nopass);
 end-pr;
 
+dcl-pr iv_head extproc(*dclcase);
+    url varchar(IV_URL_SIZE:2) value;
+    headers pointer value options(*nopass);
+end-pr;
+
 dcl-pr iv_post_text varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
     messageBody pointer value options(*string);

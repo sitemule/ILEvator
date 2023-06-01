@@ -29,6 +29,11 @@ end-proc;
 dcl-proc test_delete_failed export;
     dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
   
-    string = iv_delete('http://localhost:35801/api/entry/success');
-    aEqual('' : string); 
+    monitor;
+        string = iv_delete('http://localhost:35801/api/entry/notallowed');
+        fail('This DELETE request should have triggered an escape message.');
+    on-error;
+        // TODO check error : HTTP status 415
+        aEqual('DELETE is not allowed' : string); 
+    endmon;
 end-proc;
