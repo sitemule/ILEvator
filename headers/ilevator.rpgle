@@ -598,27 +598,12 @@ dcl-pr iv_options varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnpar
     headers pointer value options(*nopass);
 end-pr;
 
-dcl-pr iv_post_text varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
+dcl-pr iv_post varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
     messageBody pointer value options(*string);
     acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
     headers pointer value options(*nopass);
 end-pr;
-
-dcl-pr iv_post_binary varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
-    url varchar(IV_URL_SIZE:2) value;
-    messageBody pointer value;
-    messageBodyLength uns(10) value;
-    acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
-    headers pointer value options(*nopass);
-end-pr;
-
-/if defined (RPG_HAS_OVERLOAD)
-dcl-pr iv_post varchar(IV_BUFFER_SIZE:4) ccsid(1208) overload(
-  iv_post_binary :
-  iv_post_text
-);
-/endif
 
 dcl-pr iv_addHeader extproc(*dclcase);
     client pointer value;

@@ -535,7 +535,7 @@ on-exit;
 end-proc;
 
 
-dcl-proc iv_post_text export;
+dcl-proc iv_post export;
     dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
         url varchar(IV_URL_SIZE:2) value;
         messageBody pointer value options(*string);
@@ -580,30 +580,6 @@ dcl-proc iv_post_text export;
     endif;
     
     rc = iv_execute(client : 'POST' : url);
-    
-    return returnBuffer;
-    
-    on-exit;
-        iv_free(client);
-end-proc;
-
-
-dcl-proc iv_post_binary export;
-    dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
-        url varchar(IV_URL_SIZE:2) value;
-        messageBody pointer value;
-        messageBodyLength uns(10) value;
-        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
-        headers pointer value options(*nopass);
-    end-pi;
-    
-    dcl-s client pointer;
-    dcl-s returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
-    dcl-s rc ind inz(*off);
-    
-    client = iv_newHttpClient();
-    
-    // TODO
     
     return returnBuffer;
     
