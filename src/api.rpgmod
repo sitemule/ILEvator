@@ -13,7 +13,18 @@ ctl-opt nomain thread(*concurrent);
 /include 'sockets.rpginc'
 /include 'teraspace.rpginc'
 
-
+///
+// Buffer type "Bytes"
+///
+dcl-c IV_BYTES 0;
+///
+// Buffer type VARCHAR with a 2 byte size field
+///
+dcl-c IV_VARCHAR2 1;
+///
+// Buffer type VARCHAR with a 4 byte size field
+///
+dcl-c IV_VARCHAR4 2;
 
 dcl-pr fopen pointer extproc('_C_IFS_fopen');
     filename pointer value options(*string);
@@ -392,7 +403,7 @@ dcl-proc iv_setCertificate export;
     endif;
     
 
-    if %parms < 3;
+    if (%parms < 3);
         certificatePassword = %addr(empty_str);
     endif;
 

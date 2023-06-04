@@ -50,7 +50,7 @@ MODULES=$(BIN_LIB)/ANYCHAR $(BIN_LIB)/API $(BIN_LIB)/BASE64 $(BIN_LIB)/BASICAUTH
 
 # Dependency list
 
-all:  $(BIN_LIB).lib ext modules ilevator.srvpgm hdr ilevator.bnd modules.bnd
+all:  $(BIN_LIB).lib ext compile hdr ilevator.bnd modules.bnd
 
 ext: .PHONY
 	$(MAKE) -C ext/ $*
@@ -58,6 +58,8 @@ ext: .PHONY
 modules: anychar.c api.rpgmod basicauth.rpgmod bearer.rpgmod chunked.c debug.rpgmod \
          encode.rpgmod form.rpgmod httpclient.c init.cpp mime.rpgmod request.rpgmod \
          sockets.c url.rpgmod
+
+compile: modules ilevator.srvpgm
 
 #-----------------------------------------------------------
 

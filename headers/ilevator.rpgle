@@ -37,10 +37,25 @@ dcl-c IV_STATUS_OK 0;
 dcl-c IV_STATUS_RETRY 1;
 dcl-c IV_STATUS_ERROR 2;
 
+///
+// Maximum HTTP method size
+///
 dcl-c IV_METHOD_SIZE 10;
+///
+// Maximum URL size
+///
 dcl-c IV_URL_SIZE 32766;
+///
+// Default buffer size for input and output 
+///
 dcl-c IV_BUFFER_SIZE 1048576;
+///
+// Maximum HTTP header name/key size
+///
 dcl-c IV_HEADER_NAME_SIZE 1024;
+///
+// Maximum HTTP header value size
+///
 dcl-c IV_HEADER_VALUE_SIZE 16384;
 
 ///
@@ -348,19 +363,24 @@ dcl-c IV_MEDIA_TYPE_XML 'application/xml';
 
 
 ///
-// create a new  http client 
+// Create a new HTTP client 
 //
-// Returns pointer to the client
+// Returns a pointer to the new HTTP client instance.
 //
-// @return pointer to the client
+// @return Pointer to the HTTP client
+//
+// @info The memory allocated by this client instance must be freed by 
+//       calling the procedure <code>iv_free</code>. 
+//
 ///
-dcl-pr iv_newHttpClient pointer extproc(*dclcase);
-end-pr;
+dcl-pr iv_newHttpClient pointer extproc(*dclcase) end-pr;
 
 ///
-// Disconnect and cleanup memory of the client
+// Free client memory
 //
-// @param HTTP client 
+// Disconnect and cleanup memory of the passed client instance.
+//
+// @param Pointer to the HTTP client 
 //
 ///
 dcl-pr iv_free extproc(*dclcase);
@@ -368,66 +388,72 @@ dcl-pr iv_free extproc(*dclcase);
 end-pr;
 
 ///
-// buffer types
+// CCSID of the current job
 ///
-dcl-c IV_BYTES 0;
-dcl-c IV_VARCHAR2 1;
-dcl-c IV_VARCHAR4 2;
-
+dcl-c IV_CCSID_JOB 0;
 ///
-// Conversion - named values; more exists
+// CCSID UTF-8
 ///
-dcl-c IV_CCSID_JOB     0;
-dcl-c IV_CCSID_UTF8    1208;
+dcl-c IV_CCSID_UTF8 1208;
+///
+// CCSID Windows-1252 (Latin 1)
+///
 dcl-c IV_CCSID_WIN1252 1252;
-dcl-c IV_CCSID_BINARY  65535;
+///
+// CCSID special value indicating hex data and will not be converted.
+///
+dcl-c IV_CCSID_BINARY 65535;
 
 
 ///
-// Set the buffer where the header data (POST)  is placed
+// Set request buffer
 //
+// Sets the buffer of the data which will be sent as the message body of the 
+// HTTP request.
 //
-// @param pClient pointer to the http client 
-// @param pointer to buffer
-// @param size    size of buffer ( bytes in total)
-// @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
-// @param ccsid   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
+// @param Pointer to the HTTP client 
+// @param Pointer to buffer
+// @param Size of buffer (bytes in total)
+// @param Buffer type (0=Byte buffer, 1=varchar2, 2=varchar4)
+// @param CCSID (0=Current job, 65535=no xlate, 1208=UTF-8)
 ///
 dcl-pr iv_setRequestDataBuffer extproc(*dclcase);
-    pClient       pointer value;
-    pBuffer       pointer value;
+    client        pointer value;
+    buffer        pointer value;
     bufferSize    int(10) value;
     bufferType    int(5) value;
     bufferCcsid   int(10) value;
 end-pr;
 
 ///
-// Set the buffer where the  response header is received 
+// Set response header buffer
 //
+// Sets the buffer where the response header is received.
 //
-// @param pClient pointer to the http client 
-// @param pointer to buffer
-// @param size    size of buffer ( bytes in total)
-// @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
-// @param ccsid   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
+// @param Pointer to the HTTP client 
+// @param Pointer to buffer
+// @param Size of buffer ( bytes in total)
+// @param Buffer type (0=Byte buffer, 1=varchar2, 2=varchar4)
+// @param CCSID (0=Current job, 65535=no xlate, 1208=UTF-8)
 ///
 dcl-pr iv_setResponseHeaderBuffer extproc(*dclcase);
-    pClient       pointer value;
-    pBuffer       pointer value;
+    client        pointer value;
+    buffer        pointer value;
     bufferSize    int(10) value;
     bufferType    int(5) value;
     bufferCcsid   int(10) value;
 end-pr;
 
 ///
-// Set the buffer where the  response data (payload) is received 
+// Set response data buffer
 //
+// Sets the buffer where the response data (message body) is received.
 //
-// @param pClient pointer to the http client 
-// @param pointer to buffer
-// @param size    size of buffer ( bytes in total)
-// @param buffer  type  0=Byte buffer, 1=varchar2, 2=varchar4 
-// @param ccsid   Any ccsid, 0=Current job, 65535=no xlate, 1208=UTF-8
+// @param Pointer to the HTTP client 
+// @param Pointer to buffer
+// @param Size of buffer ( bytes in total)
+// @param Buffer type (0=Byte buffer, 1=varchar2, 2=varchar4)
+// @param CCSID (0=Current job, 65535=no xlate, 1208=UTF-8)
 ///
 dcl-pr iv_setResponseDataBuffer extproc(*dclcase);
     pClient       pointer value;
@@ -438,12 +464,13 @@ dcl-pr iv_setResponseDataBuffer extproc(*dclcase);
 end-pr;
 
 ///
-// Set the output files for the response 
+// Set response output file
 //
+// Sets the output file for the response.
 //
-// @param pClient  pointer to the http client 
-// @param fileName pointer to name of IFS file
-// @param ccsid    optional: file ccsid 
+// @param Pointer to the HTTP client 
+// @param IFS file name
+// @param CCSID of the file (default: 1252)
 ///
 dcl-pr iv_setResponseFile extproc(*dclcase);
     client        pointer value;
@@ -452,8 +479,14 @@ dcl-pr iv_setResponseFile extproc(*dclcase);
 end-pr;
 
 ///
-// run the request 
-// @return *ON if ok 
+// Execute HTTP request
+//
+// Executes the HTTP request with the passed client.
+//
+// @param Pointer to the HTTP client 
+// @param HTTP method
+// @param URL
+// @return *ON if ok
 ///
 dcl-pr iv_execute ind extproc(*dclcase);
     client  pointer value;
@@ -462,7 +495,13 @@ dcl-pr iv_execute ind extproc(*dclcase);
 end-pr;
 
 ///
-// Set the certificate for HTTPS 
+// Set SSL keystore
+//
+// Sets the SSL keystore used when making HTTPS requests.
+//
+// @param Pointer to the HTTP client 
+// @param IFS path to the keystore file
+// @param Keystore password (default: empty password)
 // @return *ON if ok 
 ///
 dcl-pr iv_setCertificate ind extproc(*dclcase);
@@ -472,23 +511,25 @@ dcl-pr iv_setCertificate ind extproc(*dclcase);
 end-pr;
 
 ///
-// returns the http status code 
+// Get HTTP status
 //
+// Returns the HTTP status code of the last request done with this HTTP client
+// instance.
 //
-// @param  pointer to the http client 
-// @return pointer to the client
+// @param Pointer to the HTTP client 
+// @return HTTP status code
 ///
-dcl-pr iv_getStatus int(5) extproc(*CWIDEN:'iv_getStatus');
-    pClient       pointer value;
+dcl-pr iv_getStatus int(5) extproc(*dclcase);
+    client pointer value;
 end-pr;
 
-///
+//
 // returns the http error messages  
 //
 //
 // @param  pointer to the http client 
 // @return message from the http request
-///
+//
 dcl-pr iv_getMessage varchar(256)  extproc(*CWIDEN:'iv_getMessage');
     pClient       pointer value;
 end-pr;
@@ -539,8 +580,8 @@ end-pr;
 //
 // Convenience function: put message in joblog.
 // Works like printf but with strings only like
-//
-//    iv_joblog('This is %s a test' : 'super');cl
+// <br/><br/>
+// <code>iv_joblog('This is %s a test' : 'super');</code>
 //
 // @param message string
 ///
