@@ -428,7 +428,7 @@ dcl-proc iv_getStatus export;
     return client.status;
 end-proc;
 
-dcl-proc iv_getMessage export;
+dcl-proc iv_getErrorMessage export;
     dcl-pi *n varchar(256);
         pClient pointer value;
     end-pi;

@@ -8,7 +8,7 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_setRequestDataBuffer")
     EXPORT SYMBOL("iv_execute")
     EXPORT SYMBOL("iv_getStatus")
-    EXPORT SYMBOL("iv_getMessage")
+    EXPORT SYMBOL("iv_getErrorMessage")
     EXPORT SYMBOL("iv_setCertificate")
     EXPORT SYMBOL("iv_setTrace")
     EXPORT SYMBOL("iv_setAuthProvider")
@@ -44,6 +44,9 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_basicauth_new")
     
     EXPORT SYMBOL("iv_bearer_new")
+    
+    EXPORT SYMBOL("iv_encode_path")
+    EXPORT SYMBOL("iv_encode_query")
     
     EXPORT SYMBOL("iv_form_ofMap")
     EXPORT SYMBOL("iv_form_ofString")

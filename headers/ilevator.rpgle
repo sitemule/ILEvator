@@ -523,15 +523,16 @@ dcl-pr iv_getStatus int(5) extproc(*dclcase);
     client pointer value;
 end-pr;
 
+///
+// Get error message
 //
-// returns the http error messages  
+// Returns the error message from the last HTTP request.
 //
-//
-// @param  pointer to the http client 
-// @return message from the http request
-//
-dcl-pr iv_getMessage varchar(256)  extproc(*CWIDEN:'iv_getMessage');
-    pClient       pointer value;
+// @param  Pointer to the HTTP client 
+// @return Error message from the HTTP request
+///
+dcl-pr iv_getErrorMessage varchar(256) extproc(*dclcase);
+    client pointer value;
 end-pr;
 
 ///
