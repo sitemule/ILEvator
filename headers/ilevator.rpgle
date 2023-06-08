@@ -540,7 +540,7 @@ end-pr;
 //
 // Sets the passed authentication provider on the HTTP client.
 //
-// @param HTTP Client
+// @param Pointer to the HTTP Client
 // @param Authentication provider
 ///
 dcl-pr iv_setAuthProvider extproc(*dclcase);
@@ -590,7 +590,16 @@ dcl-pr iv_joblog extproc(*CWIDEN : 'iv_joblog') ;
   message varchar(512) options(*varsize)  const ;
 end-pr;
 
-dcl-pr iv_setTrace extproc(*dclcase) ;
+///
+// Set Comm Trace
+//
+// Enables the communication trace. The trace data will be written to the passed
+// file.
+// 
+// @param Pointer to the HTTP client
+// @param IFS path to the trace file
+///
+dcl-pr iv_setCommTrace extproc(*dclcase) ;
     client    pointer value;
     traceFile pointer options(*string) value;
 end-pr;

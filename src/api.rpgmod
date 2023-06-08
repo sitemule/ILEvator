@@ -282,7 +282,7 @@ dcl-proc iv_setResponseFile export;
 end-proc;
 
 
-dcl-proc iv_setTrace export;
+dcl-proc iv_setCommTrace export;
     dcl-pi *n;
         pClient         pointer value;
         traceFileName   pointer options(*string) value;
