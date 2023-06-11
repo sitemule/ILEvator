@@ -9,13 +9,22 @@
 ///
 // ILEvator - HTTP client for ILE on IBM i
 //
-// It is a HTTP client API for the ILE environment on
+// ILEvator is a HTTP client API for the ILE environment on
 // IBM i for implementing web/microservices alike applications.
 // <p>
 // ILEvator is a service program that provides a simple, blazing fast
 // programmable HTTP client for your application so you can easily plug your RPG
 // code into a service infrastructure or make simple web applications without
 // the need of any third party web client products.
+// <p>
+// The convenient procedures like <em>iv_get</em> will throw an escape message
+// when the server responds with anything above and including HTTP status 400.
+// The escape message id will contain the HTTP status code like ILV0404 for the
+// HTTP status code 404. The message id can easily be retrieved from the program
+// status data structure.
+// <p>
+// If the convenience procedures doesn't fit with the use case just use the more
+// generic <code>iv_execute</code> procedure.
 //
 // @author Niels Liisberg
 // @date 15.12.2022
@@ -61,12 +70,12 @@ dcl-c IV_HEADER_VALUE_SIZE 16384;
 ///
 // Protocol plain HTTP 
 ///
-dcl-c IV_HTTP       0;
+dcl-c IV_HTTP 0;
 
 ///
 // Protocol HTTPS (Secure HTTP: Certificate and certificate password required)
 ///
-dcl-c IV_HTTPS      1;
+dcl-c IV_HTTPS 1;
 
 
 ///
@@ -400,7 +409,7 @@ dcl-c IV_CCSID_UTF8 1208;
 ///
 dcl-c IV_CCSID_WIN1252 1252;
 ///
-// CCSID special value indicating hex data and will not be converted.
+// CCSID special value indicating hex data and it will not be converted.
 ///
 dcl-c IV_CCSID_BINARY 65535;
 
@@ -486,7 +495,7 @@ end-pr;
 // @param Pointer to the HTTP client 
 // @param HTTP method
 // @param URL
-// @return *ON if ok
+// @return <code>*ON</code> if ok
 ///
 dcl-pr iv_execute ind extproc(*dclcase);
     client  pointer value;
@@ -502,7 +511,7 @@ end-pr;
 // @param Pointer to the HTTP client 
 // @param IFS path to the keystore file
 // @param Keystore password (default: empty password)
-// @return *ON if ok 
+// @return <code>*ON</code> if ok 
 ///
 dcl-pr iv_setCertificate ind extproc(*dclcase);
     client              pointer value;
@@ -605,9 +614,14 @@ dcl-pr iv_setCommTrace extproc(*dclcase) ;
 end-pr;
     
 ///
+// Convert varchar value
 //
-// Convenience function: convert varchar ccsid
+// Converts the value of a (small) varchar variable to another CCSID.
 //
+// @param Input and output string
+// @param From CCSID
+// @param To CCSID
+// @return Converted value
 ///
 dcl-pr iv_xlateVc varchar(32768:2) ccsid(65535) extproc(*CWIDEN : 'iv_xlateVc') rtnparm;
   inoutString varchar(32768:2) ccsid(65535) options(*varsize) const;
@@ -616,9 +630,14 @@ dcl-pr iv_xlateVc varchar(32768:2) ccsid(65535) extproc(*CWIDEN : 'iv_xlateVc') 
 end-pr;
 
 ///
+// Convert long varchar value
 //
-// Convenience function: convert long varchar ccsid
+// Converts the value of a (long) varchar variable to another CCSID.
 //
+// @param Input and output string
+// @param From CCSID
+// @param To CCSID
+// @return Converted value
 ///
 dcl-pr iv_xlateLvc varchar(2097152:4) ccsid(65535) extproc(*CWIDEN : 'iv_xlateLvc') rtnparm;
     inoutString varchar(2097152:4) ccsid(65535) options(*varsize) const;
@@ -626,29 +645,91 @@ dcl-pr iv_xlateLvc varchar(2097152:4) ccsid(65535) extproc(*CWIDEN : 'iv_xlateLv
     toCCSID   int(10) value;
 end-pr;
 
+///
+// Execute GET HTTP request
+//
+// Executes a GET HTTP request to the passed URL.
+//
+// @param URL
+// @param MIME type for the <code>Accept</code> HTTP header
+// @param Pointer to a simple list with additional HTTP headers
+// @return Response message body
+// 
+// @throws Escape message on an unsuccessful request with the HTTP status encoded 
+//         like ILV0404 for a 404 HTTP status.
+///
 dcl-pr iv_get varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
     acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
     headers pointer value options(*nopass);
 end-pr;
 
+///
+// Execute DELETE HTTP request
+//
+// Executes a DELETE HTTP request to the passed URL.
+//
+// @param URL
+// @param Pointer to a simple list with additional HTTP headers
+// @return Response message body
+// 
+// @throws Escape message on an unsuccessful request with the HTTP status encoded 
+//         like ILV0404 for a 404 HTTP status.
+///
 dcl-pr iv_delete varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
-    acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
     headers pointer value options(*nopass);
 end-pr;
 
+///
+// Execute HEAD HTTP request
+//
+// Executes a HEAD HTTP request to the passed URL.
+//
+// @param URL
+// @param Pointer to a simple list with additional HTTP headers
+// 
+// @throws Escape message on an unsuccessful request with the HTTP status encoded 
+//         like ILV0404 for a 404 HTTP status.
+///
 dcl-pr iv_head extproc(*dclcase);
     url varchar(IV_URL_SIZE:2) value;
     headers pointer value options(*nopass);
 end-pr;
 
+///
+// Execute OPTIONS HTTP request
+//
+// Executes a OPTIONS HTTP request to the passed URL.
+//
+// @param URL
+// @param MIME type for the <code>Accept</code> HTTP header
+// @param Pointer to a simple list with additional HTTP headers
+// @return Response message body
+// 
+// @throws Escape message on an unsuccessful request with the HTTP status encoded 
+//         like ILV0404 for a 404 HTTP status.
+///
 dcl-pr iv_options varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
     acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
     headers pointer value options(*nopass);
 end-pr;
 
+///
+// Execute PATCH HTTP request
+//
+// Executes a PATCH HTTP request to the passed URL.
+//
+// @param URL
+// @param Request message body
+// @param MIME type for the <code>Accept</code> HTTP header
+// @param Pointer to a simple list with additional HTTP headers
+// @return Response message body
+// 
+// @throws Escape message on an unsuccessful request with the HTTP status encoded 
+//         like ILV0404 for a 404 HTTP status.
+///
 dcl-pr iv_patch varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
     messageBody pointer value options(*string);
@@ -656,6 +737,20 @@ dcl-pr iv_patch varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     headers pointer value options(*nopass);
 end-pr;
 
+///
+// Execute POST HTTP request
+//
+// Executes a POST HTTP request to the passed URL.
+//
+// @param URL
+// @param Request message body
+// @param MIME type for the <code>Accept</code> HTTP header
+// @param Pointer to a simple list with additional HTTP headers
+// @return Response message body
+// 
+// @throws Escape message on an unsuccessful request with the HTTP status encoded 
+//         like ILV0404 for a 404 HTTP status.
+///
 dcl-pr iv_post varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
     messageBody pointer value options(*string);
@@ -663,6 +758,20 @@ dcl-pr iv_post varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     headers pointer value options(*nopass);
 end-pr;
 
+///
+// Execute PUT HTTP request
+//
+// Executes a PUT HTTP request to the passed URL.
+//
+// @param URL
+// @param Request message body
+// @param MIME type for the <code>Accept</code> HTTP header
+// @param Pointer to a simple list with additional HTTP headers
+// @return Response message body
+// 
+// @throws Escape message on an unsuccessful request with the HTTP status encoded 
+//         like ILV0404 for a 404 HTTP status.
+///
 dcl-pr iv_put varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
     messageBody pointer value options(*string);
@@ -670,24 +779,64 @@ dcl-pr iv_put varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     headers pointer value options(*nopass);
 end-pr;
 
+///
+// Added HTTP header
+//
+// Adds the passed HTTP header (key/value) to the HTTP client instance. This 
+// HTTP header will be added to each request done with this client instance.
+// <p>
+// Duplicate HTTP header keys are allowed in an HTTP message. Generally the last
+// one "wins".
+//
+// @param Pointer to the HTTP client
+// @param HTTP header name (key)
+// @param HTTP header value
+///
 dcl-pr iv_addHeader extproc(*dclcase);
     client pointer value;
     headerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8) value;
     headerValue varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8) value;
 end-pr;
 
+///
+// Add list of HTTP headers
+//
+// Adds a list of HTTP headers (key/value pairs) to the HTTP client instance. 
+// These HTTP headers will be added to each request done with this client instance.
+// <p>
+// Duplicate HTTP header keys are allowed in an HTTP message. Generally the last
+// one "wins".
+//
+// @param Pointer to the HTTP client
+// @param Simple list of HTTP headers
+///
 dcl-pr iv_addHeaders extproc(*dclcase);
     client pointer value;
     headers pointer value;
 end-pr;
 
+///
+// Set timeout
+//
+// Sets the timeout for the client instance.
+//
+// @param Pointer to the HTTP client
+// @param Timeout in seconds
+///
 dcl-pr iv_setTimeout extproc(*dclcase);
     client pointer value;
     timeout int(5) value;
 end-pr;
 
+///
+// Set Retries
+//
+// Sets the number of retries the client does on an unsuccessful request.
+//
+// @param Pointer to the HTTP client
+// @param Number of retries
+///
 dcl-pr iv_setRetries extproc(*dclcase);
     client pointer value;
     retries int(5) value;
 end-pr;
-
