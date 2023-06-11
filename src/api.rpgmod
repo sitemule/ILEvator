@@ -681,7 +681,6 @@ end-proc;
 dcl-proc iv_delete export;
     dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
         url varchar(IV_URL_SIZE:2) value;
-        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
         headers pointer value options(*nopass);        
     end-pi;
 
@@ -700,10 +699,6 @@ dcl-proc iv_delete export;
     );
     
     if (%parms() >= 3);
-      iv_addHeader(client : 'Accept' : acceptMimeType);
-    endif;
-    
-    if (%parms() >= 4);
         iv_addHeaders(client : headers);
     endif;
     
