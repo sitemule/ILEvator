@@ -160,7 +160,7 @@ dcl-proc iv_free export;
       return;
     endif;
     
-    deallocateHeaders(client.headerList);
+    iv_freeList(client.headerList);
     
     teraspace_free(client.method);
     teraspace_free(client.url);
@@ -172,7 +172,7 @@ dcl-proc iv_free export;
 end-proc;
 
 
-dcl-proc deallocateHeaders;
+dcl-proc iv_freeList export;
   dcl-pi *n;
     list pointer;
   end-pi;
@@ -455,14 +455,13 @@ dcl-proc iv_setAuthProvider export;
 end-proc;
 
 
-dcl-proc iv_addHeader export;
+dcl-proc addHeader export;
     dcl-pi *n;
-        pClient pointer value;
+        list pointer value;
         headerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8) value;
         headerValue varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8) value;
     end-pi;
 
-    dcl-ds client likeds(ilevator_t) based(pClient);
     dcl-s lowerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8);
     dcl-ds listKey likeds(LVARPUCHAR_t);
     dcl-ds listValue likeds(LVARPUCHAR_t);
@@ -482,7 +481,27 @@ dcl-proc iv_addHeader export;
     listValue.string = teraspace_alloc(listValue.length + 1);
     %str(listValue.string : listValue.length + 1) = headerValue;
     
-    sList_pushLVPC(client.headerList : listKey : listValue);
+    sList_pushLVPC(list : listKey : listValue);
+end-proc;
+
+
+dcl-proc iv_addHeader export;
+    dcl-pi *n;
+        pClient pointer value;
+        headerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8) value;
+        headerValue varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-s lowerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8);
+    dcl-ds listKey likeds(LVARPUCHAR_t);
+    dcl-ds listValue likeds(LVARPUCHAR_t);
+    
+    if (headerName = *blank);
+      return;
+    endif;
+    
+    addHeader(client.headerList : headerName : headerValue);
 end-proc;
 
 
@@ -503,7 +522,7 @@ dcl-proc iv_addHeaders export;
     dow (sList_foreach(iterator));
         headerName = %str(nodePayload.key.string : nodePayload.key.length);
         headerValue = %str(nodePayload.value.string : nodePayload.value.length);
-        iv_addHeader(pClient : headerName : headerValue);
+        addHeader(client.headerList : headerName : headerValue);
     enddo;
 end-proc;
 
@@ -769,3 +788,53 @@ dcl-proc iv_options export;
 on-exit;
     iv_free(client);
 end-proc;
+
+
+dcl-proc iv_buildList export;
+    dcl-pi *n pointer;
+        key1 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const;
+        value1 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const;
+        key2 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
+        value2 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const options(*nopass);
+        key3 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
+        value3 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const options(*nopass);
+        key4 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
+        value4 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const options(*nopass);
+        key5 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
+        value5 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const options(*nopass);
+    end-pi;
+    
+    dcl-s list pointer;
+    
+    list = sList_new();
+    
+    if (%parms() >= 2);
+       addHeader(list : key1 : value1);
+    endif;
+    if (%parms() >= 4);
+       addHeader(list : key2 : value2);
+    endif;
+    if (%parms() >= 6);
+       addHeader(list : key3 : value3);
+    endif;
+    if (%parms() >= 8);
+       addHeader(list : key4 : value4);
+    endif;
+    if (%parms() >= 10);
+       addHeader(list : key5 : value5);
+    endif;
+    
+    return list;
+end-proc;
+
+
+dcl-proc iv_addHeaderToList export;
+    dcl-pi *n;
+        list pointer value;
+        headerKey varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const;
+        headerValue varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const;        
+    end-pi;
+
+    addHeader(list : headerKey : headerValue);
+end-proc;
+

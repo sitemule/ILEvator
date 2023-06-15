@@ -840,3 +840,68 @@ dcl-pr iv_setRetries extproc(*dclcase);
     client pointer value;
     retries int(5) value;
 end-pr;
+
+///
+// Build HTTP header list
+//
+// Builds a list of HTTP headers which can be used on the convenience HTTP
+// procedures like <code>iv_get</code> to add custom HTTP headers to the 
+// HTTP request.
+//
+// @param Key 1
+// @param Value 1
+// @param Key 2
+// @param Value 2
+// @param Key 3
+// @param Value 3
+// @param Key 4
+// @param Value 4
+// @param Key 5
+// @param Value 5
+// @return Simple list instance with the passed entries
+//
+// @info The procedure <code>iv_addHeaderToList</code> can be used to add more
+//       entries to the list.
+///
+dcl-pr iv_buildList pointer extproc(*dclcase);
+    key1 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const;
+    value1 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const;
+    key2 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
+    value2 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const options(*nopass);
+    key3 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
+    value3 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const options(*nopass);
+    key4 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
+    value4 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const options(*nopass);
+    key5 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
+    value5 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const options(*nopass);
+end-pr;
+
+///
+// Free list
+//
+// Cleanup memory of the passed simple list instance.
+//
+// @param Pointer to the list
+//
+///
+dcl-pr iv_freeList extproc(*dclcase);
+    list pointer;
+end-pr;
+
+///
+// Added HTTP header to list
+//
+// Adds the passed HTTP header (key/value) to the passed list of headers.
+// <p>
+// Duplicate HTTP header keys are allowed in an HTTP message. Generally the last
+// one "wins".
+//
+// @param Pointer to the list (simple list)
+// @param HTTP header name (key)
+// @param HTTP header value
+///
+dcl-pr iv_addHeaderToList extproc(*dclcase);
+    list pointer value;
+    headerKey varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const;
+    headerValue varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const;
+end-pr;
