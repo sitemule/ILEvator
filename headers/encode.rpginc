@@ -3,18 +3,69 @@
 /if not defined (ILEVATOR_ENCODE)
 /define ILEVATOR_ENCODE
 
+///
+// ILEvator : Encoding Module
+//
+// This module contains the procedures for url encoding and form url encoding
+// values. URL encoding is also known as percent encoding. Form URL encoding
+// is almost the same as percent encoding with the diffeerence that the space
+// character is represented as a plus sign.
+//
+// @author Mihael Schmidt
+// @project ILEvator
+//
+///
+
+
+///
+// URL encode value
+//
+// URL encodes the passed value. The input string can contain single and 
+// multibyte characters.
+//
+// @param Input string
+// @return URL encoded string
+///
 dcl-pr iv_encode_url varchar(4194304) ccsid(*utf8) rtnparm extproc(*dclcase);
     unencodedValue varchar(1048576) ccsid(*utf8) value; 
 end-pr;
 
+///
+// Form URL encode value
+//
+// Form URL encodes the passed value. The input string can contain single and 
+// multibyte characters. The space sign will be encoded as a plus sign.
+//
+// @param Input string
+// @return Form URL encoded string
+///
 dcl-pr iv_encode_formUrl varchar(4194304) ccsid(*utf8) rtnparm extproc(*dclcase);
     unencodedValue varchar(1048576) ccsid(*utf8) value;
 end-pr;
 
+///
+// Encode URL path element
+//
+// URL encodes the passed value so that it can be safely used as a path element
+// in a URL.
+//
+// @param Input string
+// @return URL encoded string
+///
 dcl-pr iv_encode_path varchar(32766) ccsid(*utf8) extproc(*dclcase);
     unencodedValue varchar(32766) ccsid(*utf8) value; 
 end-pr;
 
+///
+// Encode URL query element
+//
+// URL encodes the passed key and value part of a query string and concats them
+// with an equal sign so that it can be safely used as a URL query parameter.
+//
+// @param Query parameter key
+// @param Query parameter value
+// @return URL encoded query parameter: encoded_key=encoded_value
+///
 dcl-pr iv_encode_query varchar(32766) ccsid(*utf8) extproc(*dclcase);
     key varchar(1000) ccsid(*utf8) value;
     value varchar(32766) ccsid(*utf8) value;
