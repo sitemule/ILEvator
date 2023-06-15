@@ -12,6 +12,7 @@
 #define MESSAGE_QCPFMSG "QCPFMSG   *LIBL     "
 
 void message_send(PUCHAR msgId, PUCHAR msgFile, PUCHAR type, PUCHAR message, ...);
+void message_sendPastControlBoundary(PUCHAR msgId, PUCHAR msgFile, PUCHAR type, PUCHAR message, ...);
 void message_info(PUCHAR message, ...);
 void message_escape(PUCHAR message, ...);
 
