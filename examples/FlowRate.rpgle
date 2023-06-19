@@ -31,7 +31,7 @@ dcl-proc example1;
 
     dcl-s pHttp  pointer; 
     dcl-s pflow  pointer; 
-    dcl-s eur    packed(11:4);
+    dcl-s eur    packed(11:5);
     dcl-s outbuf varchar(65000:4);
 
     pHttp = iv_newHttpClient(); 
