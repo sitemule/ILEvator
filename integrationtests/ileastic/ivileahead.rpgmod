@@ -1,0 +1,45 @@
+**FREE
+
+///
+// ILEvator : ILEastic HEAD Integration Test Backend
+//
+// This module contains the backend web services for the ILEvator integration
+// tests for the GET HTTP method.
+//
+///
+
+ctl-opt nomain;
+
+
+/include 'ileastic.rpgle'
+
+dcl-pr head_success extproc(*dclcase);
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+end-pr;
+
+dcl-pr head_failed extproc(*dclcase);
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+end-pr;
+
+
+dcl-proc head_success export;
+  dcl-pi *n;
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+  end-pi;
+
+  response.status = IL_HTTP_NO_CONTENT;
+  il_responseWrite(response : '');
+end-proc;
+
+dcl-proc head_failed export;
+  dcl-pi *n;
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+  end-pi;
+
+  response.status = IL_HTTP_BAD_REQUEST;
+  il_responseWrite(response : 'This request should fail.');
+end-proc;

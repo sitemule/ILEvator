@@ -13,23 +13,23 @@ ctl-opt nomain;
 
 /include 'ileastic.rpgle'
 
-dcl-pr sayHello extproc(*dclcase);
+dcl-pr get_sayHello extproc(*dclcase);
     request  likeds(IL_REQUEST);
     response likeds(IL_RESPONSE);
 end-pr;
 
-dcl-pr getHeaderValue extproc(*dclcase);
+dcl-pr get_getHeaderValue extproc(*dclcase);
     request  likeds(IL_REQUEST);
     response likeds(IL_RESPONSE);
 end-pr;
 
-dcl-pr listHeaders extproc(*dclcase);
+dcl-pr get_listHeaders extproc(*dclcase);
     request  likeds(IL_REQUEST);
     response likeds(IL_RESPONSE);
 end-pr;
 
 
-dcl-proc sayHello export;
+dcl-proc get_sayHello export;
   dcl-pi *n;
     request  likeds(IL_REQUEST);
     response likeds(IL_RESPONSE);
@@ -44,7 +44,7 @@ dcl-proc sayHello export;
 end-proc;
 
 
-dcl-proc getHeaderValue export;
+dcl-proc get_getHeaderValue export;
   dcl-pi *n;
     request  likeds(IL_REQUEST);
     response likeds(IL_RESPONSE);
@@ -63,7 +63,7 @@ dcl-proc getHeaderValue export;
 end-proc;
 
 
-dcl-proc listHeaders export;
+dcl-proc get_listHeaders export;
   dcl-pi *n;
     request  likeds(IL_REQUEST);
     response likeds(IL_RESPONSE);

@@ -1,0 +1,82 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	
+	<groupId>ilevator</groupId>
+	<artifactId>helidon</artifactId>
+	<version>1.0.0</version>
+	<name>ILEvator Helidon itest server</name>
+	<description>Integration Test Server with Helidon for the ILEvator project</description>
+	
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>11</maven.compiler.source>
+    	<maven.compiler.target>11</maven.compiler.target>
+		<version.helidon>2.6.0</version.helidon>
+	</properties>
+	
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>io.helidon</groupId>
+				<artifactId>helidon-dependencies</artifactId>
+				<version>${version.helidon}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	
+	<dependencies>
+		<dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile</artifactId>
+        </dependency>
+        <dependency>
+		    <groupId>org.apache.commons</groupId>
+		    <artifactId>commons-lang3</artifactId>
+		    <version>3.12.0</version>
+		</dependency>
+	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+			            <phase>prepare-package</phase>
+			            <goals>
+			                <goal>copy-dependencies</goal>
+			            </goals>
+			            <configuration>
+			                <outputDirectory>${project.build.directory}/libs</outputDirectory>
+			            </configuration>
+			        </execution>
+                </executions>
+            </plugin>
+			<plugin>
+			    <groupId>org.codehaus.mojo</groupId>
+			    <artifactId>exec-maven-plugin</artifactId>
+			    <version>3.1.0</version>
+			    <configuration>
+					<executable>java</executable>
+					<arguments>
+			            <argument>-classpath</argument>
+			            <!-- automatically creates the classpath using all project dependencies,
+			                 also adding the project build directory -->
+			            <classpath/>
+			            <argument>io.helidon.microprofile.cdi.Main</argument>
+			        </arguments>
+			        <systemProperties>
+						<systemProperty>
+							<key>java.net.preferIPv4Stack</key>
+							<value>true</value>
+						</systemProperty>
+					</systemProperties>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>

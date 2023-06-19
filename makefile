@@ -50,7 +50,7 @@ MODULES=$(BIN_LIB)/ANYCHAR $(BIN_LIB)/API $(BIN_LIB)/BASE64 $(BIN_LIB)/BASICAUTH
 
 # Dependency list
 
-all:  $(BIN_LIB).lib ext modules ilevator.srvpgm hdr ilevator.bnd modules.bnd
+all:  $(BIN_LIB).lib ext compile hdr messagefile ilevator.bnd modules.bnd
 
 ext: .PHONY
 	$(MAKE) -C ext/ $*
@@ -58,6 +58,8 @@ ext: .PHONY
 modules: anychar.c api.rpgmod basicauth.rpgmod bearer.rpgmod chunked.c debug.rpgmod \
          encode.rpgmod form.rpgmod httpclient.c init.cpp mime.rpgmod request.rpgmod \
          sockets.c url.rpgmod
+
+compile: setHeaderCcsid modules ilevator.srvpgm
 
 #-----------------------------------------------------------
 
@@ -124,12 +126,59 @@ modules.bnd:
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/VARCHAR *MODULE))"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/XLATE *MODULE))"
 
+setHeaderCcsid:
+	setccsid 1252 headers/*
+
 hdr:
 	-system -q "CRTSRCPF FILE($(BIN_LIB)/QRPGLEREF) RCDLEN(200)"
-	-system -q "CRTSRCPF FILE($(BIN_LIB)/H) RCDLEN(200)"
-  
+	-system -q "CRTSRCPF FILE($(BIN_LIB)/H) RCDLEN(200)"	
 	system "CPYFRMSTMF FROMSTMF('headers/ilevator.rpgle') TOMBR('/QSYS.LIB/$(BIN_LIB).LIB/QRPGLEREF.FILE/ILEVATOR.MBR') MBROPT(*REPLACE)"
 	system "CPYFRMSTMF FROMSTMF('headers/ilevator.h') TOMBR('/QSYS.LIB/$(BIN_LIB).LIB/H.FILE/ILEVATOR.MBR') MBROPT(*REPLACE)"
+
+messagefile:
+	-system "DLTMSGF MSGF($(BIN_LIB)/ILEVATOR)"
+	system "CRTMSGF MSGF($(BIN_LIB)/ILEVATOR) TEXT('ILEvator : HTTP status messages')"
+	system "QSYS/ADDMSGD MSGID(ILV0400) MSGF(MIHAELIV/ILEVATOR) MSG('400 - Bad request') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0401) MSGF(MIHAELIV/ILEVATOR) MSG('401 - Unauthorized') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0402) MSGF(MIHAELIV/ILEVATOR) MSG('402 - Payment required') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0403) MSGF(MIHAELIV/ILEVATOR) MSG('403 - Forbidden') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0404) MSGF(MIHAELIV/ILEVATOR) MSG('404 - Not found') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0405) MSGF(MIHAELIV/ILEVATOR) MSG('405 - Method not allowed') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0406) MSGF(MIHAELIV/ILEVATOR) MSG('406 - Not acceptable') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0407) MSGF(MIHAELIV/ILEVATOR) MSG('407 - Proxy authentication required') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0408) MSGF(MIHAELIV/ILEVATOR) MSG('408 - Request timeout') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0409) MSGF(MIHAELIV/ILEVATOR) MSG('409 - Conflict') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0410) MSGF(MIHAELIV/ILEVATOR) MSG('410 - Gone') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0411) MSGF(MIHAELIV/ILEVATOR) MSG('411 - Length required') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0412) MSGF(MIHAELIV/ILEVATOR) MSG('412 - Precondition failed') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0413) MSGF(MIHAELIV/ILEVATOR) MSG('413 - Payload too large') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0414) MSGF(MIHAELIV/ILEVATOR) MSG('414 - URI too long') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0415) MSGF(MIHAELIV/ILEVATOR) MSG('415 - Unsupported media type') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0416) MSGF(MIHAELIV/ILEVATOR) MSG('416 - Range not satisfiable') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0417) MSGF(MIHAELIV/ILEVATOR) MSG('417 - Expectation failed') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0418) MSGF(MIHAELIV/ILEVATOR) MSG('418 - I am a teapot') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0421) MSGF(MIHAELIV/ILEVATOR) MSG('421 - Misdirected request') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0422) MSGF(MIHAELIV/ILEVATOR) MSG('422 - Unprocessable entity') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0423) MSGF(MIHAELIV/ILEVATOR) MSG('423 - Locked') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0424) MSGF(MIHAELIV/ILEVATOR) MSG('424 - Failed dependency') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0425) MSGF(MIHAELIV/ILEVATOR) MSG('425 - Too early') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0426) MSGF(MIHAELIV/ILEVATOR) MSG('426 - Upgrade required') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0428) MSGF(MIHAELIV/ILEVATOR) MSG('428 - Precondition required') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0429) MSGF(MIHAELIV/ILEVATOR) MSG('429 - Too many requests') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0431) MSGF(MIHAELIV/ILEVATOR) MSG('431 - Request header fields too large') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0451) MSGF(MIHAELIV/ILEVATOR) MSG('451 - Unavailable for legal reasons') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0500) MSGF(MIHAELIV/ILEVATOR) MSG('500 - Internal server error') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0501) MSGF(MIHAELIV/ILEVATOR) MSG('501 - Not implemented') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0502) MSGF(MIHAELIV/ILEVATOR) MSG('502 - Bad gateway') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0503) MSGF(MIHAELIV/ILEVATOR) MSG('503 - Service unavailable') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0504) MSGF(MIHAELIV/ILEVATOR) MSG('504 - Gateway timeout') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0505) MSGF(MIHAELIV/ILEVATOR) MSG('505 - HTTP version not supported') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0506) MSGF(MIHAELIV/ILEVATOR) MSG('506 - Variant also negotiates') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0507) MSGF(MIHAELIV/ILEVATOR) MSG('507 - Insufficient storage') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0508) MSGF(MIHAELIV/ILEVATOR) MSG('508 - Loop detected') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0510) MSGF(MIHAELIV/ILEVATOR) MSG('510 - Not extended') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0511) MSGF(MIHAELIV/ILEVATOR) MSG('511 - Network authentication required') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0999) MSGF(MIHAELIV/ILEVATOR) MSG('Not mapped HTTP status code') SEV(10)"
 
 all:
 	@echo Build success!
@@ -156,6 +205,7 @@ purge: clean
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/QRPGLEREF) OBJTYPE(*FILE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/QSRVSRC) OBJTYPE(*FILE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/ILEVATOR) OBJTYPE(*BNDDIR)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/ILEVATOR) OBJTYPE(*MSGF)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/MODULES) OBJTYPE(*BNDDIR)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/EVFEVENT)  OBJTYPE(*file)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/RELEASE)   OBJTYPE(*file)"

@@ -1,0 +1,33 @@
+**FREE
+
+///
+// Integration Test DELETE Method
+//
+// This module tests the DELETE HTTP requests with integration test backend.
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'ilevator.rpgle'
+
+
+dcl-pr test_head_success end-pr;
+dcl-pr test_head_failed end-pr;
+
+
+dcl-proc test_head_success export;
+    iv_head('http://localhost:35801/api/entry/success');
+end-proc;
+
+
+dcl-proc test_head_failed export;
+    monitor;
+      iv_head('http://localhost:35801/api/entry/failed');
+      fail('The failed HEAD request should have triggered an escape message.');
+    on-error;
+      // TODO check error : HTTP status 400
+    endmon;
+end-proc;

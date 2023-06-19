@@ -3,8 +3,7 @@
 ///
 // Integration Test GET Method
 //
-// This module tests the GET HTTP requests with the ILEastic integration test
-// backend.
+// This module tests the GET HTTP requests with integration test backend.
 ///
 
 
@@ -13,6 +12,7 @@ ctl-opt nomain;
 
 /include 'assert.rpginc'
 /include 'ilevator.rpgle'
+/include 'encode.rpginc'
 
 
 dcl-pr test_get_success end-pr;
@@ -40,7 +40,7 @@ end-proc;
 dcl-proc test_getWithSpacesInQuery_success export;
     dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
   
-    string = iv_get('http://localhost:35801/api/hello?q=my fair lady');
+    string = iv_get('http://localhost:35801/api/hello?' + iv_encode_query('q' : 'my fair lady'));
     aEqual('Hello my fair lady' : string); 
 end-proc;
 
@@ -48,7 +48,7 @@ end-proc;
 dcl-proc test_getWithUmlautInQuery_success export;
     dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
   
-    string = iv_get('http://localhost:35801/api/hello?q=J”rg');
+    string = iv_get('http://localhost:35801/api/hello?' + iv_encode_query('q' : 'J”rg'));
     aEqual('Hello J”rg' : string); 
 end-proc;
 

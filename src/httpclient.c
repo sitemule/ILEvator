@@ -246,6 +246,7 @@ API_STATUS sendRequest (PILEVATOR pIv)
     PVOID request;
     VARCHAR12 method;
     LVARPUCHAR requestString;
+    LVARCHAR requestBody;
     LONG rc;
 
     str2vc(&method, pIv->method);
@@ -259,8 +260,15 @@ API_STATUS sendRequest (PILEVATOR pIv)
     );
     iv_request_addHeaders(request, pIv->headerList);
     
+    if (pIv->requestDataBuffer.length > 0) {
+        // TODO don't limit the size of the request data
+        requestBody.Length = pIv->requestDataBuffer.length;
+        memcpy(&requestBody.String[0], pIv->requestDataBuffer.data, pIv->requestDataBuffer.length);
+        iv_request_setTextBody(request, requestBody);
+    }
+    
     if (pIv->authProvider)
-      pIv->authProvider->processRequest(pIv->authProvider, request);
+        pIv->authProvider->processRequest(pIv->authProvider, request);
     
     requestString = iv_request_toString(&request);
     iv_request_dispose(request);

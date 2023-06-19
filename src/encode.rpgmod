@@ -22,50 +22,12 @@ dcl-proc iv_encode_url export;
     source varchar(1048576) ccsid(*utf8) value; 
   end-pi;
 
-  dcl-s sourceLength int(10);
-  dcl-s sourceAddress pointer;
-  dcl-s sourceChar char(1) ccsid(*utf8);
-  dcl-s i int(10);
-  dcl-s x int(10);
   dcl-s encoded varchar(4194304) ccsid(*utf8);
-  dcl-s encodedChar char(1) ccsid(ASCII) based(encodedPtr);
-  dcl-s encodedChar2 char(2) ccsid(ASCII) based(encodedPtr);
   dcl-s encodedLength int(10);
-  dcl-s hex char(2);
-  dcl-s hexAscii char(2) ccsid(ASCII);
   
-  sourceLength = %len(source); // will return the number of bytes used for utf8 varchar fields
-
   %len(encoded) = 4194304; 
 
-  for i = 1 to sourceLength;
-    if (encodedLength = 0);
-      encodedPtr = %addr(encoded : *data);
-    else;
-      encodedPtr += 1;
-    endif;
-
-    sourceChar = %subst(source : i : 1);
-    x = %scan(sourceChar : NOT_RESERVED_CHARS);
-    if (sourceChar = IV_ENCODE_TILDE or x = 0);
-      // need encoding
-      encodedChar = '%';
-      
-      encodedPtr += 1;
-      cvthc(%addr(hex) : %addr(sourceChar) : 2);
-      hexAscii = hex;  // automatic conversion from ebcdic to ascii
-      encodedChar2 = hexAscii;
-      
-      encodedPtr += 1; // as we have copied 2 bytes previously
-      
-      encodedLength += 3;
-    else;
-      // no encoding needed
-      encodedChar = sourceChar;
-      encodedLength += 1;
-    endif;
-  endfor;
-
+  encodedLength = urlEncode(%addr(source : *data) : %len(source) : %addr(encoded : *data) : %len(encoded) : *off);
   %len(encoded) = encodedLength;
 
   return encoded;
@@ -77,36 +39,96 @@ dcl-proc iv_encode_formUrl export;
     source varchar(1048576) ccsid(*utf8) value; 
   end-pi;
   
-  dcl-s sourceLength int(10);
-  dcl-s sourceAddress pointer;
-  dcl-s sourceChar char(1) ccsid(*utf8);
+  dcl-s encoded varchar(4194304) ccsid(*utf8);
+  dcl-s encodedLength int(10);
+  
+  %len(encoded) = 4194304; 
+
+  encodedLength = urlEncode(%addr(source : *data) : %len(source) : %addr(encoded : *data) : %len(encoded) : *on);
+  %len(encoded) = encodedLength;
+
+  return encoded;
+end-proc;
+
+
+dcl-proc iv_encode_path export;
+  dcl-pi *n varchar(32766) ccsid(*utf8);
+    source varchar(32766) ccsid(*utf8) value; 
+  end-pi;
+  
+  dcl-s encoded varchar(32766) ccsid(*utf8);
+  dcl-s encodedLength int(10);
+  
+  %len(encoded) = 32766; 
+
+  encodedLength = urlEncode(%addr(source : *data) : %len(source) : %addr(encoded : *data) : %len(encoded) : *off);
+  %len(encoded) = encodedLength;
+
+  return encoded;
+end-proc;
+
+
+dcl-proc iv_encode_query export;
+  dcl-pi *n varchar(32766) ccsid(*utf8);
+    key varchar(1000) ccsid(*utf8) value;
+    value varchar(32766) ccsid(*utf8) value;
+  end-pi;
+  
+  dcl-s encoded varchar(32766) ccsid(*utf8);
+  dcl-s encodedKeyLength uns(10);
+  dcl-s encodedValueLength uns(10);
+  dcl-s equalSign char(1) ccsid(*utf8) inz('=');
+  dcl-s c char(1) ccsid(*utf8) based(ptr);
+  
+  %len(encoded) = 32766; 
+
+  encodedKeyLength = urlEncode(%addr(key : *data) : %len(key) : %addr(encoded : *data) : %len(encoded) : *off);
+  
+  ptr = %addr(encoded : *data) + encodedKeyLength;
+  c = equalSign;
+  
+  encodedValueLength = urlEncode(%addr(value : *data) : %len(value) : %addr(encoded : *data) + encodedKeyLength + 1: %len(encoded) - encodedKeyLength: *off);
+  %len(encoded) = encodedKeyLength + encodedValueLength + 1; // + 1 for the = sign between key and value
+
+  return encoded;
+end-proc;
+
+
+dcl-proc urlEncode;
+  dcl-pi *n uns(10);
+    source pointer value;
+    sourceLength uns(10) value;
+    output pointer value;
+    outputMaxLength uns(10) const;
+    formUrlEncoding ind const;
+  end-pi;
+
+  dcl-s sourceChar char(1) ccsid(*utf8) based(sourcePtr);
   dcl-s i int(10);
   dcl-s x int(10);
-  dcl-s encoded varchar(4194304) ccsid(*utf8);
   dcl-s encodedChar char(1) ccsid(ASCII) based(encodedPtr);
   dcl-s encodedChar2 char(2) ccsid(ASCII) based(encodedPtr);
   dcl-s encodedLength int(10);
   dcl-s hex char(2);
   dcl-s hexAscii char(2) ccsid(ASCII);
   
-  sourceLength = %len(source); // will return the number of bytes used for utf8 varchar fields
-
-  %len(encoded) = 4194304; 
-
   for i = 1 to sourceLength;
     if (encodedLength = 0);
-      encodedPtr = %addr(encoded : *data);
+      encodedPtr = output;
     else;
       encodedPtr += 1;
     endif;
+    
+    if (encodedLength + 3 > outputMaxLength);
+      leave;
+    endif;
 
-    sourceChar = %subst(source : i : 1);
+    sourcePtr = source + i - 1;
     x = %scan(sourceChar : NOT_RESERVED_CHARS);
     if (sourceChar = IV_ENCODE_TILDE or x = 0);
-    
       // need encoding
       
-      if (sourceChar = *blank);
+      if (formUrlEncoding and sourceChar = *blank);
         encodedChar = '+';
         encodedLength += 1;
       else;
@@ -121,7 +143,6 @@ dcl-proc iv_encode_formUrl export;
         
         encodedLength += 3;
       endif;
-      
     else;
       // no encoding needed
       encodedChar = sourceChar;
@@ -129,7 +150,5 @@ dcl-proc iv_encode_formUrl export;
     endif;
   endfor;
 
-  %len(encoded) = encodedLength;
-
-  return encoded;
+  return encodedLength;
 end-proc;

@@ -13,7 +13,18 @@ ctl-opt nomain thread(*concurrent);
 /include 'sockets.rpginc'
 /include 'teraspace.rpginc'
 
-
+///
+// Buffer type "Bytes"
+///
+dcl-c IV_BYTES 0;
+///
+// Buffer type VARCHAR with a 2 byte size field
+///
+dcl-c IV_VARCHAR2 1;
+///
+// Buffer type VARCHAR with a 4 byte size field
+///
+dcl-c IV_VARCHAR4 2;
 
 dcl-pr fopen pointer extproc('_C_IFS_fopen');
     filename pointer value options(*string);
@@ -52,6 +63,8 @@ dcl-s ENUM int(3) template;
 dcl-c FALSE 0;
 dcl-c TRUE 1;
 dcl-c NULL x'00';
+
+dcl-s listedHttpStatusCodes int(5) dim(41) ctdata;
       
 dcl-ds ilevator_t qualified template align(*full);
     sockets pointer;
@@ -63,6 +76,8 @@ dcl-ds ilevator_t qualified template align(*full);
     responseHeaderHasContentLength ind ;
     responseIsChunked ind ;
     headerList pointer;
+    
+    requestDataBuffer likeds(anychar_t);
     responseHeaderBuffer likeds(anychar_t);
     responseDataBuffer likeds(anychar_t);
     responseDataFile pointer;
@@ -147,7 +162,7 @@ dcl-proc iv_free export;
       return;
     endif;
     
-    deallocateHeaders(client.headerList);
+    iv_freeList(client.headerList);
     
     teraspace_free(client.method);
     teraspace_free(client.url);
@@ -159,7 +174,7 @@ dcl-proc iv_free export;
 end-proc;
 
 
-dcl-proc deallocateHeaders;
+dcl-proc iv_freeList export;
   dcl-pi *n;
     list pointer;
   end-pi;
@@ -221,6 +236,27 @@ dcl-proc iv_setResponseDataBuffer export;
 end-proc;
 
 
+dcl-proc iv_setRequestDataBuffer export;
+    dcl-pi *n;
+        pClient pointer value;
+        buffer pointer value;
+        bufferSize int(10) value;
+        bufferType int(5) value;
+        bufferCcsid int(10) value;        
+    end-pi;
+    
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    
+    iv_anychar_set( 
+        %addr(client.requestDataBuffer) :
+        buffer :
+        bufferSize :
+        bufferType :
+        bufferCcsid
+    );
+end-proc;
+
+
 dcl-proc iv_setResponseFile export;
     dcl-pi *n;
         pClient       pointer value;
@@ -248,7 +284,7 @@ dcl-proc iv_setResponseFile export;
 end-proc;
 
 
-dcl-proc iv_setTrace export;
+dcl-proc iv_setCommTrace export;
     dcl-pi *n;
         pClient         pointer value;
         traceFileName   pointer options(*string) value;
@@ -264,26 +300,16 @@ dcl-proc iv_execute export;
     dcl-pi *n ind;
         pClient pointer value;
         method pointer options(*string) value;
-        url pointer options(*string) value; 
-        timeout int(10) options(*nopass) value; // In milisec. 30000 is default
-        retries int(10) options(*nopass) value; // retry n times. 3 is default        
+        url pointer options(*string) value;     
     end-pi;
 
     dcl-ds client likeds(ilevator_t) based(pClient);
     dcl-s apiStatus int(10) inz(IV_STATUS_RETRY);
     dcl-s try int(5);
-    dcl-s ok like(ENUM)  ;
+    dcl-s ok like(ENUM);
     
-    client.method = teraspace_strTrimDup (method);
-    client.url    = teraspace_strTrimDup (url);
-    
-    if (%parms() >= 4);
-        client.timeout = timeout;
-    endif;
-    
-    if (%parms() >= 5);
-        client.retries = retries;
-    endif;
+    client.method = teraspace_strTrimDup(method);
+    client.url    = teraspace_strTrimDup(url);
     
     parseUrl(pClient : url); 
     
@@ -379,7 +405,7 @@ dcl-proc iv_setCertificate export;
     endif;
     
 
-    if %parms < 3;
+    if (%parms < 3);
         certificatePassword = %addr(empty_str);
     endif;
 
@@ -404,7 +430,7 @@ dcl-proc iv_getStatus export;
     return client.status;
 end-proc;
 
-dcl-proc iv_getMessage export;
+dcl-proc iv_getErrorMessage export;
     dcl-pi *n varchar(256);
         pClient pointer value;
     end-pi;
@@ -431,14 +457,13 @@ dcl-proc iv_setAuthProvider export;
 end-proc;
 
 
-dcl-proc iv_addHeader export;
+dcl-proc addHeader export;
     dcl-pi *n;
-        pClient pointer value;
+        list pointer value;
         headerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8) value;
         headerValue varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8) value;
     end-pi;
 
-    dcl-ds client likeds(ilevator_t) based(pClient);
     dcl-s lowerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8);
     dcl-ds listKey likeds(LVARPUCHAR_t);
     dcl-ds listValue likeds(LVARPUCHAR_t);
@@ -458,7 +483,27 @@ dcl-proc iv_addHeader export;
     listValue.string = teraspace_alloc(listValue.length + 1);
     %str(listValue.string : listValue.length + 1) = headerValue;
     
-    sList_pushLVPC(client.headerList : listKey : listValue);
+    sList_pushLVPC(list : listKey : listValue);
+end-proc;
+
+
+dcl-proc iv_addHeader export;
+    dcl-pi *n;
+        pClient pointer value;
+        headerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8) value;
+        headerValue varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-s lowerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8);
+    dcl-ds listKey likeds(LVARPUCHAR_t);
+    dcl-ds listValue likeds(LVARPUCHAR_t);
+    
+    if (headerName = *blank);
+      return;
+    endif;
+    
+    addHeader(client.headerList : headerName : headerValue);
 end-proc;
 
 
@@ -479,7 +524,7 @@ dcl-proc iv_addHeaders export;
     dow (sList_foreach(iterator));
         headerName = %str(nodePayload.key.string : nodePayload.key.length);
         headerValue = %str(nodePayload.value.string : nodePayload.value.length);
-        iv_addHeader(pClient : headerName : headerValue);
+        addHeader(client.headerList : headerName : headerValue);
     enddo;
 end-proc;
 
@@ -506,17 +551,378 @@ dcl-proc iv_get export;
     );
     
     if (%parms() >= 3);
-      iv_addHeader(client : 'Accept' : acceptMimeType);
+        iv_addHeader(client : 'Accept' : acceptMimeType);
     endif;
     
     if (%parms() >= 4);
-      iv_addHeaders(client : headers);
+        iv_addHeaders(client : headers);
     endif;
     
-    rc = iv_execute(client : 'GET' : url : DEFAULT_TIMEOUT : NO_RETRIES);
+    rc = iv_execute(client : 'GET' : url);
+    
+    if (not isSuccessfulRequest(client));
+        sendStatusCodeEscapeMessage(client);
+    endif;
     
     return returnBuffer;
         
 on-exit;
     iv_free(client);
 end-proc;
+
+
+dcl-proc sendStatusCodeEscapeMessage;
+    dcl-pi *n;
+        client pointer value;
+    end-pi;
+
+    dcl-s status int(5);
+    dcl-s messageFile char(20) inz('ILEVATOR  *LIBL');
+    dcl-s messageId char(7);
+    dcl-s messageBody varchar(1000);
+    dcl-s messageType char(10) inz('*ESCAPE');
+    
+    status = iv_getStatus(client);
+    
+    if (%lookup(status : listedHttpStatusCodes) > 0);
+        messageId = 'ILV0' + %char(status);
+        // TODO get message body from response buffer (and consider correct encoding)
+        messageBody = 'Not provided.';
+    else;
+        messageId = 'ILV0999';
+        messageBody = 'Unsupported HTTP status code ' + %char(status);
+    endif;
+    
+    message_sendPastControlBoundary(messageId : messageFile : messageType : messageBody);
+end-proc;
+
+
+dcl-proc isSuccessfulRequest;
+    dcl-pi *n ind;
+        client pointer value;
+    end-pi;
+
+    dcl-s status int(5);
+    
+    status = iv_getStatus(client);
+    
+    return status < 400;
+end-proc;
+
+
+dcl-proc sendAndReceiveData export;
+    dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
+        method pointer options(*string) value;
+        url varchar(IV_URL_SIZE:2) value;
+        messageBody pointer value options(*string);
+        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+        headers pointer value options(*nopass);
+    end-pi;
+    
+    dcl-s client pointer;
+    dcl-ds clientDs likeds(ilevator_t) based(client);
+    dcl-s returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+    dcl-s rc ind inz(*off);
+    dcl-s messageBodyLength uns(10);
+    
+    client = iv_newHttpClient();
+    
+    iv_setResponseDataBuffer(
+        client :
+        %addr(returnBuffer) : 
+        IV_BUFFER_SIZE :
+        IV_VARCHAR4 :
+        IV_CCSID_UTF8
+    );
+    
+    messageBodyLength = strlen(messageBody);
+    if (messageBodyLength > 0);
+        iv_setRequestDataBuffer(
+            client :
+            messageBody : 
+            messageBodyLength :
+            IV_BYTES :
+            IV_CCSID_UTF8
+        );
+        clientDs.requestDataBuffer.length = messageBodyLength;
+    endif;
+    
+    if (%parms() >= 5);
+        iv_addHeader(client : 'Accept' : acceptMimeType);
+    endif;
+    
+    if (%parms() >= 6);
+        iv_addHeaders(client : headers);
+    endif;
+    
+    rc = iv_execute(client : method : url);
+    
+    return returnBuffer;
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc iv_patch export;
+    dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
+        url varchar(IV_URL_SIZE:2) value;
+        messageBody pointer value options(*string);
+        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+        headers pointer value options(*nopass);
+    end-pi;
+    
+    if (%parms() = 3);
+        return sendAndReceiveData('PATCH' : url : messageBody);
+    elseif (%parms() = 4);
+        return sendAndReceiveData('PATCH' : url : messageBody : acceptMimeType);
+    elseif (%parms() = 5);
+        return sendAndReceiveData('PATCH' : url : messageBody : acceptMimeType : headers);
+    endif;
+end-proc;
+
+
+dcl-proc iv_post export;
+    dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
+        url varchar(IV_URL_SIZE:2) value;
+        messageBody pointer value options(*string);
+        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+        headers pointer value options(*nopass);
+    end-pi;
+    
+    if (%parms() = 3);
+        return sendAndReceiveData('POST' : url : messageBody);
+    elseif (%parms() = 4);
+        return sendAndReceiveData('POST' : url : messageBody : acceptMimeType);
+    elseif (%parms() = 5);
+        return sendAndReceiveData('POST' : url : messageBody : acceptMimeType : headers);
+    endif;
+end-proc;
+
+
+dcl-proc iv_put export;
+    dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
+        url varchar(IV_URL_SIZE:2) value;
+        messageBody pointer value options(*string);
+        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+        headers pointer value options(*nopass);
+    end-pi;
+    
+    if (%parms() = 3);
+        return sendAndReceiveData('PUT' : url : messageBody);
+    elseif (%parms() = 4);
+        return sendAndReceiveData('PUT' : url : messageBody : acceptMimeType);
+    elseif (%parms() = 5);
+        return sendAndReceiveData('PUT' : url : messageBody : acceptMimeType : headers);
+    endif;
+end-proc;
+
+
+dcl-proc iv_setTimeout export;
+    dcl-pi *n;
+        pClient pointer value;
+        timeout int(5) value;
+    end-pi;
+    
+    dcl-ds client likeds(ilevator_t) based(pClient); 
+    
+    client.timeout = timeout;
+end-proc;
+
+
+dcl-proc iv_setRetries export;
+    dcl-pi *n;
+        pClient pointer value;
+        retries int(5) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient); 
+
+    client.retries = retries;
+end-proc;
+
+
+dcl-proc iv_delete export;
+    dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
+        url varchar(IV_URL_SIZE:2) value;
+        headers pointer value options(*nopass);        
+    end-pi;
+
+    dcl-s client pointer;
+    dcl-s returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+    dcl-s rc ind inz(*off);
+    
+    client = iv_newHttpClient();
+    
+    iv_setResponseDataBuffer(
+        client :
+        %addr(returnBuffer) : 
+        IV_BUFFER_SIZE :
+        IV_VARCHAR4 :
+        IV_CCSID_UTF8
+    );
+    
+    if (%parms() >= 3);
+        iv_addHeaders(client : headers);
+    endif;
+    
+    rc = iv_execute(client : 'DELETE' : url);
+    
+    return returnBuffer;
+        
+on-exit;
+    iv_free(client);
+end-proc;
+
+
+dcl-proc iv_head export;
+    dcl-pi *n;
+        url varchar(IV_URL_SIZE:2) value;
+        headers pointer value options(*nopass);        
+    end-pi;
+
+    dcl-s client pointer;
+    dcl-s rc ind inz(*off);
+    
+    client = iv_newHttpClient();
+    
+    if (%parms() >= 2);
+        iv_addHeaders(client : headers);
+    endif;
+    
+    rc = iv_execute(client : 'HEAD' : url);
+        
+on-exit;
+    iv_free(client);
+end-proc;
+
+
+dcl-proc iv_options export;
+    dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
+        url varchar(IV_URL_SIZE:2) value;
+        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+        headers pointer value options(*nopass);        
+    end-pi;
+
+    dcl-s client pointer;
+    dcl-s returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+    dcl-s rc ind inz(*off);
+    
+    client = iv_newHttpClient();
+    
+    iv_setResponseDataBuffer(
+        client :
+        %addr(returnBuffer) : 
+        IV_BUFFER_SIZE :
+        IV_VARCHAR4 :
+        IV_CCSID_UTF8
+    );
+    
+    if (%parms() >= 3);
+        iv_addHeader(client : 'Accept' : acceptMimeType);
+    endif;
+    
+    if (%parms() >= 4);
+        iv_addHeaders(client : headers);
+    endif;
+    
+    rc = iv_execute(client : 'OPTIONS' : url);
+    
+    return returnBuffer;
+        
+on-exit;
+    iv_free(client);
+end-proc;
+
+
+dcl-proc iv_buildList export;
+    dcl-pi *n pointer;
+        key1 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const;
+        value1 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const;
+        key2 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
+        value2 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const options(*nopass);
+        key3 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
+        value3 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const options(*nopass);
+        key4 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
+        value4 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const options(*nopass);
+        key5 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
+        value5 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const options(*nopass);
+    end-pi;
+    
+    dcl-s list pointer;
+    
+    list = sList_new();
+    
+    if (%parms() >= 2);
+       addHeader(list : key1 : value1);
+    endif;
+    if (%parms() >= 4);
+       addHeader(list : key2 : value2);
+    endif;
+    if (%parms() >= 6);
+       addHeader(list : key3 : value3);
+    endif;
+    if (%parms() >= 8);
+       addHeader(list : key4 : value4);
+    endif;
+    if (%parms() >= 10);
+       addHeader(list : key5 : value5);
+    endif;
+    
+    return list;
+end-proc;
+
+
+dcl-proc iv_addHeaderToList export;
+    dcl-pi *n;
+        list pointer value;
+        headerKey varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const;
+        headerValue varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const;        
+    end-pi;
+
+    addHeader(list : headerKey : headerValue);
+end-proc;
+
+
+**CTDATA listedHttpStatusCodes
+  400
+  401
+  402
+  403
+  404
+  405
+  406
+  407
+  408
+  409
+  410
+  411
+  412
+  413
+  414
+  415
+  416
+  417
+  418
+  421
+  422
+  423
+  424
+  425
+  426
+  428
+  429
+  431
+  451
+  500
+  501
+  502
+  503
+  504
+  505
+  506
+  507
+  508
+  510
+  511
+  999

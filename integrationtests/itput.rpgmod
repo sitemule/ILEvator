@@ -1,0 +1,44 @@
+**FREE
+
+///
+// Integration Test PUT Method
+//
+// This module tests the PUT HTTP requests with an integration test backend.
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'ilevator.rpgle'
+
+
+dcl-pr test_put_success end-pr;
+dcl-pr test_put_failed end-pr;
+
+
+dcl-proc test_put_success export;
+    dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+    dcl-s messageBody varchar(IV_BUFFER_SIZE:4);
+  
+    messageBody = 'Hello ILEvator!';
+  
+    string = iv_put('http://localhost:35801/api/entry/success' : messageBody);
+    aEqual('ok' : string); 
+end-proc;
+
+
+dcl-proc test_put_failed export;
+    dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+    dcl-s messageBody varchar(IV_BUFFER_SIZE:4);
+  
+    messageBody = 'Hello ILEvator!';
+  
+    monitor;
+        string = iv_put('http://localhost:35801/api/entry/failed' : messageBody);
+        fail('This PUT request should have triggered an escape message.');
+    on-error;
+        // TODO check error : HTTP status 400
+    endmon;
+end-proc;

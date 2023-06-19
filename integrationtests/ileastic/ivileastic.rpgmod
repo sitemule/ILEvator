@@ -21,9 +21,19 @@ dcl-proc main;
   config.port = 35801;
   config.host = '*ANY';
 
-  il_addRoute(config : %paddr('sayHello') : IL_GET : '/api/hello');
-  il_addRoute(config : %paddr('getHeaderValue') : IL_GET : '/api/headers/{header}');
-  il_addRoute(config : %paddr('listHeaders') : IL_GET : '/api/headers');
-
+  il_addRoute(config : %paddr('get_sayHello') : IL_GET : '/api/hello');
+  il_addRoute(config : %paddr('get_getHeaderValue') : IL_GET : '/api/headers/{header}');
+  il_addRoute(config : %paddr('get_listHeaders') : IL_GET : '/api/headers');
+  il_addRoute(config : %paddr('delete_success') : IL_DELETE : '/api/entry/success');
+  il_addRoute(config : %paddr('delete_notAllowed') : IL_DELETE : '/api/entry/notallowed');
+  il_addRoute(config : %paddr('head_success') : IL_HEAD : '/api/entry/success');
+  il_addRoute(config : %paddr('head_failed') : IL_HEAD : '/api/entry/failed');
+  il_addRoute(config : %paddr('options_success') : IL_OPTIONS : '/api/entry/success');
+  il_addRoute(config : %paddr('options_failed') : IL_OPTIONS : '/api/entry/failed');
+  il_addRoute(config : %paddr('put_success') : IL_PUT : '/api/entry/success');
+  il_addRoute(config : %paddr('put_failed') : IL_PUT : '/api/entry/failed');
+  il_addRoute(config : %paddr('patch_success') : IL_PATCH : '/api/entry/success');
+  il_addRoute(config : %paddr('patch_failed') : IL_PATCH : '/api/entry/failed');
+  
   il_listen (config);
 end-proc;

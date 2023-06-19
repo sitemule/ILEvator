@@ -20,6 +20,8 @@ dcl-pr test_urlEncodeUmlaute end-pr;
 dcl-pr test_formUrlEncodeAsciiOnly end-pr;
 dcl-pr test_formUrlEncodeInvariantChars end-pr;
 dcl-pr test_formUrlEncodeUmlaute end-pr;
+dcl-pr test_encodePathWithPlusAndSpace end-pr;
+dcl-pr test_encodeQueryWithPlusAndSpace end-pr;
 
 
 dcl-proc test_urlEncodeAsciiOnly export;
@@ -72,4 +74,21 @@ dcl-proc test_formUrlEncodeUmlaute export;
   encodedValue = iv_encode_formUrl('Umlaute:' + u'00E4' + u'00DC');
   aEqual('Umlaute%3A%C3%A4%C3%9C' : encodedValue);
 end-proc;
+
+
+dcl-proc test_encodePathWithPlusAndSpace export;
+  dcl-s encodedValue varchar(32766) ccsid(*utf8);
+  
+  encodedValue = iv_encode_path('Niels+J' + u'00F8' + 'rn and Mihael');
+  aEqual('Niels%2BJ%C3%B8rn%20and%20Mihael' : encodedValue);
+end-proc;
+
+
+dcl-proc test_encodeQueryWithPlusAndSpace export;
+  dcl-s encodedValue varchar(32766) ccsid(*utf8);
+  
+  encodedValue = iv_encode_query('names' : 'Niels+J' + u'00F8' + 'rn and Mihael');
+  aEqual('names=Niels%2BJ%C3%B8rn%20and%20Mihael' : encodedValue);
+end-proc;
+
 
