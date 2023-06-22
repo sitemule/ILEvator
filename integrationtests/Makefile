@@ -49,30 +49,37 @@ start_ileastic: .PHONY
 	$(MAKE) -C ileastic/ start
 
 ITGET:
+	system -i "CHGATR OBJ('itget.rpgmod') ATR(*CCSID) VALUE(1252)"
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITGET) SRCSTMF('itget.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/ITGET MODULE(($(BIN_LIB)/ITGET)) $(BINDFLAGS)"
 	
 ITPOST:
+	system -i "CHGATR OBJ('itpost.rpgmod') ATR(*CCSID) VALUE(1252)"
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITPOST) SRCSTMF('itpost.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/ITPOST MODULE(($(BIN_LIB)/ITPOST)) $(BINDFLAGS)"
 
 ITDELETE:
+	system -i "CHGATR OBJ('itdelete.rpgmod') ATR(*CCSID) VALUE(1252)"
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITDELETE) SRCSTMF('itdelete.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/ITDELETE MODULE(($(BIN_LIB)/ITDELETE)) $(BINDFLAGS)"
 
 ITHEAD:
+	system -i "CHGATR OBJ('ithead.rpgmod') ATR(*CCSID) VALUE(1252)"
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITHEAD) SRCSTMF('ithead.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/ITHEAD MODULE(($(BIN_LIB)/ITHEAD)) $(BINDFLAGS)"
 
 ITOPTIONS:
+	system -i "CHGATR OBJ('itoptions.rpgmod') ATR(*CCSID) VALUE(1252)"
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITOPTIONS) SRCSTMF('itoptions.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/ITOPTIONS MODULE(($(BIN_LIB)/ITOPTIONS)) $(BINDFLAGS)"
 
 ITPUT:
+	system -i "CHGATR OBJ('itput.rpgmod') ATR(*CCSID) VALUE(1252)"
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITPUT) SRCSTMF('itput.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/ITPUT MODULE(($(BIN_LIB)/ITPUT)) $(BINDFLAGS)"
 
 ITPATCH:
+	system -i "CHGATR OBJ('itpatch.rpgmod') ATR(*CCSID) VALUE(1252)"
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITPATCH) SRCSTMF('itpatch.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/ITPATCH MODULE(($(BIN_LIB)/ITPATCH)) $(BINDFLAGS)"
 
