@@ -688,11 +688,12 @@ end-pr;
 //
 // @param URL
 // @param Pointer to a simple list with additional HTTP headers
-// 
-// @throws Escape message on an unsuccessful request with the HTTP status encoded 
+// @return <code>*on</code> if the request was successful (HTTP status 2xx)
+//
+// @throws Info message on an unsuccessful request with the HTTP status encoded 
 //         like ILV0404 for a 404 HTTP status.
 ///
-dcl-pr iv_head extproc(*dclcase);
+dcl-pr iv_head ind extproc(*dclcase);
     url varchar(IV_URL_SIZE:2) value;
     headers pointer value options(*nopass);
 end-pr;

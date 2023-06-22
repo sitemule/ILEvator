@@ -1,0 +1,50 @@
+**FREE
+
+/if not defined(PSDS)
+/define PSDS
+
+dcl-ds programStatus psds qualified;
+  procedure char(10) ;             // Module or main procedure name
+  status zoned(5) ;           // Status code
+  previousStatus zoned(5) ;        // Previous status
+  sourceLineNumber char(8) ;        // Source line number
+  routine char(8) ;           // Name of the RPG routine
+  parms zoned(3) ;            // Number of parms passed to program
+  exceptionType char(3) ;     // Exception type
+  exceptionNumber zoned(4) ;      // Exception number
+  exception char(7) samepos(ExceptionType) ;
+  reserved1 char(4) ;         // Reserved
+  msgWrkArea char(30) ;       // Message work area
+  programLibrary char(10) ;           // Program library
+  exceptionData char(80) ;    // Retrieved exception data
+  rnx9001Exception char(4) ;  // Id of exception that caused RNX9001
+  lastFile1 char(10) ;        // Last file operation occurred on
+  unused1 char(6) ;           // Unused
+  dateEnteredSystem char(8) ;        // Date entered system
+  startDateCentury zoned(2) ;    // Century of job started date
+  lastFile2 char(8) ;         // Last file operation occurred on
+  lastFileSts char(35) ;      // Last file used status information
+  jobName char(10) ;          // Job name
+  jobUser char(10) ;          // Job user
+  jobNumber zoned(6) ;           // Job number
+  jobStartDate zoned(6) ;           // Job started date
+  programStartDate zoned(6) ;           // Date of program running
+  programStartTime zoned(6) ;          // Time of program running
+  compileDate char(6) ;        // Date program was compiled
+  compileTime char(6) ;       // Time program was compiled
+  compilerLevel char(4) ;     // Level of compiler
+  sourceFile char(10) ;          // Source file name
+  sourceLibrary char(10) ;           // Source file library
+  sourceMember char(10) ;           // Source member name
+  program char(10) ;          // Program containing procedure
+  module char(10) ;          // Module containing procedure
+  sourceLineNumberBinary bindec(2) ;   // Source line number as binary
+  lastFileStatusBin bindec(2) ;  // Source id matching positions 228-235
+  user char(10) ;             // Current user
+  extErrorCode int(10) ;        // External error code
+  intoElements int(20) ;      // Elements set by XML-INTO or DATA-INTO (7.3)
+  internalJobId char(16) ;    // Internal job id (7.3 TR6)
+  systemName char(8) ;           // System name (7.3 TR6)
+end-ds;
+
+/endif

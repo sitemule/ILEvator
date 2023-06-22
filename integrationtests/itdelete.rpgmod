@@ -12,6 +12,7 @@ ctl-opt nomain;
 
 /include 'assert.rpginc'
 /include 'ilevator.rpgle'
+/include 'psds.rpginc'
 
 
 dcl-pr test_delete_success end-pr;
@@ -33,7 +34,7 @@ dcl-proc test_delete_failed export;
         string = iv_delete('http://localhost:35801/api/entry/notallowed');
         fail('This DELETE request should have triggered an escape message.');
     on-error;
-        // TODO check error : HTTP status 415
-        aEqual('DELETE is not allowed' : string); 
+        iEqual(405 : programStatus.exceptionNumber);
+        aEqual('405 - Method not allowed' : programStatus.exceptionData); 
     endmon;
 end-proc;

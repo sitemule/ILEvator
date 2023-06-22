@@ -12,6 +12,7 @@ ctl-opt nomain;
 
 /include 'assert.rpginc'
 /include 'ilevator.rpgle'
+/include 'psds.rpginc'
 
 
 dcl-pr test_head_success end-pr;
@@ -19,15 +20,19 @@ dcl-pr test_head_failed end-pr;
 
 
 dcl-proc test_head_success export;
-    iv_head('http://localhost:35801/api/entry/success');
+    assert(
+        iv_head('http://localhost:35801/api/entry/success') : 
+        'Return code of HEAD request should have been *on.'
+    );
 end-proc;
 
 
 dcl-proc test_head_failed export;
-    monitor;
-      iv_head('http://localhost:35801/api/entry/failed');
-      fail('The failed HEAD request should have triggered an escape message.');
-    on-error;
-      // TODO check error : HTTP status 400
-    endmon;
+    dcl-s rc ind;
+    
+    rc = iv_head('http://localhost:35801/api/entry/failed');
+    assert(rc = *off : 'Return code of HEAD request should have been *off.');
+      
+    // TODO receive last message and extract ILVxxxx message code
+    // iEqual(400 : programStatus.exceptionNumber);
 end-proc;

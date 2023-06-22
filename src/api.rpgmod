@@ -561,7 +561,7 @@ dcl-proc iv_get export;
     rc = iv_execute(client : 'GET' : url);
     
     if (not isSuccessfulRequest(client));
-        sendStatusCodeEscapeMessage(client);
+        sendStatusCodeEscapeMessage(client : returnBuffer);
     endif;
     
     return returnBuffer;
@@ -574,20 +574,45 @@ end-proc;
 dcl-proc sendStatusCodeEscapeMessage;
     dcl-pi *n;
         client pointer value;
+        returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+    end-pi;
+
+    sendStatusCodeMessage(client : returnBuffer : '*ESCAPE');
+end-proc;
+
+
+dcl-proc sendStatusCodeInfoMessage;
+    dcl-pi *n;
+        client pointer value;
+        returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+    end-pi;
+
+    sendStatusCodeMessage(client : returnBuffer : '*INFO');
+end-proc;
+
+
+dcl-proc sendStatusCodeMessage;
+    dcl-pi *n;
+        client pointer value;
+        returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+        messageType char(10) value;
     end-pi;
 
     dcl-s status int(5);
     dcl-s messageFile char(20) inz('ILEVATOR  *LIBL');
     dcl-s messageId char(7);
     dcl-s messageBody varchar(1000);
-    dcl-s messageType char(10) inz('*ESCAPE');
     
     status = iv_getStatus(client);
     
     if (%lookup(status : listedHttpStatusCodes) > 0);
         messageId = 'ILV0' + %char(status);
-        // TODO get message body from response buffer (and consider correct encoding)
-        messageBody = 'Not provided.';
+
+        monitor;
+            messageBody = returnBuffer;
+        on-error;
+            messageBody = 'The message body contains not convertible characters.';
+        endmon;
     else;
         messageId = 'ILV0999';
         messageBody = 'Unsupported HTTP status code ' + %char(status);
@@ -656,6 +681,10 @@ dcl-proc sendAndReceiveData export;
     endif;
     
     rc = iv_execute(client : method : url);
+    
+    if (not isSuccessfulRequest(client));
+        sendStatusCodeEscapeMessage(client : returnBuffer);
+    endif;
     
     return returnBuffer;
     
@@ -768,6 +797,10 @@ dcl-proc iv_delete export;
     
     rc = iv_execute(client : 'DELETE' : url);
     
+    if (not isSuccessfulRequest(client));
+        sendStatusCodeEscapeMessage(client : returnBuffer);
+    endif;
+    
     return returnBuffer;
         
 on-exit;
@@ -776,22 +809,36 @@ end-proc;
 
 
 dcl-proc iv_head export;
-    dcl-pi *n;
+    dcl-pi *n ind;
         url varchar(IV_URL_SIZE:2) value;
         headers pointer value options(*nopass);        
     end-pi;
 
     dcl-s client pointer;
+    dcl-s returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
     dcl-s rc ind inz(*off);
     
     client = iv_newHttpClient();
+    
+    iv_setResponseDataBuffer(
+        client :
+        %addr(returnBuffer) : 
+        IV_BUFFER_SIZE :
+        IV_VARCHAR4 :
+        IV_CCSID_UTF8
+    );
     
     if (%parms() >= 2);
         iv_addHeaders(client : headers);
     endif;
     
     rc = iv_execute(client : 'HEAD' : url);
-        
+    
+    if (not isSuccessfulRequest(client));
+        sendStatusCodeInfoMessage(client : returnBuffer);
+    endif;
+    
+    return rc and isSuccessfulRequest(client);
 on-exit;
     iv_free(client);
 end-proc;
@@ -827,6 +874,10 @@ dcl-proc iv_options export;
     endif;
     
     rc = iv_execute(client : 'OPTIONS' : url);
+    
+    if (not isSuccessfulRequest(client));
+        sendStatusCodeEscapeMessage(client : returnBuffer);
+    endif;
     
     return returnBuffer;
         

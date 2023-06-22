@@ -13,12 +13,14 @@ ctl-opt nomain;
 /include 'assert.rpginc'
 /include 'ilevator.rpgle'
 /include 'encode.rpginc'
+/include 'psds.rpginc'
 
 
 dcl-pr test_get_success end-pr;
 dcl-pr test_getWithQuery_success end-pr;
 dcl-pr test_getWithSpacesInQuery_success end-pr;
 dcl-pr test_getWithUmlautInQuery_success end-pr;
+dcl-pr test_failed end-pr;
 
 
 dcl-proc test_get_success export;
@@ -52,3 +54,16 @@ dcl-proc test_getWithUmlautInQuery_success export;
     aEqual('Hello J”rg' : string); 
 end-proc;
 
+
+dcl-proc test_failed export;
+    dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+  
+    monitor;
+        string = iv_get('http://localhost:35801/api/entry/forbidden');
+        fail('This GET request should have triggered an escape message.');
+    on-error;
+        iEqual(403 : programStatus.exceptionNumber);
+        aEqual('403 - Forbidden' : programStatus.exceptionData); 
+    endmon;
+    
+end-proc;

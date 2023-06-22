@@ -28,6 +28,11 @@ dcl-pr get_listHeaders extproc(*dclcase);
     response likeds(IL_RESPONSE);
 end-pr;
 
+dcl-pr get_notAllowed extproc(*dclcase);
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+end-pr;
+
 
 dcl-proc get_sayHello export;
   dcl-pi *n;
@@ -71,4 +76,15 @@ dcl-proc get_listHeaders export;
 
   response.contentType = 'text/plain';
   il_responseWrite(response : il_getRequestHeaders(request));
+end-proc;
+
+dcl-proc get_notAllowed export;
+  dcl-pi *n;
+    request  likeds(IL_REQUEST);
+    response likeds(IL_RESPONSE);
+  end-pi;
+
+  response.status = 403;
+  response.contentType = 'text/plain';
+  il_responseWrite(response : 'You are not allowed to access this resource.');
 end-proc;
