@@ -1,0 +1,24 @@
+{
+    "project" : "ILEvator",
+    "title" : "ILEvator - ILE HTTP Client",
+    "output" : { "path" : "pages-ilevator-html" , "suffix" : "html"},
+    "overview" : ["page", "index"], 
+    "source" : "file://prototypes/ILEvator/ilevator.rpgle",
+    "templates": { "path" : "templates-html" },
+    "sections" : [
+        {
+            "id" : "basics",
+            "name" : "Basics",
+            "order" : 1,
+            "default" : true,
+            "descriptionAsHeader" : true
+        },
+        {
+            "id" : "constants",
+            "name" : "Constants",
+            "startsWith" : "IV_",
+            "order" : 2
+        }
+    ]
+}
+

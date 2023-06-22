@@ -1,0 +1,114 @@
+.iledocs {
+    display: flex;
+    font-family: "Open Sans", sans-serif;
+}
+
+.iledocs a[href] {
+    color: #00008b;
+    text-decoration: none;
+    background-color: transparent;
+}
+
+.iledocs a:hover {
+    text-decoration: underline;
+}
+
+.iledocs-toc,
+.iledocs-page-toc,
+.iledocs-toc-gap {
+    width: 300px;
+}
+
+.iledocs-page-toc {
+    position: fixed;
+}
+
+.iledocs-page {
+    flex-grow: 1;
+    max-width: 1000px;
+    margin-left: 25px;
+}
+
+.iledocs-table tr td {
+    border-top: 1px solid lightgray;
+    padding: 10px;
+}
+
+.iledocs-table-key-column {
+    vertical-align: top;
+}
+
+.iledocs-code {
+    border: 1px solid lightgray;
+    border-radius: 5px;
+    background-color: #f4f4f4;
+    padding: 10px;
+}
+
+.iledocs-code-returnType {
+    color: red;
+}
+
+.iledocs-code-type {
+    color: red;
+}
+
+.iledocs-code-name {
+    color: blueviolet;
+}
+
+.iledocs-list {
+    margin: 5px !important;
+}
+
+.iledocs-list li {
+    padding: 5px !important;
+}
+
+.iledocs-list-blank {
+    list-style: none;
+}
+
+.iledocs-procedure-header {
+    margin-top: 30px;
+}
+
+.iledocs-procedure-subheader {
+    margin-bottom: 10px;
+}
+
+.iledocs-box {
+    border: 1px solid lightgray;
+    border-radius: 5px;
+    padding: 15px;
+    max-width: 800px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.iledocs-info {
+    background-color: #d1ecf1;
+}
+
+.iledocs-warning {
+    color: #856404;
+    background-color: #fff3cd;
+}
+
+.iledocs-deprecated {
+    color: #721c24;
+    background-color: #f8d7da;
+}
+
+.iledocs-revision {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.iledocs-links {
+    list-style-type: "\2b9a";
+}
+
+.iledocs-links li {
+    padding: 5px !important;
+}

@@ -1,0 +1,1301 @@
+<link rel="stylesheet" href="css/iledocs.css" />
+<div class="iledocs">
+
+<div class="iledocs-page-toc">
+<h3>Sections</h3>
+<ol>
+<li><a href="basics.html">Basics</a></li>
+<li><a href="constants.html">Constants</a></li>
+</ol>
+</div>
+<div class="iledocs-toc-gap">&nbsp;</div>
+
+<div class="iledocs-page">
+<h2>Basics</h2>
+
+ILEvator is a HTTP client API for the ILE environment on
+IBM i for implementing web/microservices alike applications.
+<p>
+ILEvator is a service program that provides a simple, blazing fast
+programmable HTTP client for your application so you can easily plug your RPG
+code into a service infrastructure or make simple web applications without
+the need of any third party web client products.
+<p>
+The convenient procedures like <em>iv_get</em> will throw an escape message
+when the server responds with anything above and including HTTP status 400.
+The escape message id will contain the HTTP status code like ILV0404 for the
+HTTP status code 404. The message id can easily be retrieved from the program
+status data structure.
+<p>
+If the convenience procedures doesn't fit with the use case just use the more
+generic <code>iv_execute</code> procedure.
+
+
+
+
+<h3>Procedures</h3>
+<table class="iledocs-table">
+
+<tr>
+<td><a href="#proc_iv_addHeader">iv_addHeader</a></td><td>Added HTTP header</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_addHeaders">iv_addHeaders</a></td><td>Add list of HTTP headers</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_addHeaderToList">iv_addHeaderToList</a></td><td>Added HTTP header to list</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_buildList">iv_buildList</a></td><td>Build HTTP header list</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_decodeBase64">iv_decodeBase64</a></td><td>Base64 decode value</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_delete">iv_delete</a></td><td>Execute DELETE HTTP request</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_encodeBase64">iv_encodeBase64</a></td><td>Base64 encoding value</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_execute">iv_execute</a></td><td>Execute HTTP request</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_free">iv_free</a></td><td>Free client memory</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_freeList">iv_freeList</a></td><td>Free list</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_get">iv_get</a></td><td>Execute GET HTTP request</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_getErrorMessage">iv_getErrorMessage</a></td><td>Get error message</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_getStatus">iv_getStatus</a></td><td>Get HTTP status</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_head">iv_head</a></td><td>Execute HEAD HTTP request</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_joblog">iv_joblog</a></td><td>Add message to job log</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_newHttpClient">iv_newHttpClient</a></td><td>Create a new HTTP client</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_options">iv_options</a></td><td>Execute OPTIONS HTTP request</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_patch">iv_patch</a></td><td>Execute PATCH HTTP request</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_post">iv_post</a></td><td>Execute POST HTTP request</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_put">iv_put</a></td><td>Execute PUT HTTP request</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_setAuthProvider">iv_setAuthProvider</a></td><td>Set authentication provider</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_setCertificate">iv_setCertificate</a></td><td>Set SSL keystore</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_setCommTrace">iv_setCommTrace</a></td><td>Set Comm Trace</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_setRequestDataBuffer">iv_setRequestDataBuffer</a></td><td>Set request buffer</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_setResponseDataBuffer">iv_setResponseDataBuffer</a></td><td>Set response data buffer</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_setResponseFile">iv_setResponseFile</a></td><td>Set response output file</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_setResponseHeaderBuffer">iv_setResponseHeaderBuffer</a></td><td>Set response header buffer</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_setRetries">iv_setRetries</a></td><td>Set Retries</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_setTimeout">iv_setTimeout</a></td><td>Set timeout</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_xlateLvc">iv_xlateLvc</a></td><td>Convert long varchar value</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_xlateVc">iv_xlateVc</a></td><td>Convert varchar value</td>
+</tr>
+
+</table>
+<hr/>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_addHeader">iv_addHeader</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_addHeader</span>
+(
+Pointer client, Varchar headerName, Varchar headerValue)
+</code>
+<p>Adds the passed HTTP header (key/value) to the HTTP client instance. This
+HTTP header will be added to each request done with this client instance.
+<p>
+Duplicate HTTP header keys are allowed in an HTTP message. Generally the last
+one "wins".</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_NAME_SIZE:2)</span>
+ [value]</code>
+ &mdash; HTTP header name (key)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_VALUE_SIZE:2)</span>
+ [value]</code>
+ &mdash; HTTP header value</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_addHeaders">iv_addHeaders</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_addHeaders</span>
+(
+Pointer client, Pointer headers)
+</code>
+<p>Adds a list of HTTP headers (key/value pairs) to the HTTP client instance.
+These HTTP headers will be added to each request done with this client instance.
+<p>
+Duplicate HTTP header keys are allowed in an HTTP message. Generally the last
+one "wins".</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Simple list of HTTP headers</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_addHeaderToList">iv_addHeaderToList</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_addHeaderToList</span>
+(
+Pointer list, Varchar headerKey, Varchar headerValue)
+</code>
+<p>Adds the passed HTTP header (key/value) to the passed list of headers.
+<p>
+Duplicate HTTP header keys are allowed in an HTTP message. Generally the last
+one "wins".</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the list (simple list)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_NAME_SIZE)</span>
+ [const]</code>
+ &mdash; HTTP header name (key)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_VALUE_SIZE)</span>
+ [const]</code>
+ &mdash; HTTP header value</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_buildList">iv_buildList</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Pointer</span>
+<span class="iledocs-code-name">iv_buildList</span>
+(
+Varchar key1, Varchar value1, Varchar key2, Varchar value2, Varchar key3, Varchar value3, Varchar key4, Varchar value4, Varchar key5, Varchar value5)
+</code>
+<p>Builds a list of HTTP headers which can be used on the convenience HTTP
+procedures like <code>iv_get</code> to add custom HTTP headers to the
+HTTP request.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_NAME_SIZE)</span>
+ [const]</code>
+ &mdash; Key 1</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_VALUE_SIZE)</span>
+ [const]</code>
+ &mdash; Value 1</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_NAME_SIZE)</span>
+ [nopass, const]</code>
+ &mdash; Key 2</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_VALUE_SIZE)</span>
+ [nopass, const]</code>
+ &mdash; Value 2</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_NAME_SIZE)</span>
+ [nopass, const]</code>
+ &mdash; Key 3</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_VALUE_SIZE)</span>
+ [nopass, const]</code>
+ &mdash; Value 3</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_NAME_SIZE)</span>
+ [nopass, const]</code>
+ &mdash; Key 4</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_VALUE_SIZE)</span>
+ [nopass, const]</code>
+ &mdash; Value 4</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_NAME_SIZE)</span>
+ [nopass, const]</code>
+ &mdash; Key 5</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_VALUE_SIZE)</span>
+ [nopass, const]</code>
+ &mdash; Value 5</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Pointer
+
+</span>
+</code>
+ &mdash; Simple list instance with the passed entries
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">The procedure <code>iv_addHeaderToList</code> can be used to add more
+entries to the list.</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_decodeBase64">iv_decodeBase64</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Varchar</span>
+<span class="iledocs-code-name">iv_decodeBase64</span>
+(
+Varchar string)
+</code>
+<p>Decodes a base64 encoded string.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (2097152)</span>
+ [varsize, const]</code>
+ &mdash; Encoded string</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Varchar
+
+</span>
+</code>
+ &mdash; Decoded string
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">The character encoding for the original value is expected to be UTF-8.</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_delete">iv_delete</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Varchar</span>
+<span class="iledocs-code-name">iv_delete</span>
+(
+Varchar url, Pointer headers)
+</code>
+<p>Executes a DELETE HTTP request to the passed URL.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_URL_SIZE:2)</span>
+ [value]</code>
+ &mdash; URL</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [nopass, value]</code>
+ &mdash; Pointer to a simple list with additional HTTP headers</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Varchar
+
+</span>
+</code>
+ &mdash; Response message body
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_encodeBase64">iv_encodeBase64</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Varchar</span>
+<span class="iledocs-code-name">iv_encodeBase64</span>
+(
+Varchar string)
+</code>
+<p>Encodes a string into base64 .</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (2097152)</span>
+ [varsize, const]</code>
+ &mdash; string to encode</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Varchar
+
+</span>
+</code>
+ &mdash; Encoded string
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">The character encoding for the original value is expected to be UTF-8.</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_execute">iv_execute</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Boolean</span>
+<span class="iledocs-code-name">iv_execute</span>
+(
+Pointer client, Pointer method, Pointer url)
+</code>
+<p>Executes the HTTP request with the passed client.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; HTTP method</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; URL</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Boolean
+
+</span>
+</code>
+ &mdash; <code>*ON</code> if ok
+<h3 class="iledocs-procedure-header"><a name="proc_iv_free">iv_free</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_free</span>
+(
+Pointer client)
+</code>
+<p>Disconnect and cleanup memory of the passed client instance.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client
+</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_freeList">iv_freeList</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_freeList</span>
+(
+Pointer list)
+</code>
+<p>Cleanup memory of the passed simple list instance.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+</code>
+ &mdash; Pointer to the list
+</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_get">iv_get</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Varchar</span>
+<span class="iledocs-code-name">iv_get</span>
+(
+Varchar url, Varchar acceptMimeType, Pointer headers)
+</code>
+<p>Executes a GET HTTP request to the passed URL.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_URL_SIZE:2)</span>
+ [value]</code>
+ &mdash; URL</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_VALUE_SIZE:2)</span>
+ [nopass, value]</code>
+ &mdash; MIME type for the <code>Accept</code> HTTP header</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [nopass, value]</code>
+ &mdash; Pointer to a simple list with additional HTTP headers</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Varchar
+
+</span>
+</code>
+ &mdash; Response message body
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_getErrorMessage">iv_getErrorMessage</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Varchar</span>
+<span class="iledocs-code-name">iv_getErrorMessage</span>
+(
+Pointer client)
+</code>
+<p>Returns the error message from the last HTTP request.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash;  Pointer to the HTTP client</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Varchar
+
+</span>
+</code>
+ &mdash; Error message from the HTTP request
+<h3 class="iledocs-procedure-header"><a name="proc_iv_getStatus">iv_getStatus</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Integer</span>
+<span class="iledocs-code-name">iv_getStatus</span>
+(
+Pointer client)
+</code>
+<p>Returns the HTTP status code of the last request done with this HTTP client
+instance.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Integer
+
+</span>
+</code>
+ &mdash; HTTP status code
+<h3 class="iledocs-procedure-header"><a name="proc_iv_head">iv_head</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Boolean</span>
+<span class="iledocs-code-name">iv_head</span>
+(
+Varchar url, Pointer headers)
+</code>
+<p>Executes a HEAD HTTP request to the passed URL.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_URL_SIZE:2)</span>
+ [value]</code>
+ &mdash; URL</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [nopass, value]</code>
+ &mdash; Pointer to a simple list with additional HTTP headers</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Boolean
+
+</span>
+</code>
+ &mdash; <code>*on</code> if the request was successful (HTTP status 2xx)
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_joblog">iv_joblog</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_joblog</span>
+(
+Varchar message)
+</code>
+<p>Convenience function: put message in joblog.
+Works like printf but with strings only like
+<br/><br/>
+<code>iv_joblog('This is %s a test' : 'super');</code></p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (512)</span>
+ [varsize, const]</code>
+ &mdash; message string</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_newHttpClient">iv_newHttpClient</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Pointer</span>
+<span class="iledocs-code-name">iv_newHttpClient</span>
+(
+)
+</code>
+<p>Returns a pointer to the new HTTP client instance.</p>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Pointer
+
+</span>
+</code>
+ &mdash; Pointer to the HTTP client
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">The memory allocated by this client instance must be freed by
+calling the procedure <code>iv_free</code>.
+</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_options">iv_options</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Varchar</span>
+<span class="iledocs-code-name">iv_options</span>
+(
+Varchar url, Varchar acceptMimeType, Pointer headers)
+</code>
+<p>Executes a OPTIONS HTTP request to the passed URL.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_URL_SIZE:2)</span>
+ [value]</code>
+ &mdash; URL</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_VALUE_SIZE:2)</span>
+ [nopass, value]</code>
+ &mdash; MIME type for the <code>Accept</code> HTTP header</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [nopass, value]</code>
+ &mdash; Pointer to a simple list with additional HTTP headers</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Varchar
+
+</span>
+</code>
+ &mdash; Response message body
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_patch">iv_patch</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Varchar</span>
+<span class="iledocs-code-name">iv_patch</span>
+(
+Varchar url, Pointer messageBody, Varchar acceptMimeType, Pointer headers)
+</code>
+<p>Executes a PATCH HTTP request to the passed URL.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_URL_SIZE:2)</span>
+ [value]</code>
+ &mdash; URL</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; Request message body</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_VALUE_SIZE:2)</span>
+ [nopass, value]</code>
+ &mdash; MIME type for the <code>Accept</code> HTTP header</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [nopass, value]</code>
+ &mdash; Pointer to a simple list with additional HTTP headers</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Varchar
+
+</span>
+</code>
+ &mdash; Response message body
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_post">iv_post</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Varchar</span>
+<span class="iledocs-code-name">iv_post</span>
+(
+Varchar url, Pointer messageBody, Varchar acceptMimeType, Pointer headers)
+</code>
+<p>Executes a POST HTTP request to the passed URL.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_URL_SIZE:2)</span>
+ [value]</code>
+ &mdash; URL</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; Request message body</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_VALUE_SIZE:2)</span>
+ [nopass, value]</code>
+ &mdash; MIME type for the <code>Accept</code> HTTP header</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [nopass, value]</code>
+ &mdash; Pointer to a simple list with additional HTTP headers</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Varchar
+
+</span>
+</code>
+ &mdash; Response message body
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_put">iv_put</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Varchar</span>
+<span class="iledocs-code-name">iv_put</span>
+(
+Varchar url, Pointer messageBody, Varchar acceptMimeType, Pointer headers)
+</code>
+<p>Executes a PUT HTTP request to the passed URL.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_URL_SIZE:2)</span>
+ [value]</code>
+ &mdash; URL</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; Request message body</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_HEADER_VALUE_SIZE:2)</span>
+ [nopass, value]</code>
+ &mdash; MIME type for the <code>Accept</code> HTTP header</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [nopass, value]</code>
+ &mdash; Pointer to a simple list with additional HTTP headers</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Varchar
+
+</span>
+</code>
+ &mdash; Response message body
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_setAuthProvider">iv_setAuthProvider</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_setAuthProvider</span>
+(
+Pointer client, Pointer authProvider)
+</code>
+<p>Sets the passed authentication provider on the HTTP client.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP Client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Authentication provider</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_setCertificate">iv_setCertificate</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Boolean</span>
+<span class="iledocs-code-name">iv_setCertificate</span>
+(
+Pointer client, Pointer certificateFile, Pointer certificatePassword)
+</code>
+<p>Sets the SSL keystore used when making HTTPS requests.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; IFS path to the keystore file</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, nopass, value]</code>
+ &mdash; Keystore password (default: empty password)</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Boolean
+
+</span>
+</code>
+ &mdash; <code>*ON</code> if ok
+<h3 class="iledocs-procedure-header"><a name="proc_iv_setCommTrace">iv_setCommTrace</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_setCommTrace</span>
+(
+Pointer client, Pointer traceFile)
+</code>
+<p>Enables the communication trace. The trace data will be written to the passed
+file.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; IFS path to the trace file</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_setRequestDataBuffer">iv_setRequestDataBuffer</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_setRequestDataBuffer</span>
+(
+Pointer client, Pointer buffer, Integer bufferSize, Integer bufferType, Integer bufferCcsid)
+</code>
+<p>Sets the buffer of the data which will be sent as the message body of the
+HTTP request.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to buffer</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (10)</span>
+ [value]</code>
+ &mdash; Size of buffer (bytes in total)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (5)</span>
+ [value]</code>
+ &mdash; Buffer type (0=Byte buffer, 1=varchar2, 2=varchar4)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (10)</span>
+ [value]</code>
+ &mdash; CCSID (0=Current job, 65535=no xlate, 1208=UTF-8)</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_setResponseDataBuffer">iv_setResponseDataBuffer</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_setResponseDataBuffer</span>
+(
+Pointer pClient, Pointer pBuffer, Integer bufferSize, Integer bufferType, Integer bufferCcsid)
+</code>
+<p>Sets the buffer where the response data (message body) is received.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to buffer</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (10)</span>
+ [value]</code>
+ &mdash; Size of buffer ( bytes in total)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (5)</span>
+ [value]</code>
+ &mdash; Buffer type (0=Byte buffer, 1=varchar2, 2=varchar4)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (10)</span>
+ [value]</code>
+ &mdash; CCSID (0=Current job, 65535=no xlate, 1208=UTF-8)</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_setResponseFile">iv_setResponseFile</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_setResponseFile</span>
+(
+Pointer client, Pointer fileName, Integer fileCcsid)
+</code>
+<p>Sets the output file for the response.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; IFS file name</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (10)</span>
+ [nopass, value]</code>
+ &mdash; CCSID of the file (default: 1252)</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_setResponseHeaderBuffer">iv_setResponseHeaderBuffer</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_setResponseHeaderBuffer</span>
+(
+Pointer client, Pointer buffer, Integer bufferSize, Integer bufferType, Integer bufferCcsid)
+</code>
+<p>Sets the buffer where the response header is received.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to buffer</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (10)</span>
+ [value]</code>
+ &mdash; Size of buffer ( bytes in total)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (5)</span>
+ [value]</code>
+ &mdash; Buffer type (0=Byte buffer, 1=varchar2, 2=varchar4)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (10)</span>
+ [value]</code>
+ &mdash; CCSID (0=Current job, 65535=no xlate, 1208=UTF-8)</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_setRetries">iv_setRetries</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_setRetries</span>
+(
+Pointer client, Integer retries)
+</code>
+<p>Sets the number of retries the client does on an unsuccessful request.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (5)</span>
+ [value]</code>
+ &mdash; Number of retries</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_setTimeout">iv_setTimeout</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_setTimeout</span>
+(
+Pointer client, Integer timeout)
+</code>
+<p>Sets the timeout for the client instance.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (5)</span>
+ [value]</code>
+ &mdash; Timeout in seconds</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_xlateLvc">iv_xlateLvc</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Varchar</span>
+<span class="iledocs-code-name">iv_xlateLvc</span>
+(
+Varchar inoutString, Integer fromCCSID, Integer toCCSID)
+</code>
+<p>Converts the value of a (long) varchar variable to another CCSID.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (2097152)</span>
+ [varsize, const]</code>
+ &mdash; Input and output string</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (10)</span>
+ [value]</code>
+ &mdash; From CCSID</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (10)</span>
+ [value]</code>
+ &mdash; To CCSID</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Varchar
+
+</span>
+</code>
+ &mdash; Converted value
+<h3 class="iledocs-procedure-header"><a name="proc_iv_xlateVc">iv_xlateVc</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Varchar</span>
+<span class="iledocs-code-name">iv_xlateVc</span>
+(
+Varchar inoutString, Integer fromCCSID, Integer toCCSID)
+</code>
+<p>Converts the value of a (small) varchar variable to another CCSID.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (32768)</span>
+ [varsize, const]</code>
+ &mdash; Input and output string</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (10)</span>
+ [value]</code>
+ &mdash; From CCSID</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (10)</span>
+ [value]</code>
+ &mdash; To CCSID</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Varchar
+
+</span>
+</code>
+ &mdash; Converted value
+
+</div>
+</div>
