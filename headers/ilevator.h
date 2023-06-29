@@ -11,6 +11,7 @@
 #define ILEVATOR_H
 
 #include "anychar.h"
+#include "decimal.h"
 #include "ostypes.h"
 #include "simpleList.h"
 #include "sockets.h"
@@ -45,47 +46,46 @@ typedef struct _AUTH_PROVIDER {
 
 
 typedef struct _ILEVATOR {
-    PSOCKETS  sockets;
-    PUCHAR    method; 
-    PUCHAR    url; 
-    SHORT     timeOut;
-    SHORT     retries;
-    LGL       useProxy;
-    LGL       responseHeaderHasContentLength;
-    LGL       responseIsChunked;
-    PSLIST    headerList;
-
-    ANYCHAR   requestDataBuffer; 
-    ANYCHAR   responseHeaderBuffer; 
-    ANYCHAR   responseDataBuffer; 
-    FILE *    responseDataFile;
+    PSOCKETS     sockets;
+    PUCHAR       method; 
+    PUCHAR       url; 
+    decimal(9,3) timeOut;
+    SHORT        retries;
+    LGL          useProxy;
+    LGL          responseHeaderHasContentLength;
+    LGL          responseIsChunked;
+    PSLIST       headerList;
+                
+    ANYCHAR      requestDataBuffer; 
+    ANYCHAR      responseHeaderBuffer; 
+    ANYCHAR      responseDataBuffer; 
+    FILE *       responseDataFile;
 
     PAUTH_PROVIDER authProvider;
 
     // TODO - refactor
-    LONG      headLen;
-    PUCHAR    contentData;
-    LONG      contentLength;
-    LONG      contentLengthCalculated;
-    
-    PUCHAR    rawResponse;
-    LONG      ccsid; 
-    LONG      status;
-
-    UCHAR     server    [512];
-    LONG      port      ;
-    UCHAR     resource  [32766];
-    UCHAR     host      [512];
-    UCHAR     user      [256];
-    UCHAR     password  [256];
-    UCHAR     location  [256];
-    UCHAR     message   [256];
-
-    PUCHAR    buffer; 
-    LONG      bufferSize;  
-    LONG      bufferTotalLength;   
-    PUCHAR    bufferEnd;
-
+    LONG         headLen;
+    PUCHAR       contentData;
+    LONG         contentLength;
+    LONG         contentLengthCalculated;
+                 
+    PUCHAR       rawResponse;
+    LONG         ccsid; 
+    LONG         status;
+                 
+    UCHAR        server    [512];
+    LONG         port      ;
+    UCHAR        resource  [32766];
+    UCHAR        host      [512];
+    UCHAR        user      [256];
+    UCHAR        password  [256];
+    UCHAR        location  [256];
+    UCHAR        message   [256];
+                 
+    PUCHAR       buffer; 
+    LONG         bufferSize;  
+    LONG         bufferTotalLength;   
+    PUCHAR       bufferEnd;
 } ILEVATOR, *PILEVATOR;
 
 

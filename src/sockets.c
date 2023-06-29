@@ -434,7 +434,7 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR serverIP, LONG serverPort, LONG timeOut
     // Wait until connected or timout
     pfd.fd = ps->socket;
     pfd.events = POLLOUT;
-    rc = poll( &pfd, 1, timeOut * 1000 );
+    rc = poll( &pfd, 1, timeOut);
 
     // Wait for up to xx seconds on
     if (rc == -1 ) {
@@ -569,7 +569,7 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG timeOut)
     pdf.fd = ps->socket;
     pdf.events = POLLIN;
 
-    rc = poll( &pdf, 1, timeOut * 1000);
+    rc = poll( &pdf, 1, timeOut);
     if (rc == -1 ) {
         int so_error;
         socklen_t len = sizeof(so_error);

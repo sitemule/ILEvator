@@ -826,7 +826,7 @@ end-pr;
 ///
 dcl-pr iv_setTimeout extproc(*dclcase);
     client pointer value;
-    timeout int(5) value;
+    timeout packed(9:3) value;
 end-pr;
 
 ///

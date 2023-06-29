@@ -301,7 +301,7 @@ API_STATUS receiveHeader ( PILEVATOR pIv)
         }
 
         // Append to the current buffer
-        len = sockets_receive (pIv->sockets, pIv->bufferEnd, bufferRemain , pIv->timeOut);
+        len = sockets_receive (pIv->sockets, pIv->bufferEnd, bufferRemain , pIv->timeOut * 1000);
         
         // timeout
         if  (len == SOCK_TIMEOUT) {  
@@ -385,7 +385,7 @@ API_STATUS receiveData ( PILEVATOR pIv)
     }
 
     for (;;) { // repeat until all data is complete
-        len = sockets_receive (pIv->sockets, buffer , sizeof(buffer) , pIv->timeOut);
+        len = sockets_receive (pIv->sockets, buffer , sizeof(buffer) , pIv->timeOut * 1000);
         
         // timeout
         if  (len == SOCK_TIMEOUT) {  

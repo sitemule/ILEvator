@@ -70,7 +70,7 @@ dcl-ds ilevator_t qualified template align(*full);
     sockets pointer;
     method pointer;
     url pointer;
-    timeout int(5);
+    timeout packed(9:3);
     retries int(5);
     useProxy ind ;
     responseHeaderHasContentLength ind ;
@@ -107,7 +107,7 @@ dcl-ds ilevator_t qualified template align(*full);
     bufferEnd pointer;
 end-ds;
 
-dcl-c DEFAULT_TIMEOUT 30000;
+dcl-c DEFAULT_TIMEOUT 30.000; // 30 seconds
 dcl-c DEFAULT_RETRIES 2;
 dcl-c NO_RETRIES 0;
 
@@ -324,7 +324,7 @@ dcl-proc iv_execute export;
             client.sockets : 
             client.server : 
             client.port : 
-            client.timeout
+            client.timeout * 1000 // from seconds to milliseconds
         );
         if (ok = TRUE);
           apiStatus = IV_STATUS_OK;
@@ -377,8 +377,6 @@ dcl-proc iv_execute export;
     if (client.responseDataFile <> *null);
         fclose(client.responseDataFile);
     endif;
-
-    // TODO reset buffers to reuse the client ?
 
     return (apiStatus = IV_STATUS_OK);
 end-proc;
@@ -750,7 +748,7 @@ end-proc;
 dcl-proc iv_setTimeout export;
     dcl-pi *n;
         pClient pointer value;
-        timeout int(5) value;
+        timeout packed(9:3) value;
     end-pi;
     
     dcl-ds client likeds(ilevator_t) based(pClient); 
