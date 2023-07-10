@@ -587,7 +587,16 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG timeOut)
     // receive a message from the client using the secure session
     if (ps->asSSL) {
 
+        int retry = 100;
+
         rc = gsk_secure_soc_read(ps->my_session_handle, Buf, Len, &amtRead);
+
+        // Quick fix for error 502
+        while (rc == GSK_WOULD_BLOCK && retry) {
+            usleep(100000);
+            rc = gsk_secure_soc_read(ps->my_session_handle, Buf, Len, &amtRead);
+            retry --;
+        }
 
         /* Not cant do!!
         if (rc != GSK_OK && ! HttpHeader.Chunked &&  HttpHeader.ContentLength ==  0 && rcvTotalLen > 0) {
