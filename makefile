@@ -102,6 +102,7 @@ ilevator.bnd:
 	system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/ILEVATOR)"
 	system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/ILEVATOR) OBJ(($(BIN_LIB)/ILEVATOR *SRVPGM *IMMED))"
 
+## The MODULES binddir is only used for unittest so unexposed features can be tested individually. However, made availabel in this genrel makefile
 modules.bnd:
 	-system -q "DLTBNDDIR BNDDIR($(BIN_LIB)/MODULES)"
 	system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/MODULES)"
