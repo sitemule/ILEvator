@@ -47,7 +47,7 @@ OBJECT_DESCRIPTION=ILEvator http client example
 	setccsid 1252 $<;\
 	system -iK "CRTSQLRPGI OBJ($(BIN_LIB)/$@) SRCSTMF('$<') RPGPPOPT(*LVL2) COMPILEOPT('$(SQLRPGCFLAGS)') DBGVIEW(*NONE) TEXT('$(OBJECT_DESCRIPTION)')"
 
-OBJECTS = getGoogle1
+OBJECTS = FlowRate
 
 all: compile
 

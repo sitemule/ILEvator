@@ -44,8 +44,6 @@ dcl-proc example1;
         json_joblog('DKK to EUR: ' + %char(eur));
     endif;
 
-    return; // Remember to use return - otherwise the on-exit will not be called
-
 on-exit;
     iv_free(pHttp); 
     json_delete(pflow);

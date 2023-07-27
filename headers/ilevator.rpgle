@@ -47,6 +47,19 @@ dcl-c IV_STATUS_RETRY 1;
 dcl-c IV_STATUS_ERROR 2;
 
 ///
+// Buffer type "Bytes"
+///
+dcl-c IV_BYTES 0;
+///
+// Buffer type VARCHAR with a 2 byte size field
+///
+dcl-c IV_VARCHAR2 1;
+///
+// Buffer type VARCHAR with a 4 byte size field
+///
+dcl-c IV_VARCHAR4 2;
+    
+///
 // Maximum HTTP method size
 ///
 dcl-c IV_METHOD_SIZE 10;
