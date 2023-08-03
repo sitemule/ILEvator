@@ -31,4 +31,7 @@ dcl-proc main;
     else;
         dsply 'Look at /tmp/ivex08-response.txt';
     endif;
+    
+    on-exit;
+        iv_free(httpClient);
 end-proc;

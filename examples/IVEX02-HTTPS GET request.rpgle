@@ -35,4 +35,7 @@ dcl-proc main;
     else;
         iv_joblog(outbuffer);
     endif;
+    
+    on-exit;
+        iv_free(httpClient);
 end-proc;
