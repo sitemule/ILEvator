@@ -53,4 +53,5 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     
     EXPORT SYMBOL("iv_form_ofMap")
     EXPORT SYMBOL("iv_form_ofString")
+    EXPORT SYMBOL("iv_form_free")
 ENDPGMEXP

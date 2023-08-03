@@ -16,8 +16,6 @@ ctl-opt nomain;
 /include 'form.rpginc'
 /include 'libc.rpginc'
 /include 'simpleList.rpginc'
-/include 'teraspace.rpginc'
-/include 'varchar.rpginc'
 
 dcl-pr test_formMapSingleField end-pr;
 dcl-pr test_formSingleField end-pr;
@@ -56,7 +54,7 @@ dcl-proc test_formMapSingleField export;
           'Form encoded value is not correctly encoded.');
   
   on-exit;
-      teraspace_free(formData.String);
+      iv_form_free(formData);
       cee_discardHeap(userHeapId : *omit);
 end-proc;
 
@@ -73,7 +71,7 @@ dcl-proc test_formSingleField export;
           'Form encoded value is not correctly encoded.');
   
   on-exit;
-      teraspace_free(formData.String);
+      iv_form_free(formData);
 end-proc;
 
 
@@ -89,7 +87,7 @@ dcl-proc test_formMultipleFields export;
           'Form encoded value is not correctly encoded.');
   
   on-exit;
-      teraspace_free(formData.String);
+      iv_form_free(formData);
 end-proc;
 
 
@@ -105,6 +103,6 @@ dcl-proc test_formEmptyParts export;
           'Form encoded value is not correctly encoded.');
   
   on-exit;
-      teraspace_free(formData.String);
+      iv_form_free(formData);
 end-proc;
 

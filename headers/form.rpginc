@@ -3,6 +3,8 @@
 /if not defined (ILEVATOR_FORM_DATA)
 /define ILEVATOR_FORM_DATA
 
+/include 'varchar.rpginc'
+
 dcl-pr iv_form_ofMap likeds(LVARPUCHAR_t) extproc(*dclcase);
     formDataMap pointer value;
 end-pr;
@@ -24,6 +26,10 @@ dcl-pr iv_form_ofString likeds(LVARPUCHAR_t) extproc(*dclcase);
     value7 varchar(1048576) ccsid(*utf8) const options(*nopass);
     key8 varchar(1000) ccsid(*utf8) const options(*nopass);
     value8 varchar(1048576) ccsid(*utf8) const options(*nopass);
+end-pr;
+
+dcl-pr iv_form_free extproc(*dclcase);
+    formData likeds(LVARPUCHAR_t);
 end-pr;
 
 /if defined (RPG_HAS_OVERLOAD )

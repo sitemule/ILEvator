@@ -201,3 +201,12 @@ dcl-proc calculateAllocationSize;
         return currentLength + dataLength;
     endif;
 end-proc;
+
+
+dcl-proc iv_form_free export;
+    dcl-pi *n;
+        formData likeds(LVARPUCHAR_t);
+    end-pi;
+
+    teraspace_free(formData.String);
+end-proc;
