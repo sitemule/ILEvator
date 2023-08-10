@@ -737,7 +737,7 @@ end-pr;
 //
 // @param URL
 // @param Request message body
-// @param MIME type for the <code>Accept</code> HTTP header
+// @param MIME type for the <code>Content-Type</code> HTTP header
 // @param Pointer to a simple list with additional HTTP headers
 // @return Response message body
 // 
@@ -747,7 +747,7 @@ end-pr;
 dcl-pr iv_patch varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
     messageBody varchar(IV_BUFFER_SIZE:4) const ccsid(1208);
-    acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+    contentType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
     headers pointer value options(*nopass);
 end-pr;
 
@@ -758,7 +758,7 @@ end-pr;
 //
 // @param URL
 // @param Request message body
-// @param MIME type for the <code>Accept</code> HTTP header
+// @param MIME type for the <code>Content-Type</code> HTTP header
 // @param Pointer to a simple list with additional HTTP headers
 // @return Response message body
 // 
@@ -768,7 +768,7 @@ end-pr;
 dcl-pr iv_post varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
     messageBody varchar(IV_BUFFER_SIZE:4) const ccsid(1208);
-    acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+    contentType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
     headers pointer value options(*nopass);
 end-pr;
 
@@ -779,7 +779,7 @@ end-pr;
 //
 // @param URL
 // @param Request message body
-// @param MIME type for the <code>Accept</code> HTTP header
+// @param MIME type for the <code>Content-Type</code> HTTP header
 // @param Pointer to a simple list with additional HTTP headers
 // @return Response message body
 // 
@@ -789,7 +789,7 @@ end-pr;
 dcl-pr iv_put varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
     messageBody varchar(IV_BUFFER_SIZE:4) const ccsid(1208);
-    acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+    contentType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
     headers pointer value options(*nopass);
 end-pr;
 

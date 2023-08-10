@@ -626,7 +626,7 @@ dcl-proc sendAndReceiveData export;
         method pointer options(*string) value;
         url varchar(IV_URL_SIZE:2) value;
         messageBody varchar(IV_BUFFER_SIZE:4) value ccsid(1208);
-        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+        contentType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
         headers pointer value options(*nopass);
     end-pi;
     
@@ -659,7 +659,7 @@ dcl-proc sendAndReceiveData export;
     endif;
     
     if (%parms() >= 5);
-        iv_addHeader(client : 'Accept' : acceptMimeType);
+        iv_addHeader(client : 'Content-Type' : contentType);
     endif;
     
     if (%parms() >= 6);
@@ -683,16 +683,16 @@ dcl-proc iv_patch export;
     dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
         url varchar(IV_URL_SIZE:2) value;
         messageBody varchar(IV_BUFFER_SIZE:4) const ccsid(1208);
-        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+        contentType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
         headers pointer value options(*nopass);
     end-pi;
     
     if (%parms() = 3);
         return sendAndReceiveData('PATCH' : url : messageBody);
     elseif (%parms() = 4);
-        return sendAndReceiveData('PATCH' : url : messageBody : acceptMimeType);
+        return sendAndReceiveData('PATCH' : url : messageBody : contentType);
     elseif (%parms() = 5);
-        return sendAndReceiveData('PATCH' : url : messageBody : acceptMimeType : headers);
+        return sendAndReceiveData('PATCH' : url : messageBody : contentType : headers);
     endif;
 end-proc;
 
@@ -701,16 +701,16 @@ dcl-proc iv_post export;
     dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
         url varchar(IV_URL_SIZE:2) value;
         messageBody varchar(IV_BUFFER_SIZE:4) const ccsid(1208);
-        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+        contentType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
         headers pointer value options(*nopass);
     end-pi;
     
     if (%parms() = 3);
         return sendAndReceiveData('POST' : url : messageBody);
     elseif (%parms() = 4);
-        return sendAndReceiveData('POST' : url : messageBody : acceptMimeType);
+        return sendAndReceiveData('POST' : url : messageBody : contentType);
     elseif (%parms() = 5);
-        return sendAndReceiveData('POST' : url : messageBody : acceptMimeType : headers);
+        return sendAndReceiveData('POST' : url : messageBody : contentType : headers);
     endif;
 end-proc;
 
@@ -719,16 +719,16 @@ dcl-proc iv_put export;
     dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
         url varchar(IV_URL_SIZE:2) value;
         messageBody varchar(IV_BUFFER_SIZE:4) const ccsid(1208);
-        acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+        contentType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
         headers pointer value options(*nopass);
     end-pi;
     
     if (%parms() = 3);
         return sendAndReceiveData('PUT' : url : messageBody);
     elseif (%parms() = 4);
-        return sendAndReceiveData('PUT' : url : messageBody : acceptMimeType);
+        return sendAndReceiveData('PUT' : url : messageBody : contentType);
     elseif (%parms() = 5);
-        return sendAndReceiveData('PUT' : url : messageBody : acceptMimeType : headers);
+        return sendAndReceiveData('PUT' : url : messageBody : contentType : headers);
     endif;
 end-proc;
 
