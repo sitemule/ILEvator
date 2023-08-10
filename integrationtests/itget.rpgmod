@@ -50,8 +50,8 @@ end-proc;
 dcl-proc test_getWithUmlautInQuery_success export;
     dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
   
-    string = iv_get('http://localhost:35801/api/hello?' + iv_encode_query('q' : 'J”rg'));
-    aEqual('Hello J”rg' : string); 
+    string = iv_get('http://localhost:35801/api/hello?' + iv_encode_query('q' : 'J' + u'00F6' +'rg'));
+    aEqual('Hello J' + u'00F6' +'rg' : string); 
 end-proc;
 
 

@@ -13,7 +13,8 @@ public class HelloResource {
 
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
-	public String sayHello(@QueryParam("name") String name) {
+	public String sayHello(@QueryParam("q") String name) {
 		return "Hello " + StringUtils.defaultString(name, "World");
 	}
+	
 }

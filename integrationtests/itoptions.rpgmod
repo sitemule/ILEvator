@@ -12,6 +12,7 @@ ctl-opt nomain;
 
 /include 'assert.rpginc'
 /include 'ilevator.rpgle'
+/include 'psds.rpginc'
 
 
 dcl-pr test_options_success end-pr;
@@ -33,7 +34,6 @@ dcl-proc test_options_failed export;
         string = iv_options('http://localhost:35801/api/entry/failed');
         fail('This OPTIONS request should have triggered an escape message.');
     on-error;
-        // TODO check error : HTTP status 415
-        aEqual('OPTIONS is not allowed' : string); 
+        aEqual('ILV0405' : programStatus.exception); 
     endmon;
 end-proc;
