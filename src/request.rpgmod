@@ -3,12 +3,13 @@
 ctl-opt nomain thread(*concurrent);
 
 
-/include 'teraspace.rpginc'
+/include 'debug.rpginc'
 /include 'libc.rpginc'
 /include 'message.rpginc'
 /include 'mime.rpginc'
-/include 'simpleList.rpginc'
 /include 'request.rpginc'
+/include 'simpleList.rpginc'
+/include 'teraspace.rpginc'
 /include 'url.rpginc'
 /include 'varchar.rpginc'
 /include 'xlate.rpginc'
@@ -31,6 +32,7 @@ dcl-ds iv_request_t qualified template;
   stream pointer;
   content pointer;
   contentSize uns(10);
+  contentCcsid uns(10);
   binaryContent ind inz(*off);
   headersStreamed ind inz(*off);
   contentStreamed ind inz(*off);
@@ -179,6 +181,7 @@ dcl-proc iv_request_toString export;
 
   if (not hasAcceptHeader);
     data += 'Accept: */*' + CRLF;
+    iv_request_addHeader(p_request : 'accept' : '*/*');
   endif;
 
   if (request.content <> *null);
@@ -188,8 +191,10 @@ dcl-proc iv_request_toString export;
     if (not hasContentTypeHeader);
       if (request.binaryContent);
         data += 'content-type: application/octet-stream' + CRLF;
+        iv_request_addHeader(p_request : 'content-type' : 'application/octet-stream');
       else;
         data += 'content-type: text/plain' + CRLF;
+        iv_request_addHeader(p_request : 'content-type' : 'text/plain');
       endif;
     endif;
   endif;
@@ -337,7 +342,8 @@ end-proc;
 dcl-proc iv_request_setTextBody export;
   dcl-pi *n;
     p_request pointer value;
-    content varchar(1048576) value;
+    content varchar(1048576) ccsid(1208) value;
+    ccsid uns(10) value options(*nopass);
   end-pi;
 
   dcl-ds request likeds(iv_request_t) based(p_request);
@@ -350,6 +356,12 @@ dcl-proc iv_request_setTextBody export;
   request.contentSize = %len(content);
   request.content = teraspace_alloc(%len(content));
   memcpy(request.content : %addr(content : *data) : %len(content));
+  
+  if (%parms() >= 3);
+    request.contentCcsid = ccsid;
+  else;
+    request.contentCcsid = 1208;
+  endif;
 end-proc;
 
 
@@ -479,8 +491,10 @@ dcl-proc serializeContent;
     ccsid = 1208; // default to utf-8
   endif;
 
+  iv_debug('Converting content from ' + %char(request.contentCcsid) + ' to ' + %char(ccsid));
+
   outLength = xlate_translateBuffer(serialized.string  :
-      request.content : request.contentSize : 0 : ccsid);
+      request.content : request.contentSize : request.contentCcsid : ccsid);
   serialized.length = outLength;
 
   return outLength;

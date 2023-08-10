@@ -19,7 +19,7 @@ dcl-pr test_post_echo_success end-pr;
 
 dcl-proc test_post_echo_success export;
     dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
-    dcl-s messageBody varchar(IV_BUFFER_SIZE:4);
+    dcl-s messageBody varchar(IV_BUFFER_SIZE:4) ccsid(1208);
   
     messageBody = 'Hello ILEvator!';
   

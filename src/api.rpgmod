@@ -625,7 +625,7 @@ dcl-proc sendAndReceiveData export;
     dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
         method pointer options(*string) value;
         url varchar(IV_URL_SIZE:2) value;
-        messageBody pointer value options(*string);
+        messageBody varchar(IV_BUFFER_SIZE:4) value ccsid(1208);
         acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
         headers pointer value options(*nopass);
     end-pi;
@@ -646,13 +646,13 @@ dcl-proc sendAndReceiveData export;
         IV_CCSID_UTF8
     );
     
-    messageBodyLength = strlen(messageBody);
+    messageBodyLength = %len(messageBody);
     if (messageBodyLength > 0);
         iv_setRequestDataBuffer(
             client :
-            messageBody : 
+            %addr(messageBody) : 
             messageBodyLength :
-            IV_BYTES :
+            IV_VARCHAR4 :
             IV_CCSID_UTF8
         );
         clientDs.requestDataBuffer.length = messageBodyLength;
@@ -682,7 +682,7 @@ end-proc;
 dcl-proc iv_patch export;
     dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
         url varchar(IV_URL_SIZE:2) value;
-        messageBody pointer value options(*string);
+        messageBody varchar(IV_BUFFER_SIZE:4) const ccsid(1208);
         acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
         headers pointer value options(*nopass);
     end-pi;
@@ -700,7 +700,7 @@ end-proc;
 dcl-proc iv_post export;
     dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
         url varchar(IV_URL_SIZE:2) value;
-        messageBody pointer value options(*string);
+        messageBody varchar(IV_BUFFER_SIZE:4) const ccsid(1208);
         acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
         headers pointer value options(*nopass);
     end-pi;
@@ -718,7 +718,7 @@ end-proc;
 dcl-proc iv_put export;
     dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
         url varchar(IV_URL_SIZE:2) value;
-        messageBody pointer value options(*string);
+        messageBody varchar(IV_BUFFER_SIZE:4) const ccsid(1208);
         acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
         headers pointer value options(*nopass);
     end-pi;

@@ -264,7 +264,7 @@ API_STATUS sendRequest (PILEVATOR pIv)
         // TODO don't limit the size of the request data
         requestBody.Length = pIv->requestDataBuffer.length;
         memcpy(&requestBody.String[0], pIv->requestDataBuffer.data, pIv->requestDataBuffer.length);
-        iv_request_setTextBody(request, requestBody);
+        iv_request_setTextBody(request, requestBody, pIv->requestDataBuffer.xlate);
     }
     
     if (pIv->authProvider)

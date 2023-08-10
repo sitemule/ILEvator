@@ -206,10 +206,12 @@ end-pr;
 //
 // @param HTTP request
 // @param Message body
+// @param CCSID of the message body value (default: 1208)
 ///
 dcl-pr iv_request_setTextBody extproc(*dclcase);
   request pointer value;
-  content varchar(1048576) value;
+  content varchar(1048576) ccsid(1208) value;
+  ccsid uns(10) value options(*nopass);
 end-pr;
 
 dcl-pr iv_request_setBinaryBody extproc(*dclcase);

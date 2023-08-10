@@ -746,7 +746,7 @@ end-pr;
 ///
 dcl-pr iv_patch varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
-    messageBody pointer value options(*string);
+    messageBody varchar(IV_BUFFER_SIZE:4) const ccsid(1208);
     acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
     headers pointer value options(*nopass);
 end-pr;
@@ -767,7 +767,7 @@ end-pr;
 ///
 dcl-pr iv_post varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
-    messageBody pointer value options(*string);
+    messageBody varchar(IV_BUFFER_SIZE:4) const ccsid(1208);
     acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
     headers pointer value options(*nopass);
 end-pr;
@@ -788,7 +788,7 @@ end-pr;
 ///
 dcl-pr iv_put varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
-    messageBody pointer value options(*string);
+    messageBody varchar(IV_BUFFER_SIZE:4) const ccsid(1208);
     acceptMimeType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
     headers pointer value options(*nopass);
 end-pr;
