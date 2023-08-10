@@ -23,14 +23,12 @@ dcl-proc main;
     dcl-ds formData likeds(LVARPUCHAR_t);
     
     formData = iv_form_of(
-        'firstName' : 'Mihael' :
-        'lastName' : 'Schmidt' :
+        'firstName' : 'Fränk' :
+        'lastName' : 'Müller' :
         'email' : 'mihael@rpgnextgen.com'
     );
     
-    string = %str(formData.String : formData.Length);
-    
-    string = iv_post('http://localhost/registration': string : 'application/x-www-form-urlencoded');
+    string = iv_postForm('http://localhost:35801/api/form': formData);
 
     iv_joblog(string);
     

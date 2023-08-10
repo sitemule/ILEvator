@@ -42,6 +42,14 @@
 ///
 dcl-s IV_LONGUTF8VARCHAR varchar(2097152:4) ccsid(*utf8) template;
 
+///
+// Template for form data.
+///
+dcl-ds iv_lvarpuchar_t qualified template;
+    length uns(10);
+    string pointer;
+end-ds;
+
 dcl-c IV_STATUS_OK 0;
 dcl-c IV_STATUS_RETRY 1;
 dcl-c IV_STATUS_ERROR 2;
@@ -769,6 +777,29 @@ dcl-pr iv_post varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
     url varchar(IV_URL_SIZE:2) value;
     messageBody varchar(IV_BUFFER_SIZE:4) const ccsid(1208);
     contentType varchar(IV_HEADER_VALUE_SIZE:2) ccsid(1208) value options(*nopass);
+    headers pointer value options(*nopass);
+end-pr;
+
+///
+// Execute POST HTTP request with form data
+//
+// Executes a POST HTTP request to the passed URL. The message body is the passed
+// form data. The data will not be further encoded but passed to the server as is.
+// The content-type will be application/x-www-form-urlencoded. This can be 
+// overridden by passing the content-type as an additional header to the procedure.
+// The form data can be created with the procedure iv_form_of.
+//
+// @param URL
+// @param Request message body (form data)
+// @param Pointer to a simple list with additional HTTP headers
+// @return Response message body
+// 
+// @throws Escape message on an unsuccessful request with the HTTP status encoded 
+//         like ILV0404 for a 404 HTTP status.
+///
+dcl-pr iv_postForm varchar(IV_BUFFER_SIZE:4) ccsid(1208) extproc(*dclcase) rtnparm;
+    url varchar(IV_URL_SIZE:2) value;
+    formData likeds(iv_lvarpuchar_t);
     headers pointer value options(*nopass);
 end-pr;
 

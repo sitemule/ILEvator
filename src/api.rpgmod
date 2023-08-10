@@ -715,6 +715,58 @@ dcl-proc iv_post export;
 end-proc;
 
 
+dcl-proc iv_postForm export;
+    dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
+        url varchar(IV_URL_SIZE:2) value;
+        formData likeds(iv_lvarpuchar_t);
+        headers pointer value options(*nopass);
+    end-pi;
+    
+    dcl-s client pointer;
+    dcl-ds clientDs likeds(ilevator_t) based(client);
+    dcl-s returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+    dcl-s rc ind inz(*off);
+    
+    client = iv_newHttpClient();
+    
+    iv_setResponseDataBuffer(
+        client :
+        %addr(returnBuffer) : 
+        IV_BUFFER_SIZE :
+        IV_VARCHAR4 :
+        IV_CCSID_UTF8
+    );
+    
+    if (formData.length > 0);
+        iv_setRequestDataBuffer(
+            client :
+            formData.string : 
+            formData.length :
+            IV_BYTES :
+            0
+        );
+        clientDs.requestDataBuffer.length = formData.length;
+    endif;
+    
+    iv_addHeader(client : 'Content-Type' : 'application/x-www-form-urlencoded');
+    
+    if (%parms() >= 4);
+        iv_addHeaders(client : headers);
+    endif;
+    
+    rc = iv_execute(client : 'POST' : url);
+    
+    if (not isSuccessfulRequest(client));
+        sendStatusCodeEscapeMessage(client : returnBuffer);
+    endif;
+    
+    return returnBuffer;
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
 dcl-proc iv_put export;
     dcl-pi *n varchar(IV_BUFFER_SIZE:4) ccsid(1208) rtnparm;
         url varchar(IV_URL_SIZE:2) value;
