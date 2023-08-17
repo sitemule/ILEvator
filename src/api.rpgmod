@@ -135,6 +135,8 @@ dcl-proc iv_newHttpClient export;
     
     iv_addHeader(pClient : 'User-Agent' : 'ILEvator for IBM i/' + ILEVATOR_VERSION);
     
+    loadConfigFromEnvVar(pClient);
+    
     return pClient;
 end-proc;
 
@@ -390,7 +392,6 @@ dcl-proc iv_setCertificate export;
         return *off;
     endif;
     
-
     if (%parms < 3);
         certificatePassword = %addr(empty_str);
     endif;
@@ -401,6 +402,9 @@ dcl-proc iv_setCertificate export;
         certificateFile :
         certificatePassword
     );
+    
+    iv_debug('SSL enabled');
+    iv_debug('Using certificate file ' + %str(certificateFile));
     
     return *on;
 end-proc;
@@ -970,6 +974,29 @@ dcl-proc iv_addHeaderToList export;
     end-pi;
 
     addHeader(list : headerKey : headerValue);
+end-proc;
+
+
+dcl-proc loadConfigFromEnvVar;
+    dcl-pi *n;
+        client pointer const;
+    end-pi;
+
+    dcl-pr getenv pointer extproc('getenv');
+        *n pointer value options(*string : *trim);
+    end-pr;
+  
+    dcl-s certValue pointer;
+    dcl-s passValue pointer;
+    
+    certValue = getenv('ILEVATOR_CERTIFICATE');
+    passValue = getenv('ILEVATOR_CERTIFICATE_PASSWORD');
+    
+    if (certValue <> *null and passValue <> *null);
+        iv_setCertificate(client : certValue : passValue);
+    elseif (certValue <> *null);
+        iv_setCertificate(client : certValue);
+    endif;
 end-proc;
 
 
