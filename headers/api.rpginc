@@ -1,46 +1,24 @@
 **FREE
 
-/if defined (ILEVATOR)
+/if defined (ILEVATOR_API)
 /eof
 /endif
 
-/define ILEVATOR
-
-///
-// ILEvator - HTTP client for ILE on IBM i
-//
-// ILEvator is a HTTP client API for the ILE environment on
-// IBM i for implementing web/microservices alike applications.
-// <p>
-// ILEvator is a service program that provides a simple, blazing fast
-// programmable HTTP client for your application so you can easily plug your RPG
-// code into a service infrastructure or make simple web applications without
-// the need of any third party web client products.
-// <p>
-// The convenient procedures like <em>iv_get</em> will throw an escape message
-// when the server responds with anything above and including HTTP status 400.
-// The escape message id will contain the HTTP status code like ILV0404 for the
-// HTTP status code 404. The message id can easily be retrieved from the program
-// status data structure.
-// <p>
-// If the convenience procedures doesn't fit with the use case just use the more
-// generic <code>iv_execute</code> procedure.
-//
-// @author Niels Liisberg
-// @date 15.12.2022
-// @project ILEvator
-// @link https://github.com/sitemule/ILEvator Project page
-// @version 1.0.0
-//
-// @info Source for HTTP status documentation is the Mozilla developer website
-//       at https://developer.mozilla.org/en-US/docs/Web/HTTP/Status .
-///
+/define ILEVATOR_API
 
 
 ///
 // Template for UTF8 varchars. default to 2M 
 ///
 dcl-s IV_LONGUTF8VARCHAR varchar(2097152:4) ccsid(*utf8) template;
+
+///
+// Template for form data.
+///
+dcl-ds iv_lvarpuchar_t qualified template;
+    length uns(10);
+    string pointer;
+end-ds;
 
 dcl-c IV_STATUS_OK 0;
 dcl-c IV_STATUS_RETRY 1;
@@ -942,175 +920,3 @@ dcl-pr iv_addHeaderToList extproc(*dclcase);
     headerKey varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const;
     headerValue varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const;
 end-pr;
-
-
-
-//
-// encode module
-//
-
-///
-// URL encode value
-//
-// URL encodes the passed value. The input string can contain single and 
-// multibyte characters.
-//
-// @param Input string
-// @return URL encoded string
-///
-dcl-pr iv_encode_url varchar(4194304) ccsid(*utf8) rtnparm extproc(*dclcase);
-    unencodedValue varchar(1048576) ccsid(*utf8) value; 
-end-pr;
-
-///
-// Form URL encode value
-//
-// Form URL encodes the passed value. The input string can contain single and 
-// multibyte characters. The space sign will be encoded as a plus sign.
-//
-// @param Input string
-// @return Form URL encoded string
-///
-dcl-pr iv_encode_formUrl varchar(4194304) ccsid(*utf8) rtnparm extproc(*dclcase);
-    unencodedValue varchar(1048576) ccsid(*utf8) value;
-end-pr;
-
-///
-// Encode URL path element
-//
-// URL encodes the passed value so that it can be safely used as a path element
-// in a URL.
-//
-// @param Input string
-// @return URL encoded string
-///
-dcl-pr iv_encode_path varchar(32766) ccsid(*utf8) extproc(*dclcase);
-    unencodedValue varchar(32766) ccsid(*utf8) value; 
-end-pr;
-
-///
-// Encode URL query element
-//
-// URL encodes the passed key and value part of a query string and concats them
-// with an equal sign so that it can be safely used as a URL query parameter.
-//
-// @param Query parameter key
-// @param Query parameter value
-// @return URL encoded query parameter: encoded_key=encoded_value
-///
-dcl-pr iv_encode_query varchar(32766) ccsid(*utf8) extproc(*dclcase);
-    key varchar(1000) ccsid(*utf8) value;
-    value varchar(32766) ccsid(*utf8) value;
-end-pr;
-
-
-//
-// form module
-//
-
-///
-// Template for form data.
-///
-dcl-ds iv_lvarpuchar_t qualified template;
-    length uns(10);
-    string pointer;
-end-ds;
-
-///
-// Form data of map
-//
-// Creates a string of form url encoded data from the passed map.
-// Each key and value from the map will be form url encoded and 
-// concated with an ampersand (&amp;) to a string.
-//
-// @param Map of form data entries
-// @return Form url encoded data
-//
-// @info The returned data contains some dynamically allocated memory. The 
-//       data needs to be freed manually by calling <code>iv_form_free</code>.
-//
-///
-dcl-pr iv_form_ofMap likeds(iv_lvarpuchar_t) extproc(*dclcase);
-    formDataMap pointer value;
-end-pr;
-
-///
-// Form data of strings
-//
-// Creates a string of form url encoded data from the passed data. Each key 
-// and value will be form url encoded and concated with an ampersand (&amp;) 
-// to a string. If the value to a corresponding key is not passed then this
-// key will not be part of the returned string.
-//
-// @param Key of form data entry
-// @param Value of form data entry
-// @param Key of form data entry
-// @param Value of form data entry
-// @param Key of form data entry
-// @param Value of form data entry
-// @param Key of form data entry
-// @param Value of form data entry
-// @param Key of form data entry
-// @param Value of form data entry
-// @param Key of form data entry
-// @param Value of form data entry
-// @param Key of form data entry
-// @param Value of form data entry
-// @param Key of form data entry
-// @param Value of form data entry
-//
-// @return Form url encoded data
-//
-// @info The returned data contains some dynamically allocated memory. The 
-//       data needs to be freed manually by calling <code>iv_form_free</code>.
-//
-///
-dcl-pr iv_form_ofString likeds(iv_lvarpuchar_t) extproc(*dclcase);
-    key1 varchar(1000) ccsid(*utf8) const;
-    value1 varchar(1048576) ccsid(*utf8) const;
-    key2 varchar(1000) ccsid(*utf8) const options(*nopass);
-    value2 varchar(1048576) ccsid(*utf8) const options(*nopass);
-    key3 varchar(1000) ccsid(*utf8) const options(*nopass);
-    value3 varchar(1048576) ccsid(*utf8) const options(*nopass);
-    key4 varchar(1000) ccsid(*utf8) const options(*nopass);
-    value4 varchar(1048576) ccsid(*utf8) const options(*nopass);
-    key5 varchar(1000) ccsid(*utf8) const options(*nopass);
-    value5 varchar(1048576) ccsid(*utf8) const options(*nopass);
-    key6 varchar(1000) ccsid(*utf8) const options(*nopass);
-    value6 varchar(1048576) ccsid(*utf8) const options(*nopass);
-    key7 varchar(1000) ccsid(*utf8) const options(*nopass);
-    value7 varchar(1048576) ccsid(*utf8) const options(*nopass);
-    key8 varchar(1000) ccsid(*utf8) const options(*nopass);
-    value8 varchar(1048576) ccsid(*utf8) const options(*nopass);
-end-pr;
-
-///
-// Free form data
-//
-// Deallocates the memory from the passed form data.
-//
-// @param Form data
-///
-dcl-pr iv_form_free extproc(*dclcase);
-    formData likeds(iv_lvarpuchar_t);
-end-pr;
-
-/if defined (RPG_HAS_OVERLOAD )
-///
-// Form url encode data
-//
-// Creates a string of form url encoded data from the passed data. Each key 
-// and value will be form url encoded and concated with an ampersand (&amp;) 
-// to a string.
-//
-// @return Form url encoded data
-//
-// @info The returned data contains some dynamically allocated memory. The 
-//       data needs to be freed manually by calling <code>iv_form_free</code>.
-///
-dcl-pr iv_form_of likeds(iv_lvarpuchar_t) overload(
-  iv_form_ofMap :
-  iv_form_ofString
-);
-/endif
-

@@ -12,7 +12,6 @@ ctl-opt nomain;
 
 /include 'assert.rpginc'
 /include 'ilevator.rpgle'
-/include 'encode.rpginc'
 /include 'psds.rpginc'
 
 

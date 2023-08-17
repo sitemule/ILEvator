@@ -8,7 +8,7 @@
 //
 // This module contains the procedures for url encoding and form url encoding
 // values. URL encoding is also known as percent encoding. Form URL encoding
-// is almost the same as percent encoding with the diffeerence that the space
+// is almost the same as percent encoding with the difference that the space
 // character is represented as a plus sign.
 //
 // @author Mihael Schmidt
