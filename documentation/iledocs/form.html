@@ -1,0 +1,278 @@
+<link rel="stylesheet" href="css/iledocs.css" />
+<div class="iledocs">
+
+<div class="iledocs-page-toc">
+<h3>Sections</h3>
+<ol>
+<li><a href="basics.html">Basics</a></li>
+<li><a href="constants.html">Constants</a></li>
+<li><a href="encoding.html">Encoding</a></li>
+<li><a href="form.html">Form</a></li>
+</ol>
+</div>
+<div class="iledocs-toc-gap">&nbsp;</div>
+
+<div class="iledocs-page">
+<h2>Form</h2>
+
+
+
+<h3>Variables and Templates</h3>
+<table class="iledocs-table">
+
+<tr>
+<td class="iledocs-table-key-column">
+<code>
+<span class="iledocs-code-type">
+Data Structure 
+</span>
+</code>
+</td>
+<td>
+<b>iv_lvarpuchar_t</b>
+<p>Template for form data.</p>
+</td>
+</tr>
+
+</table>
+
+
+<h3>Procedures</h3>
+<table class="iledocs-table">
+
+<tr>
+<td><a href="#proc_iv_form_free">iv_form_free</a></td><td>Free form data</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_form_of">iv_form_of</a></td><td>Form url encode data</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_form_ofMap">iv_form_ofMap</a></td><td>Form data of map</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_form_ofString">iv_form_ofString</a></td><td>Form data of strings</td>
+</tr>
+
+</table>
+<hr/>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_form_free">iv_form_free</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_form_free</span>
+(
+iv_lvarpuchar_t formData)
+</code>
+<p>Deallocates the memory from the passed form data.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Data Structure iv_lvarpuchar_t</span>
+</code>
+ &mdash; Form data</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_form_of">iv_form_of</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+DataStructure</span>
+<span class="iledocs-code-name">iv_form_of</span>
+</code>
+<p>Creates a string of form url encoded data from the passed data. Each key
+and value will be form url encoded and concated with an ampersand (&amp;)
+to a string.</p>
+
+<h4 class="iledocs-procedure-subheader">Overloaded Procedures</h4>
+<ul class="iledocs-list">
+
+<li>iv_lvarpuchar_t</li>
+
+<li>overload</li>
+
+<li>iv_form_ofMap</li>
+
+<li>iv_form_ofString</li>
+</ul>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Data Structure 
+</span>
+</code>
+ &mdash; Form url encoded data
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">The returned data contains some dynamically allocated memory. The
+data needs to be freed manually by calling <code>iv_form_free</code>.</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_form_ofMap">iv_form_ofMap</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+DataStructure</span>
+<span class="iledocs-code-name">iv_form_ofMap</span>
+(
+Pointer formDataMap)
+</code>
+<p>Creates a string of form url encoded data from the passed map.
+Each key and value from the map will be form url encoded and
+concated with an ampersand (&amp;) to a string.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Map of form data entries</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Data Structure 
+</span>
+</code>
+ &mdash; Form url encoded data
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">The returned data contains some dynamically allocated memory. The
+data needs to be freed manually by calling <code>iv_form_free</code>.
+</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_form_ofString">iv_form_ofString</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+DataStructure</span>
+<span class="iledocs-code-name">iv_form_ofString</span>
+(
+Varchar key1, Varchar value1, Varchar key2, Varchar value2, Varchar key3, Varchar value3, Varchar key4, Varchar value4, Varchar key5, Varchar value5, Varchar key6, Varchar value6, Varchar key7, Varchar value7, Varchar key8, Varchar value8)
+</code>
+<p>Creates a string of form url encoded data from the passed data. Each key
+and value will be form url encoded and concated with an ampersand (&amp;)
+to a string. If the value to a corresponding key is not passed then this
+key will not be part of the returned string.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1000)</span>
+ [const]</code>
+ &mdash; Key of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1048576)</span>
+ [const]</code>
+ &mdash; Value of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1000)</span>
+ [nopass, const]</code>
+ &mdash; Key of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1048576)</span>
+ [nopass, const]</code>
+ &mdash; Value of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1000)</span>
+ [nopass, const]</code>
+ &mdash; Key of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1048576)</span>
+ [nopass, const]</code>
+ &mdash; Value of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1000)</span>
+ [nopass, const]</code>
+ &mdash; Key of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1048576)</span>
+ [nopass, const]</code>
+ &mdash; Value of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1000)</span>
+ [nopass, const]</code>
+ &mdash; Key of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1048576)</span>
+ [nopass, const]</code>
+ &mdash; Value of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1000)</span>
+ [nopass, const]</code>
+ &mdash; Key of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1048576)</span>
+ [nopass, const]</code>
+ &mdash; Value of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1000)</span>
+ [nopass, const]</code>
+ &mdash; Key of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1048576)</span>
+ [nopass, const]</code>
+ &mdash; Value of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1000)</span>
+ [nopass, const]</code>
+ &mdash; Key of form data entry</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1048576)</span>
+ [nopass, const]</code>
+ &mdash; Value of form data entry
+</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Data Structure 
+</span>
+</code>
+ &mdash; Form url encoded data
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">The returned data contains some dynamically allocated memory. The
+data needs to be freed manually by calling <code>iv_form_free</code>.
+</div>
+
+
+</div>
+</div>

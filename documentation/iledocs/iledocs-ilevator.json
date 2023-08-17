@@ -18,6 +18,21 @@
             "name" : "Constants",
             "startsWith" : "IV_",
             "order" : 2
+        },
+        {
+            "id" : "encoding",
+            "name" : "Encoding",
+            "startsWith" : "iv_encode_",
+            "order" : 3
+        },
+        {
+            "id" : "form",
+            "name" : "Form",
+            "startsWith" : "iv_form_",
+            "symbols" : [
+                "iv_lvarpuchar_t"
+            ],
+            "order" : 4
         }
     ]
 }

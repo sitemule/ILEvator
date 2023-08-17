@@ -6,6 +6,8 @@
 <ol>
 <li><a href="basics.html">Basics</a></li>
 <li><a href="constants.html">Constants</a></li>
+<li><a href="encoding.html">Encoding</a></li>
+<li><a href="form.html">Form</a></li>
 </ol>
 </div>
 <div class="iledocs-toc-gap">&nbsp;</div>
@@ -110,6 +112,10 @@ generic <code>iv_execute</code> procedure.
 
 <tr>
 <td><a href="#proc_iv_post">iv_post</a></td><td>Execute POST HTTP request</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_postForm">iv_postForm</a></td><td>Execute POST HTTP request with form data</td>
 </tr>
 
 <tr>
@@ -763,7 +769,7 @@ Varchar
 Varchar</span>
 <span class="iledocs-code-name">iv_patch</span>
 (
-Varchar url, Pointer messageBody, Varchar acceptMimeType, Pointer headers)
+Varchar url, Varchar messageBody, Varchar contentType, Pointer headers)
 </code>
 <p>Executes a PATCH HTTP request to the passed URL.</p>
 
@@ -778,15 +784,15 @@ Varchar (IV_URL_SIZE:2)</span>
 <li>
 <code>
 <span class="iledocs-code-returnType">
-Pointer</span>
- [string, value]</code>
+Varchar (IV_BUFFER_SIZE:4)</span>
+ [const]</code>
  &mdash; Request message body</li>
 <li>
 <code>
 <span class="iledocs-code-returnType">
 Varchar (IV_HEADER_VALUE_SIZE:2)</span>
  [nopass, value]</code>
- &mdash; MIME type for the <code>Accept</code> HTTP header</li>
+ &mdash; MIME type for the <code>Content-Type</code> HTTP header</li>
 <li>
 <code>
 <span class="iledocs-code-returnType">
@@ -810,7 +816,7 @@ Varchar
 Varchar</span>
 <span class="iledocs-code-name">iv_post</span>
 (
-Varchar url, Pointer messageBody, Varchar acceptMimeType, Pointer headers)
+Varchar url, Varchar messageBody, Varchar contentType, Pointer headers)
 </code>
 <p>Executes a POST HTTP request to the passed URL.</p>
 
@@ -825,15 +831,60 @@ Varchar (IV_URL_SIZE:2)</span>
 <li>
 <code>
 <span class="iledocs-code-returnType">
-Pointer</span>
- [string, value]</code>
+Varchar (IV_BUFFER_SIZE:4)</span>
+ [const]</code>
  &mdash; Request message body</li>
 <li>
 <code>
 <span class="iledocs-code-returnType">
 Varchar (IV_HEADER_VALUE_SIZE:2)</span>
  [nopass, value]</code>
- &mdash; MIME type for the <code>Accept</code> HTTP header</li>
+ &mdash; MIME type for the <code>Content-Type</code> HTTP header</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [nopass, value]</code>
+ &mdash; Pointer to a simple list with additional HTTP headers</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Varchar
+
+</span>
+</code>
+ &mdash; Response message body
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_postForm">iv_postForm</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Varchar</span>
+<span class="iledocs-code-name">iv_postForm</span>
+(
+Varchar url, iv_lvarpuchar_t formData, Pointer headers)
+</code>
+<p>Executes a POST HTTP request to the passed URL. The message body is the passed
+form data. The data will not be further encoded but passed to the server as is.
+The content-type will be application/x-www-form-urlencoded. This can be
+overridden by passing the content-type as an additional header to the procedure.
+The form data can be created with the procedure iv_form_of.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_URL_SIZE:2)</span>
+ [value]</code>
+ &mdash; URL</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Data Structure iv_lvarpuchar_t</span>
+</code>
+ &mdash; Request message body (form data)</li>
 <li>
 <code>
 <span class="iledocs-code-returnType">
@@ -857,7 +908,7 @@ Varchar
 Varchar</span>
 <span class="iledocs-code-name">iv_put</span>
 (
-Varchar url, Pointer messageBody, Varchar acceptMimeType, Pointer headers)
+Varchar url, Varchar messageBody, Varchar contentType, Pointer headers)
 </code>
 <p>Executes a PUT HTTP request to the passed URL.</p>
 
@@ -872,15 +923,15 @@ Varchar (IV_URL_SIZE:2)</span>
 <li>
 <code>
 <span class="iledocs-code-returnType">
-Pointer</span>
- [string, value]</code>
+Varchar (IV_BUFFER_SIZE:4)</span>
+ [const]</code>
  &mdash; Request message body</li>
 <li>
 <code>
 <span class="iledocs-code-returnType">
 Varchar (IV_HEADER_VALUE_SIZE:2)</span>
  [nopass, value]</code>
- &mdash; MIME type for the <code>Accept</code> HTTP header</li>
+ &mdash; MIME type for the <code>Content-Type</code> HTTP header</li>
 <li>
 <code>
 <span class="iledocs-code-returnType">
@@ -1196,7 +1247,7 @@ void
 </span>
 <span class="iledocs-code-name">iv_setTimeout</span>
 (
-Pointer client, Integer timeout)
+Pointer client, PackedDecimal timeout)
 </code>
 <p>Sets the timeout for the client instance.</p>
 
@@ -1211,7 +1262,7 @@ Pointer</span>
 <li>
 <code>
 <span class="iledocs-code-returnType">
-Integer (5)</span>
+PackedDecimal (9)</span>
  [value]</code>
  &mdash; Timeout in seconds</li>
 </ol>
