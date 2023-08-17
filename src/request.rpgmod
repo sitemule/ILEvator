@@ -338,7 +338,6 @@ dcl-proc iv_request_setAcceptMimeType export;
   iv_request_addHeader(p_request : 'content-type' : contentType);
 end-proc;
 
-
 dcl-proc iv_request_setTextBody export;
   dcl-pi *n;
     p_request pointer value;
@@ -358,6 +357,35 @@ dcl-proc iv_request_setTextBody export;
   memcpy(request.content : %addr(content : *data) : %len(content));
   
   if (%parms() >= 3);
+    request.contentCcsid = ccsid;
+  else;
+    request.contentCcsid = 1208;
+  endif;
+end-proc;
+
+
+dcl-proc iv_request_setTextBodyBytes export;
+  dcl-pi *n;
+    p_request pointer value;
+    content pointer value;
+    size uns(10) value;
+    ccsid uns(10) value options(*nopass);
+  end-pi;
+
+  dcl-ds request likeds(iv_request_t) based(p_request);
+
+  if (request.content <> *null);
+    teraspace_free(request.content);
+  endif;
+
+  request.binaryContent = *off;
+  request.contentSize = size;
+  if (size > 0);
+    request.content = teraspace_alloc(size);
+    memcpy(request.content : content : size);
+  endif;
+  
+  if (%parms() >= 4);
     request.contentCcsid = ccsid;
   else;
     request.contentCcsid = 1208;

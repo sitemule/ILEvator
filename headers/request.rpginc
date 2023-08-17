@@ -214,6 +214,13 @@ dcl-pr iv_request_setTextBody extproc(*dclcase);
   ccsid uns(10) value options(*nopass);
 end-pr;
 
+dcl-pr iv_request_setTextBodyBytes extproc(*dclcase);
+  request pointer value;
+  content pointer value;
+  size uns(10) value;
+  ccsid uns(10) value options(*nopass);
+end-pr;
+
 dcl-pr iv_request_setBinaryBody extproc(*dclcase);
   request pointer value;
   content pointer value;

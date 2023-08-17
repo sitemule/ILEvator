@@ -236,9 +236,6 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
     
     strutil_substr(pIv->user , l_url.username.String, l_url.username.Length);
     strutil_substr(pIv->password, l_url.password.String, l_url.password.Length);
-    
-    // TODO urlEncodeBlanks (resource , pResource);
-    // TODO URL encode path and query
 }
 /* --------------------------------------------------------------------------- */
 API_STATUS sendRequest (PILEVATOR pIv) 
@@ -246,7 +243,6 @@ API_STATUS sendRequest (PILEVATOR pIv)
     PVOID request;
     VARCHAR12 method;
     LVARPUCHAR requestString;
-    LVARCHAR requestBody;
     LONG rc;
 
     str2vc(&method, pIv->method);
@@ -261,15 +257,10 @@ API_STATUS sendRequest (PILEVATOR pIv)
     iv_request_addHeaders(request, pIv->headerList);
     
     if (pIv->requestDataBuffer.length > 0) {
-        if (pIv->requestDataBuffer.type == IV_ANYCHAR_BYTES) {
+        if (pIv->requestDataBuffer.type == IV_ANYCHAR_BYTES)
             iv_request_setBinaryBody(request, pIv->requestDataBuffer.data, pIv->requestDataBuffer.length);
-        }
-        else {
-            // TODO don't limit the size of the request data
-            requestBody.Length = pIv->requestDataBuffer.length;
-            memcpy(&requestBody.String[0], pIv->requestDataBuffer.data, pIv->requestDataBuffer.length);
-            iv_request_setTextBody(request, requestBody, pIv->requestDataBuffer.xlate);
-        }
+        else
+            iv_request_setTextBodyBytes(request, pIv->requestDataBuffer.data, pIv->requestDataBuffer.length, pIv->requestDataBuffer.xlate);
     }
     
     if (pIv->authProvider)
