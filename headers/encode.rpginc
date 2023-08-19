@@ -71,4 +71,34 @@ dcl-pr iv_encode_query varchar(32766) ccsid(*utf8) extproc(*dclcase);
     value varchar(32766) ccsid(*utf8) value;
 end-pr;
 
+///
+// Encode with Punycode 
+//
+// The passed value will be punycode encoded.
+//
+// @param Value to be encoded
+// @return Encoded value
+//
+// @info This is only available if the ICU service programs are installed.
+// @info Punycode RFC 3492
+///
+dcl-pr iv_encode_punycode varchar(32766) extproc(*dclcase);
+    value varchar(32766) const;
+end-pr;
+
+///
+// Encode as ACE string
+//
+// The passed value will be punycode encoded and returned as an ACE string.
+//
+// @param Value to be encoded
+// @return Encoded value
+//
+// @info This is only available if the ICU service programs are installed.
+// @info ACE string (ACE = ASCII Compatible Encoding), see RFC 5890.
+///
+dcl-pr iv_encode_ace varchar(32766) extproc(*dclcase);
+    value varchar(32766) const;
+end-pr;
+
 /endif

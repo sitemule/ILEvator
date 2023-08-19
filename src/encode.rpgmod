@@ -9,6 +9,7 @@ dcl-pr cvthc extproc('cvthc');
    hexLength int(10) value;
 end-pr;
 
+/include 'debug.rpginc'
 /include 'encode.rpginc'
 
 
@@ -152,3 +153,97 @@ dcl-proc urlEncode;
 
   return encodedLength;
 end-proc;
+
+
+dcl-proc iv_encode_punycode export;
+    dcl-pi *n varchar(32766);
+        p_value varchar(32766) const;
+    end-pi;
+    
+    // Service program: QICU/QXICUUC40
+    //
+    // U_CFUNC int32_t
+    // u_strToPunycode(const UChar *src, int32_t srcLength,
+    //                 UChar *dest, int32_t destCapacity,
+    //                 const UBool *caseFlags,
+    //                 UErrorCode *pErrorCode);
+    dcl-pr u_strToPunycode int(10) extproc(*CWIDEN : 'u_strToPunycode_4_0');
+      source pointer value;
+      sourceLength int(10) value;
+      dest pointer value;
+      destLength int(10) value;
+      caseFlags pointer const;
+      errorCode int(10);
+    end-pr;
+
+    dcl-s value ucs2(65534) ccsid(*utf16);
+    dcl-s encoded ucs2(65534) ccsid(*utf16);
+    dcl-s rc int(10);
+    dcl-s errorCode int(10);
+    dcl-s c ucs2(1) ccsid(*utf16) based(ptr);
+  
+    if (%len(p_value) = 0 or p_value = *blank);
+      return p_value;
+    endif;
+  
+    value = p_value + x'00';
+  
+    rc = u_strToPunycode(%addr(value) : -1 : %addr(encoded) : %size(encoded) : *null : errorCode);
+    if (errorCode <> 0);
+        iv_debug('Could not punycode encode value: ' + p_value);
+        return p_value;
+    endif;
+    
+    // See https://www.rfc-editor.org/rfc/rfc3492 , page 9 , 5. Parameter values for Punycode
+    //
+    // Using hyphen-minus as the delimiter implies that the encoded string can
+    // end with a hyphen-minus only if the Unicode string consists entirely of 
+    // basic code points, but IDNA forbids such strings from being encoded.
+    if (%len(p_value)+1 = rc);
+        return p_value;
+    else;
+        return %char(%subst(encoded : 1 : rc));
+    endif;
+end-proc;
+
+
+dcl-proc iv_encode_ace export;
+    dcl-pi *n varchar(32766);
+        p_value varchar(32766) const;
+    end-pi;
+    
+    dcl-s aceString varchar(32766);
+    dcl-s encodedValue varchar(32766);
+    dcl-s x int(10);
+    dcl-s start int(10);
+    dcl-s value varchar(32766);
+    
+    if (p_value = *blank);
+        return *blank;
+    endif;
+    
+    dou (x = 0);
+        x = %scan('.' : p_value : start+1);
+        
+        if (x > 0);
+            value = %subst(p_value : start+1 : x-start-1);
+            encodedValue = iv_encode_punycode(value);
+            if (%len(encodedValue) = %len(value));
+                aceString += value;
+            else;
+                aceString += 'xn--' + encodedValue;
+            endif;
+            
+            if (x < %len(p_value));
+                aceString += '.';
+            endif;
+        else;
+            aceString += %subst(p_value : start+1);
+        endif;
+        
+        start = x;
+    enddo;
+    
+    return aceString;
+end-proc;
+

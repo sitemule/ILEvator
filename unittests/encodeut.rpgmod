@@ -22,7 +22,15 @@ dcl-pr test_formUrlEncodeInvariantChars end-pr;
 dcl-pr test_formUrlEncodeUmlaute end-pr;
 dcl-pr test_encodePathWithPlusAndSpace end-pr;
 dcl-pr test_encodeQueryWithPlusAndSpace end-pr;
-
+dcl-pr test_punycode end-pr;
+dcl-pr test_punycodeOnlyAscii end-pr;
+dcl-pr test_punycodeEmpty end-pr;
+dcl-pr test_ace end-pr;
+dcl-pr test_aceOnlyAscii end-pr;
+dcl-pr test_aceEmpty end-pr;
+dcl-pr test_aceSubDomains end-pr;
+dcl-pr test_aceStartsWithPoint end-pr;
+dcl-pr test_aceEndsWithPoint end-pr;
 
 dcl-proc test_urlEncodeAsciiOnly export;
   dcl-s encodedValue varchar(4194304) ccsid(*utf8);
@@ -92,3 +100,73 @@ dcl-proc test_encodeQueryWithPlusAndSpace export;
 end-proc;
 
 
+dcl-proc test_punycode export;
+  dcl-s encodedValue varchar(32766);
+  
+  encodedValue = iv_encode_punycode('k' + u'00FC' + 'chen.de');
+  aEqual('kchen.de-65a' : encodedValue);
+end-proc;
+
+
+dcl-proc test_punycodeOnlyAscii export;
+  dcl-s encodedValue varchar(32766);
+  
+  encodedValue = iv_encode_punycode('kuechen.de');
+  aEqual('kuechen.de' : encodedValue);
+end-proc;
+
+
+dcl-proc test_punycodeEmpty export;
+  dcl-s encodedValue varchar(32766);
+  
+  encodedValue = iv_encode_punycode('');
+  aEqual('' : encodedValue);
+end-proc;
+
+
+dcl-proc test_ace export;
+  dcl-s encodedValue varchar(32766);
+  
+  encodedValue = iv_encode_ace('k' + u'00FC' + 'chen.de');
+  aEqual('xn--kchen-kva.de' : encodedValue);
+end-proc;
+
+
+dcl-proc test_aceOnlyAscii export;
+  dcl-s encodedValue varchar(32766);
+  
+  encodedValue = iv_encode_ace('kuechen.de');
+  aEqual('kuechen.de' : encodedValue);
+end-proc;
+
+
+dcl-proc test_aceEmpty export;
+  dcl-s encodedValue varchar(32766);
+  
+  encodedValue = iv_encode_ace('');
+  aEqual('' : encodedValue);
+end-proc;
+
+
+dcl-proc test_aceSubDomains export;
+  dcl-s encodedValue varchar(32766);
+  
+  encodedValue = iv_encode_ace('j' + u'00F6' + 'rg.m' + u'00FC' + 'hle.de');
+  aEqual('xn--jrg-sna.xn--mhle-0ra.de' : encodedValue);
+end-proc;
+
+
+dcl-proc test_aceStartsWithPoint export;
+  dcl-s encodedValue varchar(32766);
+  
+  encodedValue = iv_encode_ace('.de');
+  aEqual('.de' : encodedValue);
+end-proc;
+
+
+dcl-proc test_aceEndsWithPoint export;
+  dcl-s encodedValue varchar(32766);
+  
+  encodedValue = iv_encode_ace('mühle.');
+  aEqual('xn--mhle-0ra.' : encodedValue);
+end-proc;

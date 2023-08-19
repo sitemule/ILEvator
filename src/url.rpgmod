@@ -3,8 +3,8 @@
 ctl-opt nomain thread(*concurrent);
 
 // Reference: https://url.spec.whatwg.org/
-// TODO punycode support
 
+/include 'encode.rpginc'
 /include 'url.rpginc'
 
 dcl-pr memcmp int(10)  extproc('memcmp');
@@ -325,7 +325,9 @@ dcl-proc iv_url_parse export;
     return *allx'00';
   endif;
 
-  // TODO reverse urlencoding in path and query
+  if (%len(url.host) > 0);
+    url.host = iv_encode_punycode(url.host);
+  endif;
 
   return url;
 end-proc;
