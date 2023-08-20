@@ -223,6 +223,10 @@ dcl-proc iv_encode_ace export;
     endif;
     
     dou (x = 0);
+        if (start >= %len(p_value));
+            leave;
+        endif;
+        
         x = %scan('.' : p_value : start+1);
         
         if (x > 0);
@@ -233,8 +237,8 @@ dcl-proc iv_encode_ace export;
             else;
                 aceString += 'xn--' + encodedValue;
             endif;
-            
-            if (x < %len(p_value));
+        
+            if (x <= %len(p_value));
                 aceString += '.';
             endif;
         else;

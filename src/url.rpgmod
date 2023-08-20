@@ -7,6 +7,8 @@ ctl-opt nomain thread(*concurrent);
 /include 'encode.rpginc'
 /include 'url.rpginc'
 
+dcl-c DOMAIN_NAME_VALID_CHARS 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.0123456789';
+
 dcl-pr memcmp int(10)  extproc('memcmp');
   buffer1 pointer value;
   buffer2 pointer value;
@@ -326,7 +328,10 @@ dcl-proc iv_url_parse export;
   endif;
 
   if (%len(url.host) > 0);
-    url.host = iv_encode_punycode(url.host);
+    // check if the need to encode the host at all
+    if (%check(DOMAIN_NAME_VALID_CHARS : url.host) > 0);
+      url.host = iv_encode_ace(url.host);
+    endif;
   endif;
 
   return url;
