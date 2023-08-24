@@ -1,0 +1,79 @@
+**FREE
+
+///
+// Integration Test Request Handler
+//
+// This module tests a custom request handler.
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'ilevator.rpgle'
+
+dcl-ds requestHandler_t qualified template;
+    processRequest pointer(*proc);
+end-ds;
+
+
+dcl-pr test_noRequestHandler end-pr;
+dcl-pr test_requestHandler end-pr;
+
+
+dcl-proc test_noRequestHandler export;
+    dcl-s httpClient pointer;
+    dcl-s buffer varchar(65000:4) ccsid(1208);
+    dcl-s msg char(50);
+
+    httpClient = iv_newHttpClient();
+    iv_setResponseDataBuffer(httpClient : %addr(buffer) : %size(buffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    iv_execute(httpClient : 'GET' : 'http://localhost:35801/api/headers/X-Custom-Header');
+    if (iv_getStatus(httpClient) <> IV_HTTP_NO_CONTENT);
+        fail('The request failed with HTTP status ' + %char(iv_getStatus(httpClient)) + ' - ' + buffer);
+    else;
+        assert('' = buffer : 'The returned value should have been empty as no custom HTTP header has been set via a request handler.');
+    endif;
+
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_requestHandler export;
+    dcl-s httpClient pointer;
+    dcl-s buffer varchar(65000:4) ccsid(1208);
+    dcl-s msg char(50);
+
+    dcl-ds requestHandler likeds(requestHandler_t) inz;
+
+    requestHandler.processRequest = %paddr(addCustomHeader);
+
+    httpClient = iv_newHttpClient();
+    iv_setResponseDataBuffer(httpClient : %addr(buffer) : %size(buffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_setRequestHandler(httpClient : %addr(requestHandler));
+    
+    iv_execute(httpClient : 'GET' : 'http://localhost:35801/api/headers/X-Custom-Header');
+    if (iv_getStatus(httpClient) <> IV_HTTP_OK);
+        fail('The request failed with HTTP status ' + %char(iv_getStatus(httpClient)) + ' - ' + buffer);
+    else;
+        assert('Value 123' = buffer : 'The passed custom HTTP header on the request has not been returned as the message body.');
+    endif;
+
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc addCustomHeader export;
+    dcl-pi *n;
+        handler pointer value;
+        request pointer value;
+    end-pi;
+
+    dcl-ds requestHandler likeds(requestHandler_t) based(handler);
+
+    iv_request_addHeader(request : 'X-Custom-Header' : 'Value 123');
+end-proc;
