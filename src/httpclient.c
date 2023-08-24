@@ -266,6 +266,9 @@ API_STATUS sendRequest (PILEVATOR pIv)
     if (pIv->authProvider)
         pIv->authProvider->processRequest(pIv->authProvider, request);
     
+    if (pIv->requestHandler)
+        pIv->requestHandler->processRequest(pIv->requestHandler, request);
+    
     requestString = iv_request_toString(&request);
     iv_request_dispose(request);
     

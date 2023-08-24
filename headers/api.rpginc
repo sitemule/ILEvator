@@ -920,3 +920,16 @@ dcl-pr iv_addHeaderToList extproc(*dclcase);
     headerKey varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const;
     headerValue varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const;
 end-pr;
+
+///
+// Set request handler
+//
+// Sets the request handler which will be called on every HTTP request.
+//
+// @param Pointer to the HTTP client 
+// @param Pointer to the request handler
+///
+dcl-pr iv_setRequestHandler extproc(*dclcase);
+    client pointer value;
+    handler pointer value;
+end-pr;

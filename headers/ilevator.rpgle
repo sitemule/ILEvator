@@ -943,6 +943,19 @@ dcl-pr iv_addHeaderToList extproc(*dclcase);
     headerValue varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const;
 end-pr;
 
+///
+// Set request handler
+//
+// Sets the request handler which will be called on every HTTP request.
+//
+// @param Pointer to the HTTP client 
+// @param Pointer to the request handler
+///
+dcl-pr iv_setRequestHandler extproc(*dclcase);
+    client pointer value;
+    handler pointer value;
+end-pr;
+
 
 
 //
@@ -1002,6 +1015,7 @@ dcl-pr iv_encode_query varchar(32766) ccsid(*utf8) extproc(*dclcase);
     key varchar(1000) ccsid(*utf8) value;
     value varchar(32766) ccsid(*utf8) value;
 end-pr;
+
 
 
 //
@@ -1111,6 +1125,267 @@ end-pr;
 dcl-pr iv_form_of likeds(iv_lvarpuchar_t) overload(
   iv_form_ofMap :
   iv_form_ofString
+);
+/endif
+
+
+
+//
+// request module
+//
+
+dcl-c IV_REQUEST_URL_SIZE 32766;
+dcl-c IV_REQUEST_HEADER_NAME_SIZE 1024;
+dcl-c IV_REQUEST_HEADER_VALUE_SIZE 16384;
+
+///
+// Template for the next block of streamed data
+///
+dcl-ds iv_request_stream_result qualified template;
+  more ind;
+  content pointer;
+  size uns(10);
+end-ds;
+
+///
+// Create new HTTP request
+//
+// Creates a new URL request with the given HTTP method, URL and optional
+// the given Accept MIME type.
+//
+// @param HTTP method
+// @param URL
+// @param Accept HTTP header MIME type
+//
+// @return Request
+// 
+// @info The caller needs to free the allocated memory of the request by
+//       calling <code>iv_request_dispose</code>.
+///
+dcl-pr iv_request_new_packedUrl pointer extproc(*dclcase);
+  method varchar(12) value;
+  url varchar(IV_REQUEST_URL_SIZE:2) ccsid(*utf8) value;
+  mimeType varchar(IV_REQUEST_HEADER_VALUE_SIZE:2) ccsid(*utf8) value options(*nopass);
+end-pr;
+
+///
+// Create new HTTP request
+//
+// Creates a new URL request with the given HTTP method, URL and optional
+// the given Accept MIME type.
+// <br/><br/>
+// The url has been unpacked to its parts and are passed as separate parameters.
+//
+// @param HTTP method
+// @param Host name
+// @param Port
+// @param Path
+// @param Query
+// @param Accept HTTP header MIME type
+//
+// @return Request
+// 
+// @info The caller needs to free the allocated memory of the request by
+//       calling <code>iv_request_dispose</code>.
+///
+dcl-pr iv_request_new_unpackedUrl pointer extproc(*dclcase);
+  method varchar(12) value;
+  host pointer value options(*string);
+  port int(10) value;
+  path pointer value options(*string);
+  query pointer value options(*string);
+  mimeType varchar(IV_REQUEST_HEADER_VALUE_SIZE:2) ccsid(*utf8) value options(*nopass);
+end-pr;
+
+///
+// Dispose HTTP request
+//
+// Frees the memory used by this HTTP request.
+//
+// @param HTTP request
+///
+dcl-pr iv_request_dispose extproc(*dclcase);
+  request pointer;
+end-pr;
+
+///
+// Add HTTP request header
+//
+// Adds the passed HTTP header in the request. The header will be appended to the list
+// of headers. Any previously added header with the same name will still be included
+// in the HTTP message.
+//
+// In HTTP the last header in the list (with the same name) wins.
+//
+// @param HTTP request
+// @param HTTP header name
+// @param HTTP header value
+//
+// @info The HTTP header name needs to be in ASCII.
+// @info The HTTP header will always be converted to lowercase.
+// @info The HTTP header value will be percent-encoded.
+///
+dcl-pr iv_request_addHeader extproc(*dclcase);
+  request pointer const;
+  name varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8) const;
+  value varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
+end-pr;
+
+
+///
+// Add HTTP request headers
+//
+// Adds a set of headers to the request. The header will be appended to the list
+// of headers. Any previously added header with the same name will still be 
+// included in the HTTP message.
+//
+// In HTTP the last header in the list (with the same name) wins.
+//
+// @param HTTP request
+// @param List of HTTP headers (simpleList with key/value entries)
+//
+// @info The HTTP header will always be converted to lowercase.
+///
+dcl-pr iv_request_addHeaders extproc(*dclcase);
+    request pointer value;
+    headers pointer value;
+end-pr;
+
+
+///
+// Get HTTP request header
+//
+// Returns the first request header value with the corresponding passed header 
+// name. 
+//
+// @param HTTP request
+// @param HTTP header name
+// @return HTTP header value or <code>*blank</code> 
+///
+dcl-pr iv_request_getHeader varchar(8000) ccsid(*utf8) extproc(*dclcase);
+  request pointer const;
+  name varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8) const;
+end-pr;
+
+
+///
+// Set HTTP request Accept MIME type
+//
+// Sets the content type HTTP header for the passed request. Any previously set
+// content type will be overwritten.
+//
+// @param HTTP request
+// @param MIME type
+///
+dcl-pr iv_request_setAcceptMimeType extproc(*dclcase);
+  request pointer const;
+  mimeType varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
+end-pr;
+
+///
+// Set HTTP request content type
+//
+// Sets the content type HTTP header for the passed request. Any previously set
+// content type will be overwritten.
+//
+// @param HTTP request
+// @param Content type
+///
+dcl-pr iv_request_setContentType extproc(*dclcase);
+  request pointer const;
+  contentType varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
+end-pr;
+
+///
+// Set Form Data
+//
+// Adds all graph entries at the root level to the request body form urlencoded
+// and sets application/x-form-www-urlencoded as content-type.
+//
+// @param Request
+// @param Form data (noxDB2)
+///
+dcl-pr iv_request_setFormBody extproc(*dclcase);
+  request pointer value;
+  formData likeds(iv_lvarpuchar_t) value;
+end-pr;
+
+///
+// Set the HTTP request body (text)
+//
+// Sets the passed string data as the message body. The data will be converted
+// into the corresponding CCSID. The CCSID of the request body is specified
+// with the <em>charset</em> attribute of the Content-Type HTTP header.
+//
+// <br><br>
+// <code>text/plain;charset=cp1252</code>
+// <br><br>
+//
+// Some content types have an implicit CCSID, f. e. application/json is always
+// UTF-8 encoded.
+//
+// <br><br>
+//
+// If any data should be sent as is (without CCSID conversion) the procedure
+// <tt>iv_request_setBinaryBody</tt> can be used to set the data.
+//
+// @param HTTP request
+// @param Message body
+// @param CCSID of the message body value (default: 1208)
+///
+dcl-pr iv_request_setTextBody extproc(*dclcase);
+  request pointer value;
+  content varchar(1048576) ccsid(1208) value;
+  ccsid uns(10) value options(*nopass);
+end-pr;
+
+dcl-pr iv_request_setTextBodyBytes extproc(*dclcase);
+  request pointer value;
+  content pointer value;
+  size uns(10) value;
+  ccsid uns(10) value options(*nopass);
+end-pr;
+
+dcl-pr iv_request_setBinaryBody extproc(*dclcase);
+  request pointer value;
+  content pointer value;
+  size uns(10) value;
+end-pr;
+
+dcl-pr iv_request_setStream extproc(*dclcase);
+  request pointer const;
+  stream pointer const;
+end-pr;
+
+dcl-pr iv_request_toString likeds(iv_lvarpuchar_t) extproc(*dclcase);
+  request pointer const;
+end-pr;
+
+dcl-pr iv_request_stream likeds(iv_request_stream_result) extproc(*dclcase);
+  request pointer const;
+end-pr;
+
+dcl-pr iv_request_hasStream ind extproc(*dclcase);
+  request pointer const;
+end-pr;
+
+dcl-pr iv_request_hasTextBody ind extproc(*dclcase);
+  request pointer const;
+end-pr;
+
+dcl-pr iv_request_hasBody ind extproc(*dclcase);
+  request pointer const;
+end-pr;
+
+/if defined (RPG_HAS_OVERLOAD)
+dcl-pr iv_request_setBody overload(
+  iv_request_setTextBody :
+  iv_request_setBinaryBody
+);
+
+dcl-pr iv_request_new pointer overload(
+    iv_request_new_packedUrl :
+    iv_request_new_unpackedUrl
 );
 /endif
 

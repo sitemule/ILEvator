@@ -70,6 +70,7 @@ dcl-ds ilevator_t qualified template align(*full);
     responseDataBuffer likeds(anychar_t);
     responseDataFile pointer;
     authProvider pointer;
+    requestHandler pointer;
     
     headerLen    int(10);
     contentData pointer;
@@ -997,6 +998,18 @@ dcl-proc loadConfigFromEnvVar;
     elseif (certValue <> *null);
         iv_setCertificate(client : certValue);
     endif;
+end-proc;
+
+
+dcl-proc iv_setRequestHandler export;
+    dcl-pi *n;
+        p_client pointer value;
+        handler pointer value;        
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(p_client); 
+    
+    client.requestHandler = handler;
 end-proc;
 
 

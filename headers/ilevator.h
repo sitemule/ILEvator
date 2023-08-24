@@ -39,11 +39,11 @@ typedef enum _API_STATUS {
     API_ERROR
 } API_STATUS , *PAPI_STATUS;
 
-typedef void (* iv_auth_processRequest_t) (PVOID authProvider, PVOID request);
-typedef struct _AUTH_PROVIDER {
-    iv_auth_processRequest_t processRequest;
-} AUTH_PROVIDER, *PAUTH_PROVIDER;
+typedef void (* iv_processRequest_t) (PVOID handler, PVOID request);
 
+typedef struct _REQUEST_HANDLER {
+    iv_processRequest_t processRequest;
+} REQUEST_HANDLER, *PREQUEST_HANDLER;
 
 typedef struct _ILEVATOR {
     PSOCKETS     sockets;
@@ -61,7 +61,8 @@ typedef struct _ILEVATOR {
     ANYCHAR      responseDataBuffer; 
     FILE *       responseDataFile;
 
-    PAUTH_PROVIDER authProvider;
+    PREQUEST_HANDLER authProvider;
+    PREQUEST_HANDLER requestHandler;
 
     // TODO - refactor
     LONG         headLen;
