@@ -1,0 +1,33 @@
+**FREE
+
+/if not defined (STREAM_H)
+/define STREAM_H
+
+dcl-ds stream_t qualified template;
+  handle pointer;                  
+  writer pointer(*proc);           
+end-ds;                            
+
+// PSTREAM stream_new(ULONG size);
+dcl-pr stream_new pointer extproc(*dclcase);
+    size uns(20) value;
+end-pr;
+
+// LONG stream_write(PSTREAM stream, PUCHAR buf , ULONG len);
+dcl-pr stream_write int(20) extproc(*dclcase);
+    stream pointer value;
+    buffer pointer value;
+    length uns(20) value;
+end-pr;
+
+// void stream_delete(PSTREAM stream);
+dcl-pr stream_delete extproc(*dclcase);
+    stream pointer value;
+end-pr;
+
+// LONG stream_flush(PSTREAM stream);
+dcl-pr stream_flush int(20) extproc(*dclcase);
+    stream pointer value;
+end-pr;
+
+/endif

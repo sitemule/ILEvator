@@ -236,6 +236,11 @@ dcl-pr iv_request_toString likeds(LVARPUCHAR_t) extproc(*dclcase);
   request pointer const;
 end-pr;
 
+dcl-pr iv_request_toStream extproc(*dclcase);
+  request pointer const;
+  outstream pointer const;
+end-pr;
+
 dcl-pr iv_request_stream likeds(iv_request_stream_result) extproc(*dclcase);
   request pointer const;
 end-pr;

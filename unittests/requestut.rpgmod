@@ -15,6 +15,7 @@ ctl-opt nomain;
 /include 'assert.rpginc'
 /include 'form.rpginc'
 /include 'request.rpginc'
+/include 'stream.rpginc'
 /include 'teraspace.rpginc'
 /include 'varchar.rpginc'
 
@@ -43,10 +44,17 @@ dcl-pr memcmp int(10) extproc('memcmp');
   count uns(10) value;
 end-pr;
 
+dcl-pr memcpy pointer extproc('memcpy');
+  target pointer value;
+  source pointer value;
+  count uns(10) value;
+end-pr;
+
 dcl-pr getenv pointer extproc('getenv');
     envvar pointer value options(*string : *trim);
 end-pr;
 
+dcl-s stream_buffer_t varchar(10000) ccsid(*utf8) template;
 
 dcl-pr test_getHeader extproc(*dclcase) end-pr;
 dcl-pr test_getHeaderNonExist extproc(*dclcase) end-pr;
@@ -60,6 +68,7 @@ dcl-pr test_queryNoPath extproc(*dclcase) end-pr;
 dcl-pr test_overrideAccept extproc(*dclcase) end-pr;
 dcl-pr test_formData extproc(*dclcase) end-pr;
 dcl-pr test_textBody extproc(*dclcase) end-pr;
+dcl-pr test_streamRequest extproc(*dclcase) end-pr;
 
 
 dcl-s projectSourceDir varchar(1000);
@@ -301,6 +310,55 @@ dcl-proc test_formData export;
     iv_request_dispose(request);
     teraspace_free(buffer.string);
 end-proc;
+
+
+dcl-proc test_streamRequest export;
+  dcl-s request pointer;
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  dcl-ds outstream likeds(stream_t) based(p_outstream);
+  dcl-s buffer like(stream_buffer_t);
+  
+  assumedResult = loadFile('unittests/request/test10-formData.http');
+  
+  p_outstream = stream_new(%size(stream_buffer_t));
+  outstream.writer = %paddr(stream_memory_writer);
+  outstream.handle = %addr(buffer);
+  
+  request = iv_request_new('POST' : 'http://localhost');
+  iv_request_setContentType(request : 'application/x-www-form-urlencoded');
+  iv_request_setFormBody(request : iv_form_of('name' : 'Mihael Schmidt' : 'role' : 'developer'));
+  iv_request_toStream(request : p_outstream);
+  stream_flush(p_outstream);
+  
+  iEqual(%len(assumedResult) : %len(buffer));
+  assert(memcmp(%addr(assumedResult : *data) : %addr(buffer : *data) : %len(buffer)) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+    stream_delete(p_outstream);
+end-proc;
+
+
+dcl-proc stream_memory_writer export;                               
+    dcl-pi *n int(10);                                                 
+        pStream pointer value;                                         
+        buffer pointer value;                                          
+        length uns(10) value;                                          
+    end-pi;                                                            
+                                                                       
+    dcl-ds stream likeds(stream_t) based(pStream);                     
+    dcl-s userBuffer like(stream_buffer_t) based(stream.handle);          
+    dcl-s originalLength int(10);
+                                               
+    if (length > 0);
+        originalLength = %len(userBuffer);
+        %len(userBuffer) = originalLength + length;
+        memcpy(%addr(userBuffer : *data) + originalLength : buffer : length);
+    endif;                                                             
+                                                                       
+    return length;  
+end-proc;                                                   
 
 
 dcl-proc loadFile;

@@ -9,6 +9,7 @@ ctl-opt nomain thread(*concurrent);
 /include 'mime.rpginc'
 /include 'request.rpginc'
 /include 'simpleList.rpginc'
+/include 'stream.rpginc'
 /include 'teraspace.rpginc'
 /include 'url.rpginc'
 /include 'varchar.rpginc'
@@ -231,6 +232,121 @@ dcl-proc iv_request_toString export;
   // Note: no ending CRLF after body !!!
 
   return serialized;
+end-proc;
+
+
+dcl-proc iv_request_toStream export;
+  dcl-pi *n;
+    p_request pointer const;
+    outstream pointer const;
+  end-pi;
+
+  dcl-c SERIALIZED_INIT_SIZE 1048576;
+  dcl-ds serialized likeds(LVARPUCHAR_t);
+  dcl-s sizeAllocated uns(10);
+  dcl-s sizeUsed uns(10);
+
+  dcl-ds request likeds(iv_request_t) based(p_request);
+  dcl-ds iterator likeds(SLISTITERATOR_t);
+  dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
+  dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
+  dcl-s data varchar(SERIALIZED_INIT_SIZE) ccsid(*utf8);
+  dcl-s headerName varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8);
+  dcl-s headerValue varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8);
+  dcl-ds tmpSerializedContent likeds(LVARPUCHAR_t);
+  dcl-s translatedLength uns(10);
+  dcl-s hasContentTypeHeader ind inz(*off);
+  dcl-s hasAcceptHeader ind inz(*off);
+
+  if (request.contentSize > SERIALIZED_INIT_SIZE);
+      sizeAllocated = SERIALIZED_INIT_SIZE + request.contentSize;
+  else;
+      sizeAllocated = SERIALIZED_INIT_SIZE;
+  endif;
+
+  serialized.length = 0;
+  serialized.string = teraspace_alloc(sizeAllocated);
+
+  // TODO CONNECT message has different request line, see HTTP/1.1 spec
+
+  data = request.method + UTF8_SPACE;
+  if (%len(request.url.path) = 0);
+    data += UTF8_SLASH;
+  else;
+    data += request.url.path;
+  endif;
+  if (%len(request.url.query) > 0);
+    data += UTF8_QUESTION_MARK + request.url.query;
+  endif;
+  data += ' HTTP/1.1' + CRLF;
+  data += 'Host: ' + request.url.host + UTF8_COLON + %char(request.url.port) + CRLF;
+  data += 'Connection: keep-alive' + CRLF;
+
+  iterator = sList_setIterator(request.headers);
+  dow (sList_foreach(iterator));
+    headerName = %str(nodePayload.key.string : nodePayload.key.length);
+    headerValue = %str(nodePayload.value.string : nodePayload.value.length);
+    // TODO encode header names and values (only ASCII allowed)
+    // TODO need to check that we have enough space for the headers when adding them
+    data+= headerName + UTF8_COLON + headerValue + CRLF;
+
+    if (headerName = 'content-type');
+      hasContentTypeHeader = *on;
+    endif;
+
+    if (headerName = 'accept');
+      hasAcceptHeader = *on;
+    endif;
+  enddo;
+
+  if (not hasAcceptHeader);
+    data += 'Accept: */*' + CRLF;
+    iv_request_addHeader(p_request : 'accept' : '*/*');
+  endif;
+
+  if (request.content <> *null);
+    // request.contentSize may not be the real size after char conversion
+    data+= 'content-length' + UTF8_COLON + %char(request.contentSize) + CRLF;
+
+    if (not hasContentTypeHeader);
+      if (request.binaryContent);
+        data += 'content-type: application/octet-stream' + CRLF;
+        iv_request_addHeader(p_request : 'content-type' : 'application/octet-stream');
+      else;
+        data += 'content-type: text/plain' + CRLF;
+        iv_request_addHeader(p_request : 'content-type' : 'text/plain');
+      endif;
+    endif;
+  endif;
+
+  data += CRLF;
+
+  serialized.length = %len(data);
+  stream_write(outstream : %addr(data : *data) : %len(data));
+
+  if (request.content <> *null and request.contentSize > 0);
+    if (request.binaryContent);
+      stream_write(outstream : request.content : request.contentSize);
+    else;
+      // assume the worst : size * 4
+      tmpSerializedContent.length = request.contentSize * 4;
+      tmpSerializedContent.string = teraspace_alloc(tmpSerializedContent.length);
+      translatedLength = serializeContent(tmpSerializedContent : p_request);
+
+      if (serialized.length + translatedLength > sizeAllocated);
+        sizeAllocated = serialized.length + translatedLength;
+        serialized.string = teraspace_realloc(serialized.string : sizeAllocated);
+      endif;
+
+      if (translatedLength > 0);
+        stream_write(outstream : tmpSerializedContent.string : translatedLength);
+      endif;
+
+      teraspace_free(tmpSerializedContent.string);
+    endif;
+  endif;
+
+  // Note: no ending CRLF after body !!!
 end-proc;
 
 

@@ -20,7 +20,7 @@ PSTREAM stream_new(ULONG size)
 {
     PSTREAM pStream = teraspace_alloc(sizeof(STREAM));
     memset( pStream , 0, sizeof(STREAM));
-    pStream->buffer = malloc(size);
+    pStream->buffer = teraspace_alloc(size);
     pStream->pos = pStream->buffer;
     pStream->size = size;
     pStream->end = pStream->pos + size;

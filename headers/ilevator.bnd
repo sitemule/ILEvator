@@ -60,4 +60,5 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_request_setTextBodyBytes")
     EXPORT SYMBOL("iv_request_setFormBody")
     EXPORT SYMBOL("iv_request_toString")
+    EXPORT SYMBOL("iv_request_toStream")
 ENDPGMEXP
