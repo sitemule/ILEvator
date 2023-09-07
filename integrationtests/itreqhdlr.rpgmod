@@ -30,10 +30,10 @@ dcl-proc test_noRequestHandler export;
     httpClient = iv_newHttpClient();
     iv_setResponseDataBuffer(httpClient : %addr(buffer) : %size(buffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
     iv_execute(httpClient : 'GET' : 'http://localhost:35801/api/headers/X-Custom-Header');
-    if (iv_getStatus(httpClient) <> IV_HTTP_NO_CONTENT);
-        fail('The request failed with HTTP status ' + %char(iv_getStatus(httpClient)) + ' - ' + buffer);
-    else;
+    if (iv_getStatus(httpClient) = IV_HTTP_NO_CONTENT or iv_getStatus(httpClient) = IV_HTTP_OK);
         assert('' = buffer : 'The returned value should have been empty as no custom HTTP header has been set via a request handler.');
+    else;
+        fail('The request failed with HTTP status ' + %char(iv_getStatus(httpClient)) + ' - ' + buffer);
     endif;
 
     on-exit;

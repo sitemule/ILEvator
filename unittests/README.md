@@ -27,6 +27,7 @@ To execute a unit test just call the RUCALLTST command.
 
     RUCALLTST BASICAUTUT
 
+
 ## Request Test Data
 
 The test data for the request unit test are located in the request folder. It
@@ -38,6 +39,15 @@ line endings can be fixed with the program `unix2dos`.
 
 Any additionally calls of unix2dos on an already converted file will yield the
 same result. No harm is done in calling it twice or more times.
+
+
+## Request Test Data Path
+
+By default the test data files will be searched in the current working directory
+of the current job. Most of the time this is the wrong path. The path can either
+be set with the command `CHGCURDIR` or by setting the environment variable
+`ILEVATOR_SOURCE_DIR` (including a trailing slash like `/home/mihael/src/ilevator/`).
+
 
 [iru]: https://irpgunit.sourceforge.net
 [ru]: https://rpgunit.sourceforge.net

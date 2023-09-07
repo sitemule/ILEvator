@@ -45,7 +45,7 @@ CCFLAGS2=OUTPUT(*print) OPTION(*NOSHOWINC *STDLOGMSG) OPTIMIZE(10) ENUM(*INT) TE
 # remove all default suffix rules
 .SUFFIXES:
 
-MODULES=$(BIN_LIB)/ANYCHAR $(BIN_LIB)/API $(BIN_LIB)/BASE64 $(BIN_LIB)/BASICAUTH $(BIN_LIB)/BEARER $(BIN_LIB)/CHUNKED $(BIN_LIB)/DEBUG $(BIN_LIB)/ENCODE $(BIN_LIB)/FORM $(BIN_LIB)/HTTPCLIENT $(BIN_LIB)/INIT $(BIN_LIB)/JOBLOG $(BIN_LIB)/MESSAGE $(BIN_LIB)/MIME $(BIN_LIB)/REQUEST $(BIN_LIB)/SIMPLELIST $(BIN_LIB)/SOCKETS $(BIN_LIB)/STREAM $(BIN_LIB)/STRUTIL $(BIN_LIB)/TERASPACE $(BIN_LIB)/URL $(BIN_LIB)/VARCHAR  $(BIN_LIB)/XLATE
+MODULES=$(BIN_LIB)/ANYCHAR $(BIN_LIB)/API $(BIN_LIB)/BASE64 $(BIN_LIB)/BASICAUTH $(BIN_LIB)/BEARER $(BIN_LIB)/CHUNKED $(BIN_LIB)/DEBUG $(BIN_LIB)/ENCODE $(BIN_LIB)/FORM $(BIN_LIB)/HTTPCLIENT $(BIN_LIB)/INIT $(BIN_LIB)/JOBLOG $(BIN_LIB)/MESSAGE $(BIN_LIB)/MIME $(BIN_LIB)/MULTIPART $(BIN_LIB)/REQUEST $(BIN_LIB)/SIMPLELIST $(BIN_LIB)/SOCKETS $(BIN_LIB)/STREAM $(BIN_LIB)/STRUTIL $(BIN_LIB)/TERASPACE $(BIN_LIB)/URL $(BIN_LIB)/VARCHAR  $(BIN_LIB)/XLATE
 
 
 # Dependency list
@@ -57,7 +57,7 @@ ext: .PHONY
 
 modules: anychar.c api.rpgmod basicauth.rpgmod bearer.rpgmod chunked.c debug.rpgmod \
          encode.rpgmod form.rpgmod httpclient.c init.cpp joblog.c mime.rpgmod \
-         request.rpgmod sockets.c url.rpgmod
+         multipart.rpgmod request.rpgmod sockets.c url.rpgmod
 
 compile: setHeaderCcsid modules ilevator.srvpgm
 

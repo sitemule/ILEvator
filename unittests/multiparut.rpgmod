@@ -1,0 +1,211 @@
+**FREE
+
+///
+// Multipart Unit Test
+//
+// @project ILEvator
+// @author Mihael Schmidt
+// @date   07.09.2023
+///
+
+
+ctl-opt nomain;
+
+
+/include 'api.rpginc'
+/include 'assert.rpginc'
+/include 'multipart.rpginc'
+/include 'stream.rpginc'
+
+
+dcl-c O_RDONLY 1;
+dcl-pr open int(10) extproc('open');
+  path pointer value options(*string);
+  openflags int(10) value;
+  mode uns(10) value options(*nopass);
+  ccsid uns(10) value options(*nopass);
+end-pr;
+
+dcl-pr read int(10) extproc('read');
+  fildes int(10) value;
+  buf pointer value;
+  bytes uns(10) value;
+end-pr;
+
+dcl-pr close int(10) extproc('close');
+  fildes int(10) value;
+end-pr;
+
+dcl-pr memcmp int(10) extproc('memcmp');
+  buffer1 pointer value;
+  buffer2 pointer value;
+  count uns(10) value;
+end-pr;
+
+dcl-pr memcpy pointer extproc('memcpy');
+  target pointer value;
+  source pointer value;
+  count uns(10) value;
+end-pr;
+
+dcl-pr getenv pointer extproc('getenv');
+    envvar pointer value options(*string : *trim);
+end-pr;
+
+dcl-s stream_buffer_t varchar(10000) ccsid(*utf8) template;
+
+
+dcl-pr test_singleTextPart end-pr;
+dcl-pr test_singleTextPartWithHeaders end-pr;
+dcl-pr test_multipleTextParts end-pr;
+dcl-pr test_singleTextBase64Encoded end-pr;
+
+dcl-c BOUNDARY '--ilevator-unittest-boundary';
+
+dcl-s projectSourceDir varchar(1000);
+
+
+dcl-proc setUpSuite export;
+    dcl-s value pointer;
+    
+    value = getenv('ILEVATOR_SOURCE_DIR');
+    if (value <> *null);
+        projectSourceDir = %str(value : %size(projectSourceDir));
+    endif;
+end-proc;
+
+
+dcl-proc test_singleTextPart export;
+    dcl-s multipart pointer;
+    dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+    dcl-ds outstream likeds(stream_t) based(p_outstream);
+    dcl-s buffer like(stream_buffer_t);
+        
+    
+    assumedResult = loadFile('unittests/multipart/test1-single-text-part.txt');
+    
+    p_outstream = stream_new(%size(stream_buffer_t));
+    outstream.writer = %paddr(stream_memory_writer);
+    outstream.handle = %addr(buffer);
+    
+    multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
+    iv_multipart_addPartFromString(multipart : 'ILEvator rocks!');
+    iv_multipart_toStream(multipart : p_outstream);
+    
+    iEqual(%len(assumedResult) : %len(buffer));
+    assert(memcmp(%addr(assumedResult : *data) : %addr(buffer : *data) : %len(buffer)) = 0: 
+        'Multipart does not correspond with the assumed result.');
+    
+    on-exit;
+        iv_multipart_free(multipart);
+        stream_delete(p_outstream);
+end-proc;
+
+
+dcl-proc test_singleTextPartWithHeaders export;
+    dcl-s multipart pointer;
+    dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+    dcl-ds outstream likeds(stream_t) based(p_outstream);
+    dcl-s buffer like(stream_buffer_t);
+    dcl-s headers pointer;
+    
+    assumedResult = loadFile('unittests/multipart/test2-single-text-part-with-additional-headers.txt');
+    
+    headers = iv_buildList(
+        'User-Defined-1' : 'first part' : 
+        'User-Defined-2' : 'second test'
+    ); 
+        
+    p_outstream = stream_new(%size(stream_buffer_t));
+    outstream.writer = %paddr(stream_memory_writer);
+    outstream.handle = %addr(buffer);
+    
+    multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
+    iv_multipart_addPartFromString(multipart : 'ILEvator rocks!' : IV_MULTIPART_ENCODING_TEXT : headers);
+    iv_multipart_toStream(multipart : p_outstream);
+    
+    iEqual(%len(assumedResult) : %len(buffer));
+    assert(memcmp(%addr(assumedResult : *data) : %addr(buffer : *data) : %len(buffer)) = 0: 
+        'Multipart does not correspond with the assumed result.');
+    
+    on-exit;
+        iv_multipart_free(multipart);
+        stream_delete(p_outstream);
+end-proc;
+
+
+dcl-proc test_multipleTextParts export;
+    dcl-s multipart pointer;
+    dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+    dcl-ds outstream likeds(stream_t) based(p_outstream);
+    dcl-s buffer like(stream_buffer_t);
+        
+    
+    assumedResult = loadFile('unittests/multipart/test3-multiple-text-parts.txt');
+    
+    p_outstream = stream_new(%size(stream_buffer_t));
+    outstream.writer = %paddr(stream_memory_writer);
+    outstream.handle = %addr(buffer);
+    
+    multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
+    iv_multipart_addPartFromString(multipart : 'ILEvator rocks!');
+    iv_multipart_addPartFromString(multipart : 'ILEastic rocks!');
+    iv_multipart_addPartFromString(multipart : 'noxDB rocks!');
+    iv_multipart_toStream(multipart : p_outstream);
+    
+    iEqual(%len(assumedResult) : %len(buffer));
+    assert(memcmp(%addr(assumedResult : *data) : %addr(buffer : *data) : %len(buffer)) = 0: 
+        'Multipart does not correspond with the assumed result.');
+    
+    on-exit;
+        iv_multipart_free(multipart);
+        stream_delete(p_outstream);
+end-proc;
+
+
+dcl-proc stream_memory_writer export;                               
+    dcl-pi *n int(10);                                                 
+        pStream pointer value;                                         
+        buffer pointer value;                                          
+        length uns(10) value;                                          
+    end-pi;                                                            
+                                                                       
+    dcl-ds stream likeds(stream_t) based(pStream);                     
+    dcl-s userBuffer like(stream_buffer_t) based(stream.handle);          
+    dcl-s originalLength int(10);
+                                               
+    if (length > 0);
+        originalLength = %len(userBuffer);
+        %len(userBuffer) = originalLength + length;
+        memcpy(%addr(userBuffer : *data) + originalLength : buffer : length);
+    endif;                                                             
+                                                                       
+    return length;  
+end-proc; 
+
+dcl-proc loadFile;
+  dcl-pi *n varchar(1000000) ccsid(*hex);
+    p_path varchar(1000) const;
+  end-pi;
+
+  dcl-s path varchar(1000);
+  dcl-s content char(1000000) ccsid(*hex);
+  dcl-s returnValue varchar(1000000) ccsid(*hex);
+  dcl-s len int(10);
+  dcl-s fd int(10);
+
+  path = projectSourceDir + p_path + x'00';
+
+  fd = open(%addr(path : *data) : O_RDONLY);
+  if (fd >= 0);
+    len = read(fd : %addr(content) : 1000000);
+    returnValue = %subst(content : 1 : len);
+  endif;
+
+  return returnValue;
+  
+  on-exit;
+    if (fd >= 0);
+      callp close(fd);
+    endif;
+end-proc;
