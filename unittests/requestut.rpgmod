@@ -20,7 +20,13 @@ ctl-opt nomain;
 /include 'varchar.rpginc'
 
 
+dcl-c S_IRUSR 256;
+dcl-c S_IWUSR 128;
+     
 dcl-c O_RDONLY 1;
+dcl-c O_WRONLY 2;
+dcl-c O_CREATE 8;
+
 dcl-pr open int(10) extproc('open');
   path pointer value options(*string);
   openflags int(10) value;
@@ -34,8 +40,18 @@ dcl-pr read int(10) extproc('read');
   bytes uns(10) value;
 end-pr;
 
+dcl-pr write int(10) extproc('write');
+    fileDesc int(10) value;
+    buffer pointer value;
+    length uns(10) value;
+end-pr;
+
 dcl-pr close int(10) extproc('close');
   fildes int(10) value;
+end-pr;
+
+dcl-pr unlink int(10) extproc('unlink');
+    path pointer value options(*string : *trim);
 end-pr;
 
 dcl-pr memcmp int(10) extproc('memcmp');
@@ -56,6 +72,7 @@ end-pr;
 
 dcl-s stream_buffer_t varchar(10000) ccsid(*utf8) template;
 
+dcl-pr setUpSuite extproc(*dclcase) end-pr;
 dcl-pr test_getHeader extproc(*dclcase) end-pr;
 dcl-pr test_getHeaderNonExist extproc(*dclcase) end-pr;
 dcl-pr test_minimum extproc(*dclcase) end-pr;
@@ -69,6 +86,7 @@ dcl-pr test_overrideAccept extproc(*dclcase) end-pr;
 dcl-pr test_formData extproc(*dclcase) end-pr;
 dcl-pr test_textBody extproc(*dclcase) end-pr;
 dcl-pr test_streamRequest extproc(*dclcase) end-pr;
+dcl-pr test_contentFromFile extproc(*dclcase) end-pr;
 
 
 dcl-s projectSourceDir varchar(1000);
@@ -302,6 +320,29 @@ dcl-proc test_formData export;
   iv_request_setFormBody(request : iv_form_of('name' : 'Mihael Schmidt' : 'role' : 'developer'));
   buffer = iv_request_toString(request);
   
+  iEqual(%len(assumedResult) : buffer.length);
+  assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+    teraspace_free(buffer.string);
+end-proc;
+
+
+dcl-proc test_contentFromFile export;
+  dcl-s request pointer;
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  dcl-ds buffer likeds(LVARPUCHAR_t);
+  dcl-s charBuffer char(1000) based(buffer.string) ccsid(*utf8);
+  
+  assumedResult = loadFile('unittests/request/test11-content-from-file.http');
+  
+  request = iv_request_new('POST' : 'http://localhost');
+  iv_request_setContentType(request : 'application/json');
+  iv_request_setFile(request : 'unittests/request/request-content-from-file.txt');
+  
+  buffer = iv_request_toString(request);
   iEqual(%len(assumedResult) : buffer.length);
   assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
       'Request does not correspond to assumed result.');

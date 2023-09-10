@@ -227,9 +227,9 @@ dcl-pr iv_request_setBinaryBody extproc(*dclcase);
   size uns(10) value;
 end-pr;
 
-dcl-pr iv_request_setStream extproc(*dclcase);
+dcl-pr iv_request_setFile extproc(*dclcase);
   request pointer const;
-  stream pointer const;
+  file varchar(1024) const;
 end-pr;
 
 dcl-pr iv_request_toString likeds(LVARPUCHAR_t) extproc(*dclcase);
@@ -242,10 +242,6 @@ dcl-pr iv_request_toStream extproc(*dclcase);
 end-pr;
 
 dcl-pr iv_request_stream likeds(iv_request_stream_result) extproc(*dclcase);
-  request pointer const;
-end-pr;
-
-dcl-pr iv_request_hasStream ind extproc(*dclcase);
   request pointer const;
 end-pr;
 

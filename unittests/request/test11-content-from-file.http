@@ -1,0 +1,39 @@
+POST / HTTP/1.1
+Host: localhost:80
+Connection: keep-alive
+content-type:application/json
+Accept: */*
+
+{
+  "customer_id": "123456",
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "johndoe@example.com",
+  "phone_number": "+1 (555) 123-4567",
+  "address": {
+    "street": "123 Main Street",
+    "city": "Anytown",
+    "state": "CA",
+    "zip_code": "12345"
+  },
+  "membership_level": "Gold",
+  "registration_date": "2023-01-15",
+  "last_purchase": {
+    "date": "2023-09-05",
+    "total_amount": 250.0,
+    "products": [
+      {
+        "product_id": "7890",
+        "name": "Widget X",
+        "quantity": 2,
+        "unit_price": 50.0
+      },
+      {
+        "product_id": "5678",
+        "name": "Gadget Y",
+        "quantity": 1,
+        "unit_price": 150.0
+      }
+    ]
+  }
+}

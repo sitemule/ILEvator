@@ -26,11 +26,31 @@ dcl-s UTF8_COLON char(1) inz(':') ccsid(*utf8);
 dcl-s UPPER char(26) ccsid(*utf8) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 dcl-s LOWER char(26) ccsid(*utf8) inz('abcdefghijklmnopqrstuvwxyz');
 
+dcl-pr open int(10) extproc('open');
+    path pointer value options(*string);
+    openflags int(10) value;
+    mode uns(10) value options(*nopass);
+    ccsid uns(10) value options(*nopass);
+    textCreateId uns(10) value options(*nopass);
+end-pr;
+
+dcl-pr read int(10) extproc('read');
+    fileDesc int(10) value;
+    buffer pointer value;
+    length uns(10) value;
+end-pr;
+
+dcl-pr close int(10) extproc('close');
+    fileDesc int(10) value;
+end-pr;
+
+dcl-c O_RDONLY 1;
+
 dcl-ds iv_request_t qualified template;
   method varchar(10);
   url likeds(iv_url_t);
   headers pointer;
-  stream pointer;
+  file varchar(1024);
   content pointer;
   contentSize uns(10);
   contentCcsid uns(10);
@@ -111,8 +131,6 @@ dcl-proc iv_request_dispose export;
 
   deallocateHeaders(request.headers);
 
-  // TODO dealloc stream
-
   teraspace_free(p_request);
 end-proc;
 
@@ -138,6 +156,9 @@ dcl-proc iv_request_toString export;
   dcl-s translatedLength uns(10);
   dcl-s hasContentTypeHeader ind inz(*off);
   dcl-s hasAcceptHeader ind inz(*off);
+  dcl-s fileDesc int(10);
+  dcl-s fileBuffer char(4096) ccsid(*hex);
+  dcl-s rc int(10);
 
   if (request.contentSize > SERIALIZED_INIT_SIZE);
       sizeAllocated = SERIALIZED_INIT_SIZE + request.contentSize;
@@ -187,6 +208,7 @@ dcl-proc iv_request_toString export;
 
   if (request.content <> *null);
     // request.contentSize may not be the real size after char conversion
+    // TODO calculate real size
     data+= 'content-length' + UTF8_COLON + %char(request.contentSize) + CRLF;
 
     if (not hasContentTypeHeader);
@@ -227,11 +249,24 @@ dcl-proc iv_request_toString export;
 
       teraspace_free(tmpSerializedContent.string);
     endif;
+  elseif (request.file <> *blank);
+    fileDesc = open(request.file : O_RDONLY);
+    rc = read(fileDesc : %addr(fileBuffer) : %size(fileBuffer));
+    dow (rc > 0);
+      memcpy(serialized.string + serialized.length : %addr(fileBuffer) : rc);
+      serialized.length += rc;
+      rc = read(fileDesc : %addr(fileBuffer) : %size(fileBuffer));
+    enddo;  
   endif;
 
   // Note: no ending CRLF after body !!!
 
   return serialized;
+  
+  on-exit;
+    if (fileDesc >= 0);
+      callp close(fileDesc);
+    endif;
 end-proc;
 
 
@@ -549,26 +584,15 @@ dcl-proc iv_request_setFormBody export;
 end-proc;
 
 
-dcl-proc iv_request_setStream export;
+dcl-proc iv_request_setFile export;
   dcl-pi *n;
     p_request pointer const;
-    stream pointer const;
+    file varchar(1024) const;
   end-pi;
 
   dcl-ds request likeds(iv_request_t) based(p_request);
 
-  request.stream = stream;
-end-proc;
-
-
-dcl-proc iv_request_hasStream export;
-  dcl-pi *n ind;
-    p_request pointer const;
-  end-pi;
-
-  dcl-ds request likeds(iv_request_t) based(p_request);
-
-  return request.stream <> *null;
+  request.file = file;
 end-proc;
 
 
@@ -590,7 +614,7 @@ dcl-proc iv_request_hasBody export;
 
   dcl-ds request likeds(iv_request_t) based(p_request);
 
-  return request.stream <> *null or request.content <> *null;
+  return request.file <> *blank or request.content <> *null;
 end-proc;
 
 
