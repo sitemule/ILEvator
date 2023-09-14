@@ -86,7 +86,8 @@ dcl-pr test_overrideAccept extproc(*dclcase) end-pr;
 dcl-pr test_formData extproc(*dclcase) end-pr;
 dcl-pr test_textBody extproc(*dclcase) end-pr;
 dcl-pr test_streamRequest extproc(*dclcase) end-pr;
-dcl-pr test_contentFromFile extproc(*dclcase) end-pr;
+dcl-pr test_contentFromFileToString extproc(*dclcase) end-pr;
+dcl-pr test_contentFromFileToStream extproc(*dclcase) end-pr;
 
 
 dcl-s projectSourceDir varchar(1000);
@@ -330,7 +331,7 @@ dcl-proc test_formData export;
 end-proc;
 
 
-dcl-proc test_contentFromFile export;
+dcl-proc test_contentFromFileToString export;
   dcl-s request pointer;
   dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
   dcl-ds buffer likeds(LVARPUCHAR_t);
@@ -353,6 +354,33 @@ dcl-proc test_contentFromFile export;
 end-proc;
 
 
+dcl-proc test_contentFromFileToStream export;
+  dcl-s request pointer;
+  dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+  dcl-ds outstream likeds(stream_t) based(p_outstream);
+  dcl-s buffer like(stream_buffer_t);
+  
+  assumedResult = loadFile('unittests/request/test11-content-from-file.http');
+  
+  p_outstream = stream_new(%size(stream_buffer_t));
+  outstream.writer = %paddr(stream_memory_writer);
+  outstream.handle = %addr(buffer);
+  
+  request = iv_request_new('POST' : 'http://localhost');
+  iv_request_setContentType(request : 'application/json');
+  iv_request_setFile(request : 'unittests/request/request-content-from-file.txt');
+  
+  iv_request_toStream(request : p_outstream);
+  
+  iEqual(%len(assumedResult) : %len(buffer));
+  assert(memcmp(%addr(assumedResult : *data) : %addr(buffer : *data) : %len(buffer)) = 0: 
+      'Request does not correspond to assumed result.');
+  
+  on-exit;
+    iv_request_dispose(request);
+end-proc;
+
+
 dcl-proc test_streamRequest export;
   dcl-s request pointer;
   dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
@@ -369,7 +397,6 @@ dcl-proc test_streamRequest export;
   iv_request_setContentType(request : 'application/x-www-form-urlencoded');
   iv_request_setFormBody(request : iv_form_of('name' : 'Mihael Schmidt' : 'role' : 'developer'));
   iv_request_toStream(request : p_outstream);
-  stream_flush(p_outstream);
   
   iEqual(%len(assumedResult) : %len(buffer));
   assert(memcmp(%addr(assumedResult : *data) : %addr(buffer : *data) : %len(buffer)) = 0: 

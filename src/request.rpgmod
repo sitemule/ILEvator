@@ -292,6 +292,9 @@ dcl-proc iv_request_toStream export;
   dcl-s translatedLength uns(10);
   dcl-s hasContentTypeHeader ind inz(*off);
   dcl-s hasAcceptHeader ind inz(*off);
+  dcl-s fileDesc int(10);
+  dcl-s fileBuffer char(4096) ccsid(*hex);
+  dcl-s rc int(10);
 
   if (request.contentSize > SERIALIZED_INIT_SIZE);
       sizeAllocated = SERIALIZED_INIT_SIZE + request.contentSize;
@@ -379,9 +382,25 @@ dcl-proc iv_request_toStream export;
 
       teraspace_free(tmpSerializedContent.string);
     endif;
+  elseif (request.file <> *blank);
+    fileDesc = open(request.file : O_RDONLY);
+    rc = read(fileDesc : %addr(fileBuffer) : %size(fileBuffer));
+    dow (rc > 0);
+      stream_write(outstream : %addr(fileBuffer) : rc);
+      rc = read(fileDesc : %addr(fileBuffer) : %size(fileBuffer));
+    enddo;
   endif;
 
+  stream_flush(outstream);
+
   // Note: no ending CRLF after body !!!
+  
+  on-exit;
+    teraspace_free(serialized.string);
+  
+    if (fileDesc >= 0);
+      callp close(fileDesc);
+    endif;
 end-proc;
 
 
