@@ -1,18 +1,17 @@
-
 --ilevator-unittest-boundary
-Content-Disposition: form-data
+Content-Disposition: form-data; name="test1"
 Content-Type: text/plain
 Content-Transfer-Encoding: 8bit
 
 ILEvator rocks!
 --ilevator-unittest-boundary
-Content-Disposition: form-data
+Content-Disposition: form-data; name="test2"
 Content-Type: text/plain
 Content-Transfer-Encoding: 8bit
 
 ILEastic rocks!
 --ilevator-unittest-boundary
-Content-Disposition: form-data
+Content-Disposition: form-data; name="test3"
 Content-Type: text/plain
 Content-Transfer-Encoding: 8bit
 

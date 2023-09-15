@@ -59,8 +59,9 @@ dcl-pr test_singleTextPart end-pr;
 dcl-pr test_singleTextPartWithHeaders end-pr;
 dcl-pr test_multipleTextParts end-pr;
 dcl-pr test_singleTextBase64Encoded end-pr;
+dcl-pr test_umlautFieldName end-pr;
 
-dcl-c BOUNDARY '--ilevator-unittest-boundary';
+dcl-c BOUNDARY 'ilevator-unittest-boundary';
 
 dcl-s projectSourceDir varchar(1000);
 
@@ -89,7 +90,38 @@ dcl-proc test_singleTextPart export;
     outstream.handle = %addr(buffer);
     
     multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
-    iv_multipart_addPartFromString(multipart : 'ILEvator rocks!');
+    iv_multipart_addPartFromString(multipart : 'test' : 'ILEvator rocks!');
+    iv_multipart_finalize(multipart);
+    
+    iv_multipart_toStream(multipart : p_outstream);
+    
+    iEqual(%len(assumedResult) : %len(buffer));
+    assert(memcmp(%addr(assumedResult : *data) : %addr(buffer : *data) : %len(buffer)) = 0: 
+        'Multipart does not correspond with the assumed result.');
+    
+    on-exit;
+        iv_multipart_free(multipart);
+        stream_delete(p_outstream);
+end-proc;
+
+
+dcl-proc test_umlautFieldName export;
+    dcl-s multipart pointer;
+    dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+    dcl-ds outstream likeds(stream_t) based(p_outstream);
+    dcl-s buffer like(stream_buffer_t);
+        
+    
+    assumedResult = loadFile('unittests/multipart/test4-umlaut-field-name.txt');
+    
+    p_outstream = stream_new(%size(stream_buffer_t));
+    outstream.writer = %paddr(stream_memory_writer);
+    outstream.handle = %addr(buffer);
+    
+    multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
+    iv_multipart_addPartFromString(multipart : 'L' + u'00FC' + 'ckenf' + u'00FC' + 'ller' : 'ILEvator rocks!');
+    iv_multipart_finalize(multipart);
+    
     iv_multipart_toStream(multipart : p_outstream);
     
     iEqual(%len(assumedResult) : %len(buffer));
@@ -121,7 +153,9 @@ dcl-proc test_singleTextPartWithHeaders export;
     outstream.handle = %addr(buffer);
     
     multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
-    iv_multipart_addPartFromString(multipart : 'ILEvator rocks!' : IV_MULTIPART_ENCODING_TEXT : headers);
+    iv_multipart_addPartFromString(multipart : 'test' : 'ILEvator rocks!' : IV_MULTIPART_ENCODING_TEXT : headers);
+    iv_multipart_finalize(multipart);
+    
     iv_multipart_toStream(multipart : p_outstream);
     
     iEqual(%len(assumedResult) : %len(buffer));
@@ -148,9 +182,11 @@ dcl-proc test_multipleTextParts export;
     outstream.handle = %addr(buffer);
     
     multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
-    iv_multipart_addPartFromString(multipart : 'ILEvator rocks!');
-    iv_multipart_addPartFromString(multipart : 'ILEastic rocks!');
-    iv_multipart_addPartFromString(multipart : 'noxDB rocks!');
+    iv_multipart_addPartFromString(multipart : 'test1' : 'ILEvator rocks!');
+    iv_multipart_addPartFromString(multipart : 'test2' : 'ILEastic rocks!');
+    iv_multipart_addPartFromString(multipart : 'test3' : 'noxDB rocks!');
+    iv_multipart_finalize(multipart);
+    
     iv_multipart_toStream(multipart : p_outstream);
     
     iEqual(%len(assumedResult) : %len(buffer));

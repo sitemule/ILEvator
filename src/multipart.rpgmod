@@ -5,9 +5,11 @@ ctl-opt nomain thread(*concurrent);
 
 
 /include 'base64.rpginc'
+/include 'encode.rpginc'
 /include 'message.rpginc'
 /include 'mime.rpginc'
 /include 'multipart.rpginc'
+/include 'request.rpginc'
 /include 'simpleList.rpginc'
 /include 'stream.rpginc'
 /include 'teraspace.rpginc'
@@ -68,9 +70,13 @@ dcl-c ASCII 437;
 dcl-s CRLF char(2) ccsid(*hex) inz(x'0D0A');
 
 dcl-ds iv_multipart_handler_t qualified template;
+    processRequest pointer(*proc);
     mimeType varchar(1000);
     tempFile varchar(100);
     boundary varchar(70) ccsid(ASCII);
+    finalized ind;
+    partCount int(10);
+    contentSize int(10);
 end-ds;
 
 dcl-s contentTransferEncodings char(10) dim(3) ctdata;
@@ -86,6 +92,9 @@ dcl-proc iv_multipart_new export;
   
     ptr = teraspace_alloc(%size(handler));
     clear handler;
+  
+    handler.processRequest = %paddr(iv_multipart_processRequest);
+    handler.finalized = *off;
   
     if (%parms() = 0);
         handler.mimeType = 'multipart/form-data';
@@ -105,6 +114,20 @@ dcl-proc iv_multipart_new export;
 end-proc;
 
 
+dcl-proc iv_multipart_processRequest export;
+    dcl-pi *n;
+        handler pointer value;
+        request pointer value;
+    end-pi;
+
+    dcl-ds requestHandler likeds(iv_multipart_handler_t) based(handler);
+    
+    iv_request_addHeader(request : 'Content-Type' : 'multipart/form-data; boundary=' + requestHandler.boundary);
+    iv_request_addHeader(request : 'Content-Length' : %char(requestHandler.contentSize));
+    iv_request_setFile(request : requestHandler.tempFile);
+end-proc;
+
+
 dcl-proc iv_multipart_free export;
     dcl-pi *n;
         p_handler pointer;
@@ -119,9 +142,35 @@ dcl-proc iv_multipart_free export;
 end-proc;
 
 
+dcl-proc iv_multipart_finalize export;
+    dcl-pi *n;
+        p_handler pointer;
+    end-pi;
+
+    dcl-ds handler likeds(iv_multipart_handler_t) based(p_handler);
+    dcl-s fileDesc int(10) inz(-1);
+    
+    if (handler.finalized);
+        return;
+    endif;
+    
+    fileDesc = openTempFile(p_handler);
+    if (fileDesc >= 0);
+        writeEndingBoundary(p_handler : fileDesc);
+        handler.finalized = *on;
+    endif;
+    
+    on-exit;
+        if (fileDesc >= 0);
+            callp close(fileDesc);
+        endif;
+end-proc;
+
+
 dcl-proc iv_multipart_addPartFromString export;
     dcl-pi *n;
         p_handler pointer value;
+        fieldName varchar(100) ccsid(1208) value;
         p_content varchar(1048576) ccsid(1208) value;
         p_encoding uns(3) value options(*nopass);
         headers pointer value options(*nopass);
@@ -129,20 +178,24 @@ dcl-proc iv_multipart_addPartFromString export;
     
     dcl-ds handler likeds(iv_multipart_handler_t) based(p_handler);
     dcl-s ccsid uns(5) inz(819); // 819 = ISO-8859-1 (Latin-1)
-    dcl-s fileDesc int(10);
+    dcl-s fileDesc int(10) inz(-1);
     dcl-s content varchar(1048576) ccsid(*hex);
     dcl-s xlatedLength uns(10);
     dcl-s encoding uns(3) inz(IV_MULTIPART_ENCODING_TEXT);
+    
+    if (handler.finalized);
+        return;
+    endif;
     
     if (%len(p_content) = 0);
         return;
     endif;
     
-    if (%parms() >= 3);
+    if (%parms() >= 4);
         encoding = p_encoding;
     endif;
     
-    if (%parms() >= 4);
+    if (%parms() >= 5);
         ccsid = getCcsidFromHeaders(headers : ccsid);
     endif;
 
@@ -162,18 +215,18 @@ dcl-proc iv_multipart_addPartFromString export;
     if (fileDesc >= 0);
         writeBoundary(p_handler : fileDesc);
         
-        writeHeader(fileDesc : 'Content-Disposition: form-data');
-        writeHeader(fileDesc : 'Content-Type: text/plain');
+        writeHeader(p_handler : fileDesc : 'Content-Disposition: form-data; name="' + iv_encode_url(fieldName) + '"');
+        writeHeader(p_handler : fileDesc : 'Content-Type: text/plain');
         if (%elem(contentTransferEncodings) >= encoding);
-            writeHeader(fileDesc : 'Content-Transfer-Encoding: ' + %trim(contentTransferEncodings(encoding)));
+            writeHeader(p_handler : fileDesc : 'Content-Transfer-Encoding: ' + %trim(contentTransferEncodings(encoding)));
         endif;
         
-        if (%parms() >= 4);
-            writeHeaders(fileDesc : headers);
+        if (%parms() >= 5);
+            writeHeaders(p_handler : fileDesc : headers);
         endif;
         
         // write body content delimiter (CRLF)
-        callp write(fileDesc : %addr(CRLF) : 2);
+        writeMessageBody(p_handler : fileDesc : %addr(CRLF) : 2);
         
         if (encoding = IV_MULTIPART_ENCODING_BASE64);
           // TODO write body base64 encoded
@@ -181,36 +234,59 @@ dcl-proc iv_multipart_addPartFromString export;
           // best practice : base64 encoded and split lines at 78 + CRLF which makes 80 bytes per line.
         else;
           // just write the content
-          callp write(fileDesc : %addr(content : *data) : %len(content));
+          writeMessageBody(p_handler : fileDesc : %addr(content : *data) : %len(content));
         endif;
     else;
         message_escape('Could not open temporary file for adding multipart message part.');
     endif;
+    
+    handler.partCount += 1;
+    
+    on-exit;
+        if (fileDesc >= 0);
+            callp close(fileDesc);
+        endif;
 end-proc;
 
 
 dcl-proc iv_multipart_addPartFromFile export;
     dcl-pi *n;
-        handler pointer value;
+        p_handler pointer value;
         path pointer value options(*string);
         encoding uns(3) value options(*nopass);
         headers pointer value options(*nopass);
     end-pi;
 
+    dcl-ds handler likeds(iv_multipart_handler_t) based(p_handler);
+    
+    if (handler.finalized);
+        return;
+    endif;
+    
     // TODO
+    
+    handler.partCount += 1;
 end-proc;
 
 
 dcl-proc iv_multipart_addPartFromBytes export;
     dcl-pi *n;
-        handler pointer value;
+        p_handler pointer value;
         content pointer value;
         length uns(10) value;
         encoding uns(3) value options(*nopass);
         headers pointer value options(*nopass);
     end-pi;
 
+    dcl-ds handler likeds(iv_multipart_handler_t) based(p_handler);
+    
+    if (handler.finalized);
+        return;
+    endif;
+    
     // TODO
+    
+    handler.partCount += 1;
 end-proc;
 
 
@@ -222,9 +298,8 @@ dcl-proc iv_multipart_toStream export;
     
     dcl-c BUFFER_SIZE 4096; // file system block size = 4096
     dcl-ds handler likeds(iv_multipart_handler_t) based(p_handler);
-    dcl-s fileDesc int(10);
+    dcl-s fileDesc int(10) inz(-1);
     dcl-s buffer char(BUFFER_SIZE) ccsid(*hex);
-    dcl-s padding char(2) ccsid(ASCII) inz('--');
     dcl-s rc int(10);
     
     fileDesc = openTempFileReadOnly(p_handler);
@@ -234,13 +309,13 @@ dcl-proc iv_multipart_toStream export;
         stream_write(outstream : %addr(buffer) : rc);
         rc = read(fileDesc : %addr(buffer) : %size(buffer));
     enddo;
-
-    // write boundary signaling end of multipart message
-    stream_write(outstream : %addr(CRLF) : 2);
-    stream_write(outstream : %addr(handler.boundary : *data) : %len(handler.boundary));
-    stream_write(outstream : %addr(padding) : 2);
     
     stream_flush(outstream);
+    
+    on-exit;
+        if (fileDesc >= 0);
+            callp close(fileDesc);
+        endif;
 end-proc;
 
 
@@ -294,26 +369,49 @@ dcl-proc writeBoundary export;
     end-pi;
 
     dcl-ds handler likeds(iv_multipart_handler_t) based(p_handler);
+    dcl-s boundaryPrefix char(2) inz('--') ccsid(ASCII);
+    
+    if (handler.partCount > 0);
+        writeMessageBody(p_handler : fileDesc : %addr(CRLF) : 2);
+    endif;
+    
+    writeMessageBody(p_handler : fileDesc : %addr(boundaryPrefix) : 2);
+    writeMessageBody(p_handler : fileDesc : %addr(handler.boundary : *data) : %len(handler.boundary));
+    writeMessageBody(p_handler : fileDesc : %addr(CRLF) : 2);
+end-proc;
 
-    callp write(fileDesc : %addr(CRLF) : 2);
-    callp write(fileDesc : %addr(handler.boundary : *data) : %len(handler.boundary));
-    callp write(fileDesc : %addr(CRLF) : 2);
+
+dcl-proc writeEndingBoundary export;
+    dcl-pi *n;
+        p_handler pointer value;
+        fileDesc int(10) value;
+    end-pi;
+
+    dcl-ds handler likeds(iv_multipart_handler_t) based(p_handler);
+    dcl-s boundaryPrefix char(2) inz('--') ccsid(ASCII);
+    
+    writeMessageBody(p_handler : fileDesc : %addr(CRLF) : 2);
+    writeMessageBody(p_handler : fileDesc : %addr(boundaryPrefix) : 2);
+    writeMessageBody(p_handler : fileDesc : %addr(handler.boundary : *data) : %len(handler.boundary));
+    writeMessageBody(p_handler : fileDesc : %addr(boundaryPrefix) : 2);
 end-proc;
 
 
 dcl-proc writeHeader;
     dcl-pi *n;
+        handler pointer value;
         fileDesc int(10) value;
         header varchar(IV_MULTIPART_HEADER_SIZE) ccsid(*utf8) value;
     end-pi;
     
-    callp write(fileDesc : %addr(header : *data) : %len(header));
-    callp write(fileDesc : %addr(CRLF) : 2);
+    writeMessageBody(handler : fileDesc : %addr(header : *data) : %len(header));
+    writeMessageBody(handler : fileDesc : %addr(CRLF) : 2);
 end-proc;
 
 
 dcl-proc writeHeaders;
     dcl-pi *n;
+        handler pointer value;
         fileDesc int(10) value;
         headers pointer value;
     end-pi;
@@ -332,9 +430,26 @@ dcl-proc writeHeaders;
         headerName = %str(nodePayload.key.string : nodePayload.key.length);
         headerValue = %str(nodePayload.value.string : nodePayload.value.length);
         header = headerName + separator + headerValue + CRLF;
-        callp write(fileDesc : %addr(header : *data) : %len(header));
+        writeMessageBody(handler : fileDesc : %addr(header : *data) : %len(header));
     enddo;
 end-proc;
+
+
+dcl-proc writeMessageBody export;
+    dcl-pi *n;
+        p_handler pointer value;
+        fileDesc int(10) value;
+        buffer pointer value;
+        length uns(10) value;
+    end-pi;
+
+    dcl-ds handler likeds(iv_multipart_handler_t) based(p_handler);
+    
+    callp write(fileDesc : buffer : length);
+    
+    handler.contentSize += length;
+end-proc;
+
 
 
 dcl-proc openTempFile export;
@@ -376,7 +491,7 @@ dcl-proc generateBoundary export;
     boundary = %subst(%str(tmpnam(*omit) : 39) : 6) + %char(randomNumber);
     boundary = %xlate('.-+' : 'XXX' : boundary);
         
-    return '--' + boundary;
+    return boundary;
 end-proc;
 
 **CTDATA contentTransferEncodings

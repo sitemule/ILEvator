@@ -78,6 +78,17 @@ dcl-pr iv_multipart_free extproc(*dclcase);
 end-pr;
 
 ///
+// Finalize multipart message
+//
+// Finalizes this multipart message. No further parts are accepted to this multipart message.
+//
+// @param Multipart handler
+///
+dcl-pr iv_multipart_finalize extproc(*dclcase);
+    handler pointer;
+end-pr;
+
+///
 // Add new multipart from string
 //
 // Adds a new part to this multipart message. The content will be the string with the passed 
@@ -85,15 +96,20 @@ end-pr;
 // the charset UTF-8. If any other encoding should be used it needs to be passed with the HTTP
 // header Content-Type like <code>text/plain;charset=windows-1252</code>.
 // <br><br>
+// The field name will be addded as the name attribute to the Content-Disposition header
+// of this part.
+// <br><br>
 // Valid content transfer encodings are IV_MULTIPART_ENCODING_TEXT and IV_MULTIPART_ENCODING_BASE64.
 //
 // @param Multipart handler
+// @param Field name
 // @param New part content
 // @param Content transfer encoding (default: IV_MULTIPART_ENCODING_TEXT)
 // @param Part headers
 ///
 dcl-pr iv_multipart_addPartFromString extproc(*dclcase);
     handler pointer value;
+    fieldName varchar(100) ccsid(1208) value;
     content varchar(1048576) ccsid(1208) value;
     encoding uns(3) value options(*nopass);
     headers pointer value options(*nopass);

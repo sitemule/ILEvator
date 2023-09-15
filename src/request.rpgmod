@@ -156,7 +156,7 @@ dcl-proc iv_request_toString export;
   dcl-s translatedLength uns(10);
   dcl-s hasContentTypeHeader ind inz(*off);
   dcl-s hasAcceptHeader ind inz(*off);
-  dcl-s fileDesc int(10);
+  dcl-s fileDesc int(10) inz(-1);
   dcl-s fileBuffer char(4096) ccsid(*hex);
   dcl-s rc int(10);
 
@@ -292,7 +292,7 @@ dcl-proc iv_request_toStream export;
   dcl-s translatedLength uns(10);
   dcl-s hasContentTypeHeader ind inz(*off);
   dcl-s hasAcceptHeader ind inz(*off);
-  dcl-s fileDesc int(10);
+  dcl-s fileDesc int(10) inz(-1);
   dcl-s fileBuffer char(4096) ccsid(*hex);
   dcl-s rc int(10);
 
