@@ -15,10 +15,11 @@ ctl-opt nomain;
 /include 'psds.rpginc'
 
 
-dcl-pr test_multipartHandler extproc(*dclcase) end-pr;
+dcl-pr test_multipartHandlerText extproc(*dclcase) end-pr;
+dcl-pr test_multipartHandlerTextPartsWithMixedEncoding extproc(*dclcase) end-pr;
 
 
-dcl-proc test_multipartHandler export;
+dcl-proc test_multipartHandlerText export;
     dcl-s httpClient pointer;
     dcl-s buffer varchar(65000:4) ccsid(1208);
     dcl-s msg char(50);
@@ -37,10 +38,44 @@ dcl-proc test_multipartHandler export;
     if (iv_getStatus(httpClient) <> IV_HTTP_OK);
         fail('The request failed with HTTP status ' + %char(iv_getStatus(httpClient)) + ' - ' + buffer);
     else;
-        assert('mihael - mihael' + u'0040' +'rpgnextgen.com' = buffer : 'The passed custom HTTP header on the request has not been returned as the message body.');
+        assert('mihael - mihael' + u'0040' +'rpgnextgen.com' = buffer : 'The passed message text on the request has not been returned as the message body.');
     endif;
 
     on-exit;
         iv_free(httpClient);
         iv_multipart_free(multipart);
 end-proc;
+
+
+dcl-proc test_multipartHandlerTextPartsWithMixedEncoding export;
+    dcl-s httpClient pointer;
+    dcl-s buffer varchar(65000:4) ccsid(1208);
+    dcl-s msg char(50);
+    dcl-s multipart pointer;
+    dcl-s headers pointer;
+
+    headers = iv_buildList('Content-Type' : 'text/plain; charset=windows-1252');
+
+    multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE);
+    iv_multipart_addPartFromString(multipart : 'user' : 'J' + u'00F8' + 'rn' : IV_MULTIPART_ENCODING_TEXT : headers);
+    iv_multipart_addPartFromString(multipart : 'email' : 'jorn' + u'0040' +'example.com');
+    iv_multipart_finalize(multipart);
+    
+    httpClient = iv_newHttpClient();
+    iv_setResponseDataBuffer(httpClient : %addr(buffer) : %size(buffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    iv_setRequestHandler(httpClient : multipart);
+    
+    iv_execute(httpClient : 'POST' : 'http://localhost:35801/api/multipart/form');
+    if (iv_getStatus(httpClient) <> IV_HTTP_OK);
+        fail('The request failed with HTTP status ' + %char(iv_getStatus(httpClient)) + ' - ' + buffer);
+    else;
+        assert('J' + u'00F8' + 'rn - jorn' + u'0040' +'example.com' = buffer : 'The passed message text on the request has not been returned as the message body.');
+    endif;
+
+    on-exit;
+        iv_free(httpClient);
+        iv_multipart_free(multipart);
+        iv_freeList(headers);
+end-proc;
+
+

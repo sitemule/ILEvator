@@ -214,15 +214,19 @@ dcl-proc iv_multipart_addPartFromString export;
     fileDesc = openTempFile(p_handler);
     if (fileDesc >= 0);
         writeBoundary(p_handler : fileDesc);
-        
+
         writeHeader(p_handler : fileDesc : 'Content-Disposition: form-data; name="' + iv_encode_url(fieldName) + '"');
-        writeHeader(p_handler : fileDesc : 'Content-Type: text/plain');
         if (%elem(contentTransferEncodings) >= encoding);
             writeHeader(p_handler : fileDesc : 'Content-Transfer-Encoding: ' + %trim(contentTransferEncodings(encoding)));
         endif;
         
         if (%parms() >= 5);
+            if (not containsHeader(headers : 'content-type'));
+                writeHeader(p_handler : fileDesc : 'Content-Type: text/plain');
+            endif;
             writeHeaders(p_handler : fileDesc : headers);
+        else;
+            writeHeader(p_handler : fileDesc : 'Content-Type: text/plain');
         endif;
         
         // write body content delimiter (CRLF)
@@ -406,6 +410,29 @@ dcl-proc writeHeader;
     
     writeMessageBody(handler : fileDesc : %addr(header : *data) : %len(header));
     writeMessageBody(handler : fileDesc : %addr(CRLF) : 2);
+end-proc;
+
+
+dcl-proc containsHeader;
+    dcl-pi *n ind;
+        headers pointer value;
+        p_headerName varchar(IV_MULTIPART_HEADER_NAME_SIZE) ccsid(*utf8) const;
+    end-pi;
+
+    dcl-ds iterator likeds(SLISTITERATOR_t);
+    dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
+    dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
+    dcl-s headerName varchar(IV_MULTIPART_HEADER_NAME_SIZE) ccsid(*utf8);
+
+    iterator = sList_setIterator(headers);
+    dow (sList_foreach(iterator));
+        headerName = %str(nodePayload.key.string : nodePayload.key.length);
+        if (p_headerName = headerName);
+          return *on;
+        endif;
+    enddo;
+    
+    return *off;
 end-proc;
 
 
