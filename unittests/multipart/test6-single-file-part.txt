@@ -1,7 +1,7 @@
 --ilevator-unittest-boundary
 Content-Disposition: form-data; name="test"
-Content-Transfer-Encoding: 8bit
-Content-Type: text/plain
+Content-Transfer-Encoding: binary
+Content-Type: application/octet-stream
 
 ILEvator rocks!
 --ilevator-unittest-boundary--

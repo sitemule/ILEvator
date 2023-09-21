@@ -60,6 +60,8 @@ dcl-pr test_singleTextPartWithHeaders end-pr;
 dcl-pr test_multipleTextParts end-pr;
 dcl-pr test_singleTextBase64Encoded end-pr;
 dcl-pr test_umlautFieldName end-pr;
+dcl-pr test_singleBytesPart end-pr;
+dcl-pr test_singleFilePartBinary end-pr;
 
 dcl-c BOUNDARY 'ilevator-unittest-boundary';
 
@@ -91,6 +93,68 @@ dcl-proc test_singleTextPart export;
     
     multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
     iv_multipart_addPartFromString(multipart : 'test' : 'ILEvator rocks!');
+    iv_multipart_finalize(multipart);
+    
+    iv_multipart_toStream(multipart : p_outstream);
+    
+    iEqual(%len(assumedResult) : %len(buffer));
+    assert(memcmp(%addr(assumedResult : *data) : %addr(buffer : *data) : %len(buffer)) = 0: 
+        'Multipart does not correspond with the assumed result.');
+    
+    on-exit;
+        iv_multipart_free(multipart);
+        stream_delete(p_outstream);
+end-proc;
+
+
+dcl-proc test_singleBytesPart export;
+    dcl-s multipart pointer;
+    dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+    dcl-ds outstream likeds(stream_t) based(p_outstream);
+    dcl-s buffer like(stream_buffer_t);
+    dcl-s content varchar(100) ccsid(*utf8);
+        
+    content = 'ILEvator rocks' + u'0021';
+    
+    assumedResult = loadFile('unittests/multipart/test5-single-bytes-part.txt');
+    
+    p_outstream = stream_new(%size(stream_buffer_t));
+    outstream.writer = %paddr(stream_memory_writer);
+    outstream.handle = %addr(buffer);
+    
+    multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
+    iv_multipart_addPartFromBytes(multipart : 'test' : %addr(content : *data) : %len(content));
+    iv_multipart_finalize(multipart);
+    
+    iv_multipart_toStream(multipart : p_outstream);
+    
+    iEqual(%len(assumedResult) : %len(buffer));
+    assert(memcmp(%addr(assumedResult : *data) : %addr(buffer : *data) : %len(buffer)) = 0: 
+        'Multipart does not correspond with the assumed result.');
+    
+    on-exit;
+        iv_multipart_free(multipart);
+        stream_delete(p_outstream);
+end-proc;
+
+
+dcl-proc test_singleFilePartBinary export;
+    dcl-s multipart pointer;
+    dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+    dcl-ds outstream likeds(stream_t) based(p_outstream);
+    dcl-s buffer like(stream_buffer_t);
+    dcl-s content varchar(100) ccsid(*utf8);
+        
+    content = 'ILEvator rocks' + u'0021';
+    
+    assumedResult = loadFile('unittests/multipart/test6-single-file-part.txt');
+    
+    p_outstream = stream_new(%size(stream_buffer_t));
+    outstream.writer = %paddr(stream_memory_writer);
+    outstream.handle = %addr(buffer);
+    
+    multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
+    iv_multipart_addPartFromFile(multipart : 'test' : 'unittests/multipart/test6-input.txt' : IV_MULTIPART_ENCODING_BINARY);
     iv_multipart_finalize(multipart);
     
     iv_multipart_toStream(multipart : p_outstream);

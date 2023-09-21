@@ -118,18 +118,19 @@ end-pr;
 ///
 // Add new multipart from file
 //
-// Adds a new part to this multipart message. The content of the passed file will added as the
-// content of the new part. If no headers are passed the Content-Type <code>text/plain</code> will 
-// be used with the charset UTF-8. If any other encoding should be used it needs to be passed with 
-// the HTTP header Content-Type like <code>text/plain;charset=windows-1252</code>.
+// Adds a new part to this multipart message. The content of the passed file will added as is as the
+// content of the new part. If no headers are passed the Content-Type <code>application/octet-stream</code> 
+// will be used.
 // 
 // @param Multipart handler
+// @param Field name
 // @param File path
 // @param Content transfer encoding (default: IV_MULTIPART_ENCODING_BASE64)
 // @param Part headers
 ///
 dcl-pr iv_multipart_addPartFromFile extproc(*dclcase);
     handler pointer value;
+    fieldName varchar(100) ccsid(1208) value;
     path pointer value options(*string);
     encoding uns(3) value options(*nopass);
     headers pointer value options(*nopass);
@@ -143,6 +144,7 @@ end-pr;
 // be used.
 // 
 // @param Multipart handler
+// @param Field name
 // @param Part content
 // @param Part content length
 // @param Content transfer encoding (default: IV_MULTIPART_ENCODING_BINARY)
@@ -150,6 +152,7 @@ end-pr;
 ///
 dcl-pr iv_multipart_addPartFromBytes extproc(*dclcase);
     handler pointer value;
+    fieldName varchar(100) ccsid(1208) value;
     content pointer value;
     length uns(10) value;
     encoding uns(3) value options(*nopass);

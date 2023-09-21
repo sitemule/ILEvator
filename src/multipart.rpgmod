@@ -256,41 +256,146 @@ end-proc;
 dcl-proc iv_multipart_addPartFromFile export;
     dcl-pi *n;
         p_handler pointer value;
+        fieldName varchar(100) ccsid(1208) value;
         path pointer value options(*string);
-        encoding uns(3) value options(*nopass);
+        p_encoding uns(3) value options(*nopass);
         headers pointer value options(*nopass);
     end-pi;
 
     dcl-ds handler likeds(iv_multipart_handler_t) based(p_handler);
+    dcl-s fileDesc int(10) inz(-1);
+    dcl-s encoding uns(3) inz(IV_MULTIPART_ENCODING_BASE64);
+    dcl-s inputDesc int(10) inz(-1);
+    dcl-s inputBuffer char(4096);
+    dcl-s rc int(10);
     
     if (handler.finalized);
         return;
     endif;
     
-    // TODO
+    if (%parms() >= 4);
+        encoding = p_encoding;
+    endif;
+    
+    fileDesc = openTempFile(p_handler);
+    if (fileDesc >= 0);
+        writeBoundary(p_handler : fileDesc);
+
+        writeHeader(p_handler : fileDesc : 'Content-Disposition: form-data; name="' + iv_encode_url(fieldName) + '"');
+        if (%elem(contentTransferEncodings) >= encoding);
+            writeHeader(p_handler : fileDesc : 'Content-Transfer-Encoding: ' + %trim(contentTransferEncodings(encoding)));
+        endif;
+        
+        if (%parms() >= 5);
+            if (not containsHeader(headers : 'content-type'));
+                writeHeader(p_handler : fileDesc : 'Content-Type: application/octet-stream');
+            endif;
+            writeHeaders(p_handler : fileDesc : headers);
+        else;
+            writeHeader(p_handler : fileDesc : 'Content-Type: application/octet-stream');
+        endif;
+        
+        // write body content delimiter (CRLF)
+        writeMessageBody(p_handler : fileDesc : %addr(CRLF) : 2);
+        
+        if (encoding = IV_MULTIPART_ENCODING_BASE64);
+            // TODO write body base64 encoded
+            // TODO change base64_encode/decode from ccsid(*utf8) to ccsid(*hex)?
+            // best practice : base64 encoded and split lines at 78 + CRLF which makes 80 bytes per line.
+        elseif (encoding = IV_MULTIPART_ENCODING_BINARY);
+            inputDesc = open(path : O_RDONLY);
+            if (inputDesc < 0);
+                message_escape('Could not open file ' + %str(path : 1024));
+            endif;
+            
+            rc = read(inputDesc : %addr(inputBuffer) : %size(inputBuffer));
+            dow (rc > 0);
+                writeMessageBody(p_handler : fileDesc : %addr(inputBuffer) : rc);
+                rc = read(inputDesc : %addr(inputBuffer) : %size(inputBuffer));
+            enddo;
+             
+            callp close(inputDesc);
+        else;
+            message_escape('Unsupported content transfer encoding. Only base64 and binary are supported.');
+        endif;
+    else;
+        message_escape('Could not open temporary file for adding multipart message part.');
+    endif;
     
     handler.partCount += 1;
+    
+    on-exit;
+        if (fileDesc >= 0);
+            callp close(fileDesc);
+        endif;
 end-proc;
 
 
 dcl-proc iv_multipart_addPartFromBytes export;
     dcl-pi *n;
         p_handler pointer value;
+        fieldName varchar(100) ccsid(1208) value;
         content pointer value;
         length uns(10) value;
-        encoding uns(3) value options(*nopass);
+        p_encoding uns(3) value options(*nopass);
         headers pointer value options(*nopass);
     end-pi;
 
     dcl-ds handler likeds(iv_multipart_handler_t) based(p_handler);
+    dcl-s fileDesc int(10) inz(-1);
+    dcl-s encoding uns(3) inz(IV_MULTIPART_ENCODING_BINARY);
     
     if (handler.finalized);
         return;
     endif;
     
-    // TODO
+    if (length = 0 or content = *null);
+        return;
+    endif;
+    
+    if (%parms() >= 5);
+        encoding = p_encoding;
+    endif;
+    
+    fileDesc = openTempFile(p_handler);
+    if (fileDesc >= 0);
+        writeBoundary(p_handler : fileDesc);
+
+        writeHeader(p_handler : fileDesc : 'Content-Disposition: form-data; name="' + iv_encode_url(fieldName) + '"');
+        if (%elem(contentTransferEncodings) >= encoding);
+            writeHeader(p_handler : fileDesc : 'Content-Transfer-Encoding: ' + %trim(contentTransferEncodings(encoding)));
+        endif;
+        
+        if (%parms() >= 6);
+            if (not containsHeader(headers : 'content-type'));
+                writeHeader(p_handler : fileDesc : 'Content-Type: application/octet-stream');
+            endif;
+            writeHeaders(p_handler : fileDesc : headers);
+        else;
+            writeHeader(p_handler : fileDesc : 'Content-Type: application/octet-stream');
+        endif;
+        
+        // write body content delimiter (CRLF)
+        writeMessageBody(p_handler : fileDesc : %addr(CRLF) : 2);
+        
+        if (encoding = IV_MULTIPART_ENCODING_BASE64);
+          // TODO write body base64 encoded
+          // TODO change base64_encode/decode from ccsid(*utf8) to ccsid(*hex)?
+          // best practice : base64 encoded and split lines at 78 + CRLF which makes 80 bytes per line.
+        else;
+          // just write the content
+          writeMessageBody(p_handler : fileDesc : content : length);
+        endif;
+    else;
+        message_escape('Could not open temporary file for adding multipart message part.');
+    endif;
     
     handler.partCount += 1;
+    
+    on-exit;
+        if (fileDesc >= 0);
+            callp close(fileDesc);
+        endif;
 end-proc;
 
 
@@ -501,7 +606,7 @@ dcl-proc openTempFileReadOnly export;
     dcl-ds handler likeds(iv_multipart_handler_t) based(p_handler);
     dcl-s fileDesc int(10);
     
-    fileDesc = open(handler.tempFile : O_RDONLY + O_CREATE + O_APPEND : S_IRUSR + S_IWUSR);
+    fileDesc = open(handler.tempFile : O_RDONLY);
     
     return fileDesc;
 end-proc;

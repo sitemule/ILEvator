@@ -1,7 +1,7 @@
 --ilevator-unittest-boundary
 Content-Disposition: form-data; name="test"
-Content-Type: text/plain
 Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
 user-defined-1: first part
 user-defined-2: second test
 
