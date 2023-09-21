@@ -62,6 +62,8 @@ dcl-pr test_singleTextBase64Encoded end-pr;
 dcl-pr test_umlautFieldName end-pr;
 dcl-pr test_singleBytesPart end-pr;
 dcl-pr test_singleFilePartBinary end-pr;
+dcl-pr test_singleFilePartBase64 end-pr;
+dcl-pr test_singleTextPartBase64 end-pr;
 
 dcl-c BOUNDARY 'ilevator-unittest-boundary';
 
@@ -83,7 +85,6 @@ dcl-proc test_singleTextPart export;
     dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
     dcl-ds outstream likeds(stream_t) based(p_outstream);
     dcl-s buffer like(stream_buffer_t);
-        
     
     assumedResult = loadFile('unittests/multipart/test1-single-text-part.txt');
     
@@ -93,6 +94,43 @@ dcl-proc test_singleTextPart export;
     
     multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
     iv_multipart_addPartFromString(multipart : 'test' : 'ILEvator rocks!');
+    iv_multipart_finalize(multipart);
+    
+    iv_multipart_toStream(multipart : p_outstream);
+    
+    iEqual(%len(assumedResult) : %len(buffer));
+    assert(memcmp(%addr(assumedResult : *data) : %addr(buffer : *data) : %len(buffer)) = 0: 
+        'Multipart does not correspond with the assumed result.');
+    
+    on-exit;
+        iv_multipart_free(multipart);
+        stream_delete(p_outstream);
+end-proc;
+
+
+dcl-proc test_singleTextPartBase64 export;
+    dcl-s multipart pointer;
+    dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+    dcl-ds outstream likeds(stream_t) based(p_outstream);
+    dcl-s buffer like(stream_buffer_t);
+        
+    
+    assumedResult = loadFile('unittests/multipart/test8-single-text-part-base64.txt');
+    
+    p_outstream = stream_new(%size(stream_buffer_t));
+    outstream.writer = %paddr(stream_memory_writer);
+    outstream.handle = %addr(buffer);
+    
+    multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
+    iv_multipart_addPartFromString(multipart : 'test' :
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt +
+        ut labore et dolore magna aliqua. Integer enim neque volutpat ac. Turpis massa sed elementum +
+        tempus. Purus sit amet luctus venenatis lectus magna. Aliquet bibendum enim facilisis gravida +
+        neque convallis. Porta lorem mollis aliquam ut porttitor leo a diam. Diam in arcu cursus euismod +
+        quis viverra nibh. Nunc aliquet bibendum enim facilisis gravida neque. Id donec ultrices tincidunt +
+        arcu. Feugiat pretium nibh ipsum consequat nisl vel pretium lectus quam. Aenean sed adipiscing diam +
+        donec.' :
+        IV_MULTIPART_ENCODING_BASE64);
     iv_multipart_finalize(multipart);
     
     iv_multipart_toStream(multipart : p_outstream);
@@ -143,9 +181,6 @@ dcl-proc test_singleFilePartBinary export;
     dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
     dcl-ds outstream likeds(stream_t) based(p_outstream);
     dcl-s buffer like(stream_buffer_t);
-    dcl-s content varchar(100) ccsid(*utf8);
-        
-    content = 'ILEvator rocks' + u'0021';
     
     assumedResult = loadFile('unittests/multipart/test6-single-file-part.txt');
     
@@ -155,6 +190,34 @@ dcl-proc test_singleFilePartBinary export;
     
     multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
     iv_multipart_addPartFromFile(multipart : 'test' : 'unittests/multipart/test6-input.txt' : IV_MULTIPART_ENCODING_BINARY);
+    iv_multipart_finalize(multipart);
+    
+    iv_multipart_toStream(multipart : p_outstream);
+    
+    iEqual(%len(assumedResult) : %len(buffer));
+    assert(memcmp(%addr(assumedResult : *data) : %addr(buffer : *data) : %len(buffer)) = 0: 
+        'Multipart does not correspond with the assumed result.');
+    
+    on-exit;
+        iv_multipart_free(multipart);
+        stream_delete(p_outstream);
+end-proc;
+
+
+dcl-proc test_singleFilePartBase64 export;
+    dcl-s multipart pointer;
+    dcl-s assumedResult varchar(1000000:4) ccsid(*utf8);
+    dcl-ds outstream likeds(stream_t) based(p_outstream);
+    dcl-s buffer like(stream_buffer_t);
+        
+    assumedResult = loadFile('unittests/multipart/test7-single-file-part-base64.txt');
+    
+    p_outstream = stream_new(%size(stream_buffer_t));
+    outstream.writer = %paddr(stream_memory_writer);
+    outstream.handle = %addr(buffer);
+    
+    multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
+    iv_multipart_addPartFromFile(multipart : 'test' : 'unittests/multipart/test7-input.txt');
     iv_multipart_finalize(multipart);
     
     iv_multipart_toStream(multipart : p_outstream);
