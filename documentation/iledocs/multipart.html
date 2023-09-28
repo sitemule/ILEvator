@@ -1,0 +1,363 @@
+<link rel="stylesheet" href="../css/iledocs.css" />
+<div class="iledocs">
+
+<div class="iledocs-page-toc">
+<h3>Sections</h3>
+<ol>
+<li><a href="basics.html">Basics</a></li>
+<li><a href="constants.html">Constants</a></li>
+<li><a href="encoding.html">Encoding</a></li>
+<li><a href="form.html">Form</a></li>
+<li><a href="request.html">Request</a></li>
+<li><a href="multipart.html">Multipart</a></li>
+</ol>
+</div>
+<div class="iledocs-toc-gap">&nbsp;</div>
+
+<div class="iledocs-page">
+<h2>Multipart</h2>
+
+
+<h3> Constants</h3>
+<table class="iledocs-table">
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_MULTIPART_ENCODING_BASE64</b></td><td>Base64 part encoding : The content will be encoded as in the specified CCSID (see Content-Type HTTP header, attribute charset) and then Base64 encoded. For better compatibility the lines
+will be split to a length of 80 characters.</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_MULTIPART_ENCODING_BINARY</b></td><td>Binary part encoding : The content will be added to the part as is.</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_MULTIPART_ENCODING_TEXT</b></td><td>Text part encoding : The content will be added as text encoded in the specified CCSID (see Content-Type HTTP header, attribute charset). This corresponds to the Content-Transfer-Encoding
+8bit.</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_MULTIPART_MEDIA_TYPE</b></td><td>Default Media Type for multipart form data</td>
+</tr>
+
+</table>
+
+
+
+<h3>Procedures</h3>
+<table class="iledocs-table">
+
+<tr>
+<td><a href="#proc_iv_multipart_addPartFromBytes">iv_multipart_addPartFromBytes</a></td><td>Add new multipart from raw byte</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_multipart_addPartFromFile">iv_multipart_addPartFromFile</a></td><td>Add new multipart from file</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_multipart_addPartFromString">iv_multipart_addPartFromString</a></td><td>Add new multipart from string</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_multipart_finalize">iv_multipart_finalize</a></td><td>Finalize multipart message</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_multipart_free">iv_multipart_free</a></td><td>Free memory of multipart handler</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_multipart_new">iv_multipart_new</a></td><td>Create a new multipart handler</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_multipart_toStream">iv_multipart_toStream</a></td><td>Write content to stream</td>
+</tr>
+
+</table>
+<hr/>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_multipart_addPartFromBytes">iv_multipart_addPartFromBytes</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_multipart_addPartFromBytes</span>
+(
+Pointer handler, Varchar fieldName, Pointer content, UnsignedInteger length, UnsignedInteger encoding, Pointer headers)
+</code>
+<p>Adds a new part to this multipart message. The passed bytes will be added as the content of the
+new part. If no headers are passed the Content-Type <code>application/octet-stream</code> will
+be used.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Multipart handler</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (100)</span>
+ [value]</code>
+ &mdash; Field name</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Part content</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+UnsignedInteger (10)</span>
+ [value]</code>
+ &mdash; Part content length</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+UnsignedInteger (3)</span>
+ [nopass, value]</code>
+ &mdash; Content transfer encoding (default: IV_MULTIPART_ENCODING_BINARY)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [nopass, value]</code>
+ &mdash; Part headers</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_multipart_addPartFromFile">iv_multipart_addPartFromFile</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_multipart_addPartFromFile</span>
+(
+Pointer handler, Varchar fieldName, Pointer path, Varchar filename, UnsignedInteger encoding, Pointer headers)
+</code>
+<p>Adds a new part to this multipart message. The content of the passed file will added as is as the
+content of the new part. If no headers are passed the Content-Type <code>application/octet-stream</code>
+will be used.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Multipart handler</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (100)</span>
+ [value]</code>
+ &mdash; Field name</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; File path</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1000)</span>
+ [nopass, value]</code>
+ &mdash; File name (in the Content-Disposition HTTP header, default file name from file path parameter)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+UnsignedInteger (3)</span>
+ [nopass, value]</code>
+ &mdash; Content transfer encoding (default: IV_MULTIPART_ENCODING_BASE64)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [nopass, value]</code>
+ &mdash; Part headers</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_multipart_addPartFromString">iv_multipart_addPartFromString</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_multipart_addPartFromString</span>
+(
+Pointer handler, Varchar fieldName, Varchar content, UnsignedInteger encoding, Pointer headers)
+</code>
+<p>Adds a new part to this multipart message. The content will be the string with the passed
+headers. If no headers are passed the Content-Type <code>text/plain</code> will be used with
+the charset UTF-8. If any other encoding should be used it needs to be passed with the HTTP
+header Content-Type like <code>text/plain;charset=windows-1252</code>.
+<br><br>
+The field name will be addded as the name attribute to the Content-Disposition header
+of this part.
+<br><br>
+Valid content transfer encodings are IV_MULTIPART_ENCODING_TEXT and IV_MULTIPART_ENCODING_BASE64.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Multipart handler</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (100)</span>
+ [value]</code>
+ &mdash; Field name</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1048576)</span>
+ [value]</code>
+ &mdash; New part content</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+UnsignedInteger (3)</span>
+ [nopass, value]</code>
+ &mdash; Content transfer encoding (default: IV_MULTIPART_ENCODING_TEXT)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [nopass, value]</code>
+ &mdash; Part headers</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_multipart_finalize">iv_multipart_finalize</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_multipart_finalize</span>
+(
+Pointer handler)
+</code>
+<p>Finalizes this multipart message. No further parts are accepted to this multipart message.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+</code>
+ &mdash; Multipart handler
+</li>
+</ol>
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">This procedure <em>must</em> be called before any HTTP request is executed.</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_multipart_free">iv_multipart_free</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_multipart_free</span>
+(
+Pointer handler, Pointer boundaryId)
+</code>
+<p>Frees all memory associated with this multipart handler. If a boundary id is not provided it
+will be generated.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+</code>
+ &mdash; Multipart handler</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, nopass, const]</code>
+ &mdash; Boundary id (default: generated)</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_multipart_new">iv_multipart_new</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Pointer</span>
+<span class="iledocs-code-name">iv_multipart_new</span>
+(
+Varchar mimeType, Varchar boundary)
+</code>
+<p>Returns a new multipart handler.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1000)</span>
+ [nopass, const]</code>
+ &mdash; MIME type (default: <code>multipart/form-data</code>)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (70)</span>
+ [nopass, value]</code>
+ &mdash; Boundary Id</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Pointer
+
+</span>
+</code>
+ &mdash; New multipart handler
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">The procedure <code>iv_multipart_free</code> must be called for releasing
+the allocated resources of this multipart handler.</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_multipart_toStream">iv_multipart_toStream</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_multipart_toStream</span>
+(
+Pointer handler, Pointer stream)
+</code>
+<p>Writes the content of the multipart message to the passed stream. The HTTP request
+header with the boundary id will not be written to the stream. The procedure will
+return when the whole content is written to the stream.
+<br><br>
+This procedure can be called multiple time on the same multipart object. The same
+content will be streamed each time.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Multipart handler</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Stream</li>
+</ol>
+
+
+</div>
+</div>

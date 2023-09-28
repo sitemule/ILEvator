@@ -1,0 +1,755 @@
+<link rel="stylesheet" href="../css/iledocs.css" />
+<div class="iledocs">
+
+<div class="iledocs-page-toc">
+<h3>Sections</h3>
+<ol>
+<li><a href="basics.html">Basics</a></li>
+<li><a href="constants.html">Constants</a></li>
+<li><a href="encoding.html">Encoding</a></li>
+<li><a href="form.html">Form</a></li>
+<li><a href="request.html">Request</a></li>
+<li><a href="multipart.html">Multipart</a></li>
+</ol>
+</div>
+<div class="iledocs-toc-gap">&nbsp;</div>
+
+<div class="iledocs-page">
+<h2>Request</h2>
+
+
+<h3> Constants</h3>
+<table class="iledocs-table">
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_REQUEST_HEADER_NAME_SIZE</b></td><td>Maximum request HTTP header name/key size.</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_REQUEST_HEADER_VALUE_SIZE</b></td><td>Maximum request HTTP header value size.</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_REQUEST_URL_SIZE</b></td><td>Maximum request URL size</td>
+</tr>
+
+</table>
+
+
+
+<h3>Procedures</h3>
+<table class="iledocs-table">
+
+<tr>
+<td><a href="#proc_iv_request_addHeader">iv_request_addHeader</a></td><td>Add HTTP request header</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_addHeaders">iv_request_addHeaders</a></td><td>Add HTTP request headers</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_dispose">iv_request_dispose</a></td><td>Dispose HTTP request</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_getHeader">iv_request_getHeader</a></td><td>Get HTTP request header</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_hasBody">iv_request_hasBody</a></td><td>Check for message body</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_hasTextBody">iv_request_hasTextBody</a></td><td>Check for text body</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_new">iv_request_new</a></td><td>Create new HTTP request</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_new_packedUrl">iv_request_new_packedUrl</a></td><td>Create new HTTP request</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_new_unpackedUrl">iv_request_new_unpackedUrl</a></td><td>Create new HTTP request</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_setAcceptMimeType">iv_request_setAcceptMimeType</a></td><td>Set HTTP request Accept MIME type</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_setBinaryBody">iv_request_setBinaryBody</a></td><td>Set the HTTP request body (bytes)</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_setBody">iv_request_setBody</a></td><td>Set the HTTP request body</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_setContentType">iv_request_setContentType</a></td><td>Set HTTP request content type</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_setFormBody">iv_request_setFormBody</a></td><td>Set Form Data</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_setTextBody">iv_request_setTextBody</a></td><td>Set the HTTP request body (text)</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_setTextBodyBytes">iv_request_setTextBodyBytes</a></td><td>Set the HTTP request body (bytes as text)</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_toStream">iv_request_toStream</a></td><td>Serialize HTTP request to stream</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_toString">iv_request_toString</a></td><td>Serialize HTTP request to string</td>
+</tr>
+
+</table>
+<hr/>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_addHeader">iv_request_addHeader</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_request_addHeader</span>
+(
+Pointer request, Varchar name, Varchar value)
+</code>
+<p>Adds the passed HTTP header in the request. The header will be appended to the list
+of headers. Any previously added header with the same name will still be included
+in the HTTP message.
+
+In HTTP the last header in the list (with the same name) wins.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [const]</code>
+ &mdash; HTTP request</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_REQUEST_HEADER_NAME_SIZE)</span>
+ [const]</code>
+ &mdash; HTTP header name</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_REQUEST_HEADER_VALUE_SIZE)</span>
+ [const, value]</code>
+ &mdash; HTTP header value
+</li>
+</ol>
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">The HTTP header name needs to be in ASCII.</div>
+<div class="iledocs-box iledocs-info">The HTTP header will always be converted to lowercase.</div>
+<div class="iledocs-box iledocs-info">The HTTP header value will be percent-encoded.</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_addHeaders">iv_request_addHeaders</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_request_addHeaders</span>
+(
+Pointer request, Pointer headers)
+</code>
+<p>Adds a set of headers to the request. The header will be appended to the list
+of headers. Any previously added header with the same name will still be
+included in the HTTP message.
+
+In HTTP the last header in the list (with the same name) wins.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; HTTP request</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; List of HTTP headers (simpleList with key/value entries)
+</li>
+</ol>
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">The HTTP header will always be converted to lowercase.</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_dispose">iv_request_dispose</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_request_dispose</span>
+(
+Pointer request)
+</code>
+<p>Frees the memory used by this HTTP request.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+</code>
+ &mdash; HTTP request</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_getHeader">iv_request_getHeader</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Varchar</span>
+<span class="iledocs-code-name">iv_request_getHeader</span>
+(
+Pointer request, Varchar name)
+</code>
+<p>Returns the first request header value with the corresponding passed header
+name.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [const]</code>
+ &mdash; HTTP request</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_REQUEST_HEADER_NAME_SIZE)</span>
+ [const]</code>
+ &mdash; HTTP header name</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Varchar
+
+</span>
+</code>
+ &mdash; HTTP header value or <code>*blank</code>
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_hasBody">iv_request_hasBody</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Boolean</span>
+<span class="iledocs-code-name">iv_request_hasBody</span>
+(
+Pointer request)
+</code>
+<p>Returns if the request has any message body (either binary or text).</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [const]</code>
+ &mdash; HTTP request</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Boolean
+
+</span>
+</code>
+ &mdash; <code>*on</code> if the request has any message body else <code>*off</code>
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_hasTextBody">iv_request_hasTextBody</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Boolean</span>
+<span class="iledocs-code-name">iv_request_hasTextBody</span>
+(
+Pointer request)
+</code>
+<p>Returns if the request has a text message body. A text body can be added by one of the following procedures:
+
+<ul>
+   <li>iv_request_setFormBody</li>
+   <li>iv_request_setTextBody</li>
+   <li>iv_request_setTextBodyBytes</li>
+</ul></p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [const]</code>
+ &mdash; HTTP request</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Boolean
+
+</span>
+</code>
+ &mdash; <code>*on</code> if the request has a text body else <code>*off</code>
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_new">iv_request_new</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Pointer</span>
+<span class="iledocs-code-name">iv_request_new</span>
+</code>
+<p>Creates a new URL request with the given HTTP method, URL and optional
+the given Accept MIME type.</p>
+
+<h4 class="iledocs-procedure-subheader">Overloaded Procedures</h4>
+<ul class="iledocs-list">
+
+<li>overload</li>
+
+<li>iv_request_new_packedUrl</li>
+
+<li>iv_request_new_unpackedUrl</li>
+</ul>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Pointer
+
+</span>
+</code>
+ &mdash; Request
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">The caller needs to free the allocated memory of the request by
+calling <code>iv_request_dispose</code>.</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_new_packedUrl">iv_request_new_packedUrl</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Pointer</span>
+<span class="iledocs-code-name">iv_request_new_packedUrl</span>
+(
+Varchar method, Varchar url, Varchar mimeType)
+</code>
+<p>Creates a new URL request with the given HTTP method, URL and optional
+the given Accept MIME type.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (12)</span>
+ [value]</code>
+ &mdash; HTTP method</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_REQUEST_URL_SIZE:2)</span>
+ [value]</code>
+ &mdash; URL</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_REQUEST_HEADER_VALUE_SIZE:2)</span>
+ [nopass, value]</code>
+ &mdash; Accept HTTP header MIME type
+</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Pointer
+
+</span>
+</code>
+ &mdash; Request
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">The caller needs to free the allocated memory of the request by
+calling <code>iv_request_dispose</code>.</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_new_unpackedUrl">iv_request_new_unpackedUrl</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Pointer</span>
+<span class="iledocs-code-name">iv_request_new_unpackedUrl</span>
+(
+Varchar method, Pointer host, Integer port, Pointer path, Pointer query, Varchar mimeType)
+</code>
+<p>Creates a new URL request with the given HTTP method, URL and optional
+the given Accept MIME type.
+<br/><br/>
+The url has been unpacked to its parts and are passed as separate parameters.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (12)</span>
+ [value]</code>
+ &mdash; HTTP method</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; Host name</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (10)</span>
+ [value]</code>
+ &mdash; Port</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; Path</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; Query</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_REQUEST_HEADER_VALUE_SIZE:2)</span>
+ [nopass, value]</code>
+ &mdash; Accept HTTP header MIME type
+</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Pointer
+
+</span>
+</code>
+ &mdash; Request
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">The caller needs to free the allocated memory of the request by
+calling <code>iv_request_dispose</code>.</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_setAcceptMimeType">iv_request_setAcceptMimeType</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_request_setAcceptMimeType</span>
+(
+Pointer request, Varchar mimeType)
+</code>
+<p>Sets the content type HTTP header for the passed request. Any previously set
+content type will be overwritten.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [const]</code>
+ &mdash; HTTP request</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_REQUEST_HEADER_VALUE_SIZE)</span>
+ [const]</code>
+ &mdash; MIME type</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_setBinaryBody">iv_request_setBinaryBody</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_request_setBinaryBody</span>
+(
+Pointer request, Pointer content, UnsignedInteger size)
+</code>
+<p>Sets the passed data as the message body. The data will copied as is.
+The default Content-Type of the request will be <code>application/octet-stream</code>.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; HTTP request</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Message body content</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+UnsignedInteger (10)</span>
+ [value]</code>
+ &mdash; Length of message body content</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_setBody">iv_request_setBody</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_request_setBody</span>
+</code>
+<p>Sets the passed data as the message body.</p>
+
+<h4 class="iledocs-procedure-subheader">Overloaded Procedures</h4>
+<ul class="iledocs-list">
+
+<li>iv_request_setFormBody</li>
+
+<li>iv_request_setTextBody</li>
+
+<li>iv_request_setTextBodyBytes</li>
+
+<li>iv_request_setBinaryBody</li>
+</ul>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_setContentType">iv_request_setContentType</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_request_setContentType</span>
+(
+Pointer request, Varchar contentType)
+</code>
+<p>Sets the content type HTTP header for the passed request. Any previously set
+content type will be overwritten.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [const]</code>
+ &mdash; HTTP request</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (IV_REQUEST_HEADER_VALUE_SIZE)</span>
+ [const]</code>
+ &mdash; Content type</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_setFormBody">iv_request_setFormBody</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_request_setFormBody</span>
+(
+Pointer request, iv_lvarpuchar_t formData)
+</code>
+<p>Adds all graph entries at the root level to the request body form urlencoded
+and sets application/x-form-www-urlencoded as content-type.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Request</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Data Structure iv_lvarpuchar_t</span>
+ [value]</code>
+ &mdash; Form data (noxDB2)</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_setTextBody">iv_request_setTextBody</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_request_setTextBody</span>
+(
+Pointer request, Varchar content, UnsignedInteger ccsid)
+</code>
+<p>Sets the passed string data as the message body. The data will be converted
+into the corresponding CCSID. The CCSID of the request body is specified
+with the <em>charset</em> attribute of the Content-Type HTTP header.
+
+<br><br>
+<code>text/plain;charset=cp1252</code>
+<br><br>
+
+Some content types have an implicit CCSID, f. e. application/json is always
+UTF-8 encoded.
+
+<br><br>
+
+If any data should be sent as is (without CCSID conversion) the procedure
+<tt>iv_request_setBinaryBody</tt> can be used to set the data.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; HTTP request</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1048576)</span>
+ [value]</code>
+ &mdash; Message body</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+UnsignedInteger (10)</span>
+ [nopass, value]</code>
+ &mdash; CCSID of the message body value (default: 1208)</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_setTextBodyBytes">iv_request_setTextBodyBytes</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_request_setTextBodyBytes</span>
+(
+Pointer request, Pointer content, UnsignedInteger size, UnsignedInteger ccsid)
+</code>
+<p>Sets the passed data as the message body. The data will <em>not</em> be
+converted to any different CCSID but copied as is. The CCSID of the request
+body is specified with the <em>charset</em> attribute of the Content-Type HTTP
+header.
+
+<br><br>
+<code>text/plain;charset=cp1252</code>
+<br><br>
+
+Some content types have an implicit CCSID, f. e. application/json is always
+UTF-8 encoded.
+
+<br><br>
+
+If any data should be sent as is (without CCSID conversion) the procedure
+<tt>iv_request_setBinaryBody</tt> can be used to set the data.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; HTTP request</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Message body content</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+UnsignedInteger (10)</span>
+ [value]</code>
+ &mdash; Length of message body content</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+UnsignedInteger (10)</span>
+ [nopass, value]</code>
+ &mdash; CCSID of the message body value set on the Content-Type HTTP header (default: 1208)</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_toStream">iv_request_toStream</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_request_toStream</span>
+(
+Pointer request, Pointer outstream)
+</code>
+<p>Passes the HTTP message in the HTTP message format of the HTTP protocol
+version 1.1 to the passed stream.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [const]</code>
+ &mdash; HTTP request</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [const]</code>
+ &mdash; Output stream (see stream module)</li>
+</ol>
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">The stream fill be flushed after passing the request content to the stream.</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_toString">iv_request_toString</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+DataStructure</span>
+<span class="iledocs-code-name">iv_request_toString</span>
+(
+Pointer request)
+</code>
+<p>Returns the HTTP message in the HTTP message format of the HTTP protocol
+version 1.1.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [const]</code>
+ &mdash; HTTP request</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Data Structure 
+</span>
+</code>
+ &mdash; Formatted HTTP request
+
+</div>
+</div>

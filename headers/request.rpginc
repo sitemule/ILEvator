@@ -9,18 +9,18 @@
 /include 'varchar.rpginc'
 
 
+///
+// Maximum request URL size
+///
 dcl-c IV_REQUEST_URL_SIZE 32766;
+///
+// Maximum request HTTP header name/key size.
+///
 dcl-c IV_REQUEST_HEADER_NAME_SIZE 1024;
+///
+// Maximum request HTTP header value size.
+///
 dcl-c IV_REQUEST_HEADER_VALUE_SIZE 16384;
-
-///
-// Template for the next block of streamed data
-///
-dcl-ds iv_request_stream_result qualified template;
-  more ind;
-  content pointer;
-  size uns(10);
-end-ds;
 
 ///
 // Create new HTTP request
@@ -182,7 +182,7 @@ end-pr;
 ///
 dcl-pr iv_request_setFormBody extproc(*dclcase);
   request pointer value;
-  formData likeds(LVARPUCHAR_t) value;
+  formData likeds(lvarpuchar_t) value;
 end-pr;
 
 ///
@@ -214,6 +214,31 @@ dcl-pr iv_request_setTextBody extproc(*dclcase);
   ccsid uns(10) value options(*nopass);
 end-pr;
 
+///
+// Set the HTTP request body (bytes as text)
+//
+// Sets the passed data as the message body. The data will <em>not</em> be 
+// converted to any different CCSID but copied as is. The CCSID of the request 
+// body is specified with the <em>charset</em> attribute of the Content-Type HTTP 
+// header.
+//
+// <br><br>
+// <code>text/plain;charset=cp1252</code>
+// <br><br>
+//
+// Some content types have an implicit CCSID, f. e. application/json is always
+// UTF-8 encoded.
+//
+// <br><br>
+//
+// If any data should be sent as is (without CCSID conversion) the procedure
+// <tt>iv_request_setBinaryBody</tt> can be used to set the data.
+//
+// @param HTTP request
+// @param Message body content
+// @param Length of message body content
+// @param CCSID of the message body value set on the Content-Type HTTP header (default: 1208)
+///
 dcl-pr iv_request_setTextBodyBytes extproc(*dclcase);
   request pointer value;
   content pointer value;
@@ -221,48 +246,124 @@ dcl-pr iv_request_setTextBodyBytes extproc(*dclcase);
   ccsid uns(10) value options(*nopass);
 end-pr;
 
+///
+// Set the HTTP request body (bytes)
+//
+// Sets the passed data as the message body. The data will copied as is. 
+// The default Content-Type of the request will be <code>application/octet-stream</code>.
+//
+// @param HTTP request
+// @param Message body content
+// @param Length of message body content
+///
 dcl-pr iv_request_setBinaryBody extproc(*dclcase);
   request pointer value;
   content pointer value;
   size uns(10) value;
 end-pr;
 
-dcl-pr iv_request_setFile extproc(*dclcase);
+///
+// Serialize HTTP request to string
+//
+// Returns the HTTP message in the HTTP message format of the HTTP protocol 
+// version 1.1.
+//
+// @param HTTP request
+// @return Formatted HTTP request
+///
+dcl-pr iv_request_toString likeds(lvarpuchar_t) extproc(*dclcase);
   request pointer const;
-  file varchar(1024) const;
 end-pr;
 
-dcl-pr iv_request_toString likeds(LVARPUCHAR_t) extproc(*dclcase);
-  request pointer const;
-end-pr;
-
+///
+// Serialize HTTP request to stream
+//
+// Passes the HTTP message in the HTTP message format of the HTTP protocol 
+// version 1.1 to the passed stream.
+//
+// @param HTTP request
+// @param Output stream (see stream module)
+// @return Formatted HTTP request
+//
+// @info The stream fill be flushed after passing the request content to the stream.
+///
 dcl-pr iv_request_toStream extproc(*dclcase);
   request pointer const;
   outstream pointer const;
 end-pr;
 
-dcl-pr iv_request_stream likeds(iv_request_stream_result) extproc(*dclcase);
-  request pointer const;
-end-pr;
-
+///
+// Check for text body
+//
+// Returns if the request has a text message body. A text body can be added by one of the following procedures:
+//
+// <ul>
+//    <li>iv_request_setFormBody</li>
+//    <li>iv_request_setTextBody</li>
+//    <li>iv_request_setTextBodyBytes</li>
+// </ul>
+//
+// @param HTTP request
+// @return <code>*on</code> if the request has a text body else <code>*off</code>
+///
 dcl-pr iv_request_hasTextBody ind extproc(*dclcase);
   request pointer const;
 end-pr;
 
+///
+// Check for message body
+//
+// Returns if the request has any message body (either binary or text).
+//
+// @param HTTP request
+// @return <code>*on</code> if the request has any message body else <code>*off</code>
+///
 dcl-pr iv_request_hasBody ind extproc(*dclcase);
   request pointer const;
 end-pr;
 
 /if defined (RPG_HAS_OVERLOAD)
+///
+// Set the HTTP request body
+//
+// Sets the passed data as the message body.
+///
 dcl-pr iv_request_setBody overload(
+  iv_request_setFormBody :
   iv_request_setTextBody :
+  iv_request_setTextBodyBytes :
   iv_request_setBinaryBody
 );
 
+///
+// Create new HTTP request
+//
+// Creates a new URL request with the given HTTP method, URL and optional
+// the given Accept MIME type.
+//
+// @return Request
+// 
+// @info The caller needs to free the allocated memory of the request by
+//       calling <code>iv_request_dispose</code>.
+///
 dcl-pr iv_request_new pointer overload(
     iv_request_new_packedUrl :
     iv_request_new_unpackedUrl
 );
 /endif
+
+///
+// Set the HTTP request body (file content)
+//
+// Sets the stream file as the message body content. The content of the file will be 
+// copied to the message body as is.
+//
+// @param HTTP request
+// @param Stream file path
+///
+dcl-pr iv_request_setFile extproc(*dclcase);
+  request pointer const;
+  file varchar(1024) const;
+end-pr;
 
 /endif

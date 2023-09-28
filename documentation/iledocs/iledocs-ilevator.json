@@ -33,7 +33,29 @@
                 "iv_lvarpuchar_t"
             ],
             "order" : 4
+        },
+        {
+            "id" : "request",
+            "name" : "Request",
+            "startsWith" : "iv_request_",
+            "symbols" : [
+                "IV_REQUEST_URL_SIZE",
+                "IV_REQUEST_HEADER_NAME_SIZE",
+                "IV_REQUEST_HEADER_VALUE_SIZE"
+            ],
+            "order" : 5
+        },
+        {
+            "id" : "multipart",
+            "name" : "Multipart",
+            "startsWith" : "iv_multipart_",
+            "symbols" : [
+                "IV_MULTIPART_MEDIA_TYPE",
+                "IV_MULTIPART_ENCODING_BINARY",
+                "IV_MULTIPART_ENCODING_TEXT",
+                "IV_MULTIPART_ENCODING_BASE64"
+            ],
+            "order" : 6
         }
     ]
 }
-

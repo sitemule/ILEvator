@@ -8,7 +8,7 @@
 //
 // This module adds support for sending data as multipart form data to the server.
 // A request handler is created with <code>iv_multipart_new</code>. Parts are added
-// to the form of the handler with <code>iv_multipart_addPart</code>. Each part 
+// to the form of the handler with <code>iv_multipart_addPartFrom...</code>. Each part 
 // can have additional headers.
 //
 // The request handler is registered at the client by calling 
@@ -83,6 +83,8 @@ end-pr;
 // Finalizes this multipart message. No further parts are accepted to this multipart message.
 //
 // @param Multipart handler
+// 
+// @info This procedure <em>must</em> be called before any HTTP request is executed.
 ///
 dcl-pr iv_multipart_finalize extproc(*dclcase);
     handler pointer;

@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="css/iledocs.css" />
+<link rel="stylesheet" href="../css/iledocs.css" />
 <div class="iledocs">
 
 <div class="iledocs-page-toc">
@@ -8,6 +8,8 @@
 <li><a href="constants.html">Constants</a></li>
 <li><a href="encoding.html">Encoding</a></li>
 <li><a href="form.html">Form</a></li>
+<li><a href="request.html">Request</a></li>
+<li><a href="multipart.html">Multipart</a></li>
 </ol>
 </div>
 <div class="iledocs-toc-gap">&nbsp;</div>
@@ -136,6 +138,10 @@ generic <code>iv_execute</code> procedure.
 
 <tr>
 <td><a href="#proc_iv_setRequestDataBuffer">iv_setRequestDataBuffer</a></td><td>Set request buffer</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_setRequestHandler">iv_setRequestHandler</a></td><td>Set request handler</td>
 </tr>
 
 <tr>
@@ -1088,6 +1094,33 @@ Integer (5)</span>
 Integer (10)</span>
  [value]</code>
  &mdash; CCSID (0=Current job, 65535=no xlate, 1208=UTF-8)</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_setRequestHandler">iv_setRequestHandler</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_setRequestHandler</span>
+(
+Pointer client, Pointer handler)
+</code>
+<p>Sets the request handler which will be called on every HTTP request.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the request handler</li>
 </ol>
 
 <h3 class="iledocs-procedure-header"><a name="proc_iv_setResponseDataBuffer">iv_setResponseDataBuffer</a></h3>

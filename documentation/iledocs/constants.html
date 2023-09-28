@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="css/iledocs.css" />
+<link rel="stylesheet" href="../css/iledocs.css" />
 <div class="iledocs">
 
 <div class="iledocs-page-toc">
@@ -8,6 +8,8 @@
 <li><a href="constants.html">Constants</a></li>
 <li><a href="encoding.html">Encoding</a></li>
 <li><a href="form.html">Form</a></li>
+<li><a href="request.html">Request</a></li>
+<li><a href="multipart.html">Multipart</a></li>
 </ol>
 </div>
 <div class="iledocs-toc-gap">&nbsp;</div>
@@ -312,7 +314,37 @@ therefore not a proper end point in the negotiation process.</td>
 </tr>
 
 <tr>
-<td class="iledocs-table-key-column"><b>IV_METHOD_SIZE</b></td><td>Maximum HTTP method size</td>
+<td class="iledocs-table-key-column"><b>IV_METHOD_SIZE</b></td><td>Maximum HTTP method name length</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_MULTIPART_ENCODING_BASE64</b></td><td>Base64 part encoding : The content will be encoded as in the specified CCSID (see Content-Type HTTP header, attribute charset) and then Base64 encoded. For better compatibility the lines
+will be split to a length of 80 characters.</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_MULTIPART_ENCODING_BINARY</b></td><td>Binary part encoding : The content will be added to the part as is.</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_MULTIPART_ENCODING_TEXT</b></td><td>Text part encoding : The content will be added as text encoded in the specified CCSID (see Content-Type HTTP header, attribute charset). This corresponds to the Content-Transfer-Encoding
+8bit.</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_MULTIPART_MEDIA_TYPE</b></td><td>Default Media Type for multipart form data</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_REQUEST_HEADER_NAME_SIZE</b></td><td>Maximum request HTTP header name/key size.</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_REQUEST_HEADER_VALUE_SIZE</b></td><td>Maximum request HTTP header value size.</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_REQUEST_URL_SIZE</b></td><td>Maximum request URL size</td>
 </tr>
 
 <tr>
