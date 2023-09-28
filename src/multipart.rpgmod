@@ -6,6 +6,7 @@ ctl-opt nomain thread(*concurrent);
 
 /include 'base64.rpginc'
 /include 'encode.rpginc'
+/include 'libc.rpginc'
 /include 'message.rpginc'
 /include 'mime.rpginc'
 /include 'multipart.rpginc'
@@ -19,10 +20,6 @@ dcl-pr CEERAN0 extproc('CEERAN0');
     seed int(10);
     randomNumber float(8);
     feedback char(12) options(*omit);
-end-pr;
-
-dcl-pr tmpnam pointer extproc('_C_IFS_tmpnam');
-    buffer char(39) options(*omit);
 end-pr;
 
 dcl-pr unlink int(10) extproc('unlink');
@@ -80,6 +77,7 @@ dcl-ds iv_multipart_handler_t qualified template;
 end-ds;
 
 dcl-s contentTransferEncodings char(10) dim(3) ctdata;
+dcl-s ccsidsForBase64Encoding uns(5) dim(3) ctdata;
 
 
 dcl-proc iv_multipart_new export;
@@ -102,7 +100,7 @@ dcl-proc iv_multipart_new export;
         handler.mimeType = mimeType;
     endif;
 
-    handler.tempFile = '/tmp/ilevator-multipart-' + %subst(%str(tmpnam(*omit) : 39) : 6) + '.tmp';
+    handler.tempFile = '/tmp/ilevator-multipart-' + %subst(%str(tmpnamIFS(*omit) : 39) : 6) + '.tmp';
     
     if (%parms() >= 2);
         handler.boundary = boundary;
@@ -233,12 +231,10 @@ dcl-proc iv_multipart_addPartFromString export;
         writeMessageBody(p_handler : fileDesc : %addr(CRLF) : 2);
         
         if (encoding = IV_MULTIPART_ENCODING_BASE64);
-          // TODO write body base64 encoded
-          // TODO change base64_encode/decode from ccsid(*utf8) to ccsid(*hex)?
-          // best practice : base64 encoded and split lines at 78 + CRLF which makes 80 bytes per line.
+            writeMessageBodyBase64(p_handler : fileDesc : %addr(content : *data) : %len(content));
         else;
-          // just write the content
-          writeMessageBody(p_handler : fileDesc : %addr(content : *data) : %len(content));
+            // just write the content
+            writeMessageBody(p_handler : fileDesc : %addr(content : *data) : %len(content));
         endif;
     else;
         message_escape('Could not open temporary file for adding multipart message part.');
@@ -266,7 +262,7 @@ dcl-proc iv_multipart_addPartFromFile export;
     dcl-s fileDesc int(10) inz(-1);
     dcl-s encoding uns(3) inz(IV_MULTIPART_ENCODING_BASE64);
     dcl-s inputDesc int(10) inz(-1);
-    dcl-s inputBuffer char(4096);
+    dcl-s inputBuffer char(155648);
     dcl-s rc int(10);
     
     if (handler.finalized);
@@ -275,6 +271,10 @@ dcl-proc iv_multipart_addPartFromFile export;
     
     if (%parms() >= 4);
         encoding = p_encoding;
+    endif;
+
+    if (not (encoding = IV_MULTIPART_ENCODING_BASE64 or encoding = IV_MULTIPART_ENCODING_BINARY));
+        message_escape('Unsupported content transfer encoding. Only base64 and binary are supported.');
     endif;
     
     fileDesc = openTempFile(p_handler);
@@ -298,26 +298,22 @@ dcl-proc iv_multipart_addPartFromFile export;
         // write body content delimiter (CRLF)
         writeMessageBody(p_handler : fileDesc : %addr(CRLF) : 2);
         
-        if (encoding = IV_MULTIPART_ENCODING_BASE64);
-            // TODO write body base64 encoded
-            // TODO change base64_encode/decode from ccsid(*utf8) to ccsid(*hex)?
-            // best practice : base64 encoded and split lines at 78 + CRLF which makes 80 bytes per line.
-        elseif (encoding = IV_MULTIPART_ENCODING_BINARY);
-            inputDesc = open(path : O_RDONLY);
-            if (inputDesc < 0);
-                message_escape('Could not open file ' + %str(path : 1024));
-            endif;
-            
-            rc = read(inputDesc : %addr(inputBuffer) : %size(inputBuffer));
-            dow (rc > 0);
-                writeMessageBody(p_handler : fileDesc : %addr(inputBuffer) : rc);
-                rc = read(inputDesc : %addr(inputBuffer) : %size(inputBuffer));
-            enddo;
-             
-            callp close(inputDesc);
-        else;
-            message_escape('Unsupported content transfer encoding. Only base64 and binary are supported.');
+        inputDesc = open(path : O_RDONLY);
+        if (inputDesc < 0);
+            message_escape('Could not open file ' + %str(path : 1024));
         endif;
+        
+        rc = read(inputDesc : %addr(inputBuffer) : %size(inputBuffer));
+        dow (rc > 0);
+            if (encoding = IV_MULTIPART_ENCODING_BASE64);
+                writeMessageBodyBase64(p_handler : fileDesc : %addr(inputBuffer) : rc);
+            elseif (encoding = IV_MULTIPART_ENCODING_BINARY);
+                writeMessageBody(p_handler : fileDesc : %addr(inputBuffer) : rc);
+            endif;
+            rc = read(inputDesc : %addr(inputBuffer) : %size(inputBuffer));
+        enddo;
+         
+        callp close(inputDesc);
     else;
         message_escape('Could not open temporary file for adding multipart message part.');
     endif;
@@ -379,12 +375,10 @@ dcl-proc iv_multipart_addPartFromBytes export;
         writeMessageBody(p_handler : fileDesc : %addr(CRLF) : 2);
         
         if (encoding = IV_MULTIPART_ENCODING_BASE64);
-          // TODO write body base64 encoded
-          // TODO change base64_encode/decode from ccsid(*utf8) to ccsid(*hex)?
-          // best practice : base64 encoded and split lines at 78 + CRLF which makes 80 bytes per line.
+            writeMessageBodyBase64(p_handler : fileDesc : content : length);
         else;
-          // just write the content
-          writeMessageBody(p_handler : fileDesc : content : length);
+            // just write the content
+            writeMessageBody(p_handler : fileDesc : content : length);
         endif;
     else;
         message_escape('Could not open temporary file for adding multipart message part.');
@@ -433,9 +427,7 @@ dcl-proc needsBase64Encoding;
         ccsid uns(5) value;
     end-pi;
 
-    // TODO check which other ccsids also need base64 encoding for safe transfer
-
-    return ccsid = 1208;
+    return %lookup(ccsid : ccsidsForBase64Encoding) > 0;
 end-proc;
 
 
@@ -583,6 +575,113 @@ dcl-proc writeMessageBody export;
 end-proc;
 
 
+dcl-proc writeMessageBodyBase64 export;
+    dcl-pi *n;
+        p_handler pointer value;
+        fileDesc int(10) value;
+        buffer pointer value;
+        length uns(10) value;
+    end-pi;
+
+    dcl-c BASE64_INPUT_BLOCK_SIZE 155648;
+    dcl-ds handler likeds(iv_multipart_handler_t) based(p_handler);
+    dcl-s currentBuffer pointer;
+    dcl-s currentBufferLength int(10);
+    dcl-s fileBuffer char(159744);
+    dcl-s encodedLength int(20);
+    dcl-s restLength uns(10);
+    
+    if (length = 0);
+        return;
+    endif;
+    
+    currentBuffer = buffer;
+    restLength = length;
+    
+    // best practice : base64 encoded and split lines at 76 + CRLF which makes 78 bytes per line.
+    // 76 = base64 encodes 3 bytes to a result of 4 bytes. 76 is a multiple of 4 and less than 80 
+    // (which is the historically preferred line length).
+    //
+    // File buffer is 159744 bytes. That is a multiple of 4096 which is the file system block size.
+    // 159744 is also a multiple of 78 (single base64 encoded line: 76 encoded bytes + CRLF
+    //
+    // So we will always write full lines and use the file system block size optimally.
+    // We will write 2048 lines (159744 / 78).
+    //
+    // The buffer for base64 encoding is the number of lines multiplied with 76 = 155648.
+    //
+    
+    dou (restLength <= 0);
+        if (restLength > BASE64_INPUT_BLOCK_SIZE);
+            currentBufferLength = BASE64_INPUT_BLOCK_SIZE;
+        else;
+            currentBufferLength = restLength;
+        endif;
+        restLength -= currentBufferLength;
+        
+        encodedLength = base64_encodeBuffer(%addr(fileBuffer) : currentBuffer : currentBufferLength);
+        if (encodedLength > 0);
+            encodedLength = splitLines(fileBuffer : encodedLength);
+            callp write(fileDesc : %addr(fileBuffer) : encodedLength);
+            handler.contentSize += encodedLength;
+        endif;
+        
+        if (restLength > 0);
+            currentBuffer += currentBufferLength;
+        endif;
+    enddo;
+end-proc;
+
+
+dcl-proc splitLines export;
+    dcl-pi *n int(20);
+        buffer char(159744);
+        bufferLength int(20);
+    end-pi;
+
+    dcl-s bufferPtr pointer;
+    dcl-s tempBuffer char(159744);
+    dcl-s tempBufferPtr pointer;
+    dcl-s restLength int(20);
+    dcl-s writtenBytes int(20);
+    dcl-s lineLength uns(5);
+    dcl-s CRLF char(2) ccsid(*hex) inz(x'0D0A');
+    dcl-s crlfPtr pointer;
+    
+    if (bufferLength = 0);
+        return 0;
+    endif;
+    
+    restLength = bufferLength;
+    
+    memcpy(%addr(tempBuffer) : %addr(buffer) : bufferLength);
+    tempBufferPtr = %addr(tempBuffer);
+    bufferPtr = %addr(buffer);
+    crlfPtr = %addr(CRLF);
+    
+    dou (restLength <= 0);
+        if (restLength > 76);
+            lineLength = 76;
+        else;
+            lineLength = restLength;
+        endif;
+        
+        memcpy(bufferPtr : tempBufferPtr : lineLength);
+        writtenBytes += lineLength;
+        
+        restLength -= lineLength;
+        if (restLength > 0);
+            tempBufferPtr += lineLength;
+            bufferPtr += lineLength;
+            memcpy(bufferPtr : crlfPtr : 2);
+            bufferPtr += 2;
+            writtenBytes += 2;
+        endif;
+    enddo;
+    
+    return writtenBytes;
+end-proc;
+
 
 dcl-proc openTempFile export;
     dcl-pi *n int(10);
@@ -620,7 +719,7 @@ dcl-proc generateBoundary export;
     dcl-s randomNumber float(8);
     
     CEERAN0(seed : randomNumber : *omit);
-    boundary = %subst(%str(tmpnam(*omit) : 39) : 6) + %char(randomNumber);
+    boundary = %subst(%str(tmpnamIFS(*omit) : 39) : 6) + %char(randomNumber);
     boundary = %xlate('.-+' : 'XXX' : boundary);
         
     return boundary;
@@ -630,3 +729,7 @@ end-proc;
 binary
 8bit
 base64
+**CTDATA ccsidsForBase64Encoding
+ 1200
+ 1208
+13488

@@ -34,3 +34,17 @@ end-pr;
 dcl-pr base64_encode varchar(524284:4) ccsid(*utf8) extproc(*CWIDEN : 'base64_encode') rtnparm;
   string varchar(524284:4) ccsid(*utf8) options(*varsize) const;
 end-pr;
+
+
+dcl-pr base64_encodeBuffer int(20) extproc(*CWIDEN : 'base64_encodeBuffer');
+   output pointer value;
+   input pointer value;
+   inputLength int(20) value; 
+end-pr;
+
+
+dcl-pr base64_decodeBuffer int(20) extproc(*CWIDEN : 'base64_decodeBuffer');
+   output pointer value;
+   input pointer value;
+   inputLength int(20) value; 
+end-pr;
