@@ -17,6 +17,9 @@ ctl-opt nomain;
 
 dcl-pr test_multipartHandlerText extproc(*dclcase) end-pr;
 dcl-pr test_multipartHandlerTextPartsWithMixedEncoding extproc(*dclcase) end-pr;
+dcl-pr test_multipartFileUploadKb extproc(*dclcase) end-pr;
+dcl-pr test_multipartFileUploadMb extproc(*dclcase) end-pr;
+dcl-pr test_multipartFileUploadUmlauteInFilename extproc(*dclcase) end-pr;
 
 
 dcl-proc test_multipartHandlerText export;
@@ -79,3 +82,70 @@ dcl-proc test_multipartHandlerTextPartsWithMixedEncoding export;
 end-proc;
 
 
+dcl-proc test_multipartFileUploadKb export;
+    dcl-s httpClient pointer;
+    dcl-s buffer varchar(65000:4) ccsid(1208);
+    dcl-s multipart pointer;
+
+    multipart = iv_multipart_new();
+    iv_multipart_addPartFromString(multipart : 'user' : 'Mihael');
+    iv_multipart_addPartFromFile(multipart : 'avatar' : 'integrationtests/resources/avatar.jpg');
+    iv_multipart_finalize(multipart);
+    
+    httpClient = iv_newHttpClient();
+    iv_setResponseDataBuffer(httpClient : %addr(buffer) : %size(buffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    iv_setRequestHandler(httpClient : multipart);
+    
+    iv_execute(httpClient : 'POST' : 'http://localhost:35801/api/multipart/file');
+    iEqual(IV_HTTP_OK : iv_getStatus(httpClient));
+
+    on-exit;
+        iv_free(httpClient);
+        iv_multipart_free(multipart);
+end-proc;
+
+
+dcl-proc test_multipartFileUploadUmlauteInFilename; // TODO  export when unicode chars in filename is implemented
+    dcl-s httpClient pointer;
+    dcl-s buffer varchar(65000:4) ccsid(1208);
+    dcl-s multipart pointer;
+
+    multipart = iv_multipart_new();
+    iv_multipart_addPartFromString(multipart : 'user' : 'Mihael');
+    iv_multipart_addPartFromFile(multipart : 'avatar' : 'integrationtests/resources/avatar.jpg' : u'00DC' + 'berflieger');
+    iv_multipart_finalize(multipart);
+    
+    httpClient = iv_newHttpClient();
+    iv_setResponseDataBuffer(httpClient : %addr(buffer) : %size(buffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    iv_setRequestHandler(httpClient : multipart);
+    
+    iv_execute(httpClient : 'POST' : 'http://localhost:35801/api/multipart/file');
+    iEqual(IV_HTTP_OK : iv_getStatus(httpClient));
+
+    on-exit;
+        iv_free(httpClient);
+        iv_multipart_free(multipart);
+end-proc;
+
+
+dcl-proc test_multipartFileUploadMb; // TODO  export when streaming support is implemented
+    dcl-s httpClient pointer;
+    dcl-s buffer varchar(65000:4) ccsid(1208);
+    dcl-s multipart pointer;
+
+    multipart = iv_multipart_new();
+    iv_multipart_addPartFromString(multipart : 'user' : 'Mihael');
+    iv_multipart_addPartFromFile(multipart : 'avatar' : 'integrationtests/resources/yellow-sky.jpg');
+    iv_multipart_finalize(multipart);
+    
+    httpClient = iv_newHttpClient();
+    iv_setResponseDataBuffer(httpClient : %addr(buffer) : %size(buffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    iv_setRequestHandler(httpClient : multipart);
+    
+    iv_execute(httpClient : 'POST' : 'http://localhost:35801/api/multipart/file');
+    iEqual(IV_HTTP_OK : iv_getStatus(httpClient));
+
+    on-exit;
+        iv_free(httpClient);
+        iv_multipart_free(multipart);
+end-proc;

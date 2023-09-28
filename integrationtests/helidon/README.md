@@ -22,3 +22,9 @@ The application is started with the command:
 java -Djava.net.preferIPv4Stack=true -cp ./:target/helidon-1.0.0.jar:target/libs/* io.helidon.microprofile.cdi.Main
 
 ```
+
+### Multipart Endpoint
+
+The Multipart endpoint for file upload will store the file in the `/tmp` folder. 
+The uploaded files will not be automatically deleted.
+ 

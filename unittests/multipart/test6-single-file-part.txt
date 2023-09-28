@@ -1,5 +1,5 @@
 --ilevator-unittest-boundary
-Content-Disposition: form-data; name="test"
+Content-Disposition: form-data; name="test"; filename="test6-input.txt"
 Content-Transfer-Encoding: binary
 Content-Type: application/octet-stream
 

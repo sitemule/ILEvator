@@ -125,6 +125,7 @@ end-pr;
 // @param Multipart handler
 // @param Field name
 // @param File path
+// @param File name (in the Content-Disposition HTTP header, default file name from file path parameter)
 // @param Content transfer encoding (default: IV_MULTIPART_ENCODING_BASE64)
 // @param Part headers
 ///
@@ -132,6 +133,7 @@ dcl-pr iv_multipart_addPartFromFile extproc(*dclcase);
     handler pointer value;
     fieldName varchar(100) ccsid(1208) value;
     path pointer value options(*string);
+    filename varchar(1000) ccsid(1208) value options(*nopass);
     encoding uns(3) value options(*nopass);
     headers pointer value options(*nopass);
 end-pr;

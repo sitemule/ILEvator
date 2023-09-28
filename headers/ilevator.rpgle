@@ -1404,20 +1404,19 @@ dcl-c IV_MULTIPART_MEDIA_TYPE 'multipart/form-data';
 // Binary part encoding : The content will be added to the part as is.
 ///
 dcl-c IV_MULTIPART_ENCODING_BINARY 1;
-
 ///
 // Text part encoding : The content will be added as text encoded in the specified CCSID 
 // (see Content-Type HTTP header, attribute charset). This corresponds to the Content-Transfer-Encoding
 // 8bit.
 ///
 dcl-c IV_MULTIPART_ENCODING_TEXT 2;
-
 ///
 // Base64 part encoding : The content will be encoded as in the specified CCSID (see Content-Type
 // HTTP header, attribute charset) and then Base64 encoded. For better compatibility the lines
 // will be split to a length of 80 characters.
 ///
 dcl-c IV_MULTIPART_ENCODING_BASE64 3;
+
 
 ///
 // Create a new multipart handler
@@ -1451,6 +1450,17 @@ dcl-pr iv_multipart_free extproc(*dclcase);
 end-pr;
 
 ///
+// Finalize multipart message
+//
+// Finalizes this multipart message. No further parts are accepted to this multipart message.
+//
+// @param Multipart handler
+///
+dcl-pr iv_multipart_finalize extproc(*dclcase);
+    handler pointer;
+end-pr;
+
+///
 // Add new multipart from string
 //
 // Adds a new part to this multipart message. The content will be the string with the passed 
@@ -1480,19 +1490,22 @@ end-pr;
 ///
 // Add new multipart from file
 //
-// Adds a new part to this multipart message. The content of the passed file will added as the
-// content of the new part. If no headers are passed the Content-Type <code>text/plain</code> will 
-// be used with the charset UTF-8. If any other encoding should be used it needs to be passed with 
-// the HTTP header Content-Type like <code>text/plain;charset=windows-1252</code>.
+// Adds a new part to this multipart message. The content of the passed file will added as is as the
+// content of the new part. If no headers are passed the Content-Type <code>application/octet-stream</code> 
+// will be used.
 // 
 // @param Multipart handler
+// @param Field name
 // @param File path
+// @param File name (in the Content-Disposition HTTP header, default file name from file path parameter)
 // @param Content transfer encoding (default: IV_MULTIPART_ENCODING_BASE64)
 // @param Part headers
 ///
 dcl-pr iv_multipart_addPartFromFile extproc(*dclcase);
     handler pointer value;
+    fieldName varchar(100) ccsid(1208) value;
     path pointer value options(*string);
+    filename varchar(1000) ccsid(1208) value options(*nopass);
     encoding uns(3) value options(*nopass);
     headers pointer value options(*nopass);
 end-pr;
@@ -1505,6 +1518,7 @@ end-pr;
 // be used.
 // 
 // @param Multipart handler
+// @param Field name
 // @param Part content
 // @param Part content length
 // @param Content transfer encoding (default: IV_MULTIPART_ENCODING_BINARY)
@@ -1512,6 +1526,7 @@ end-pr;
 ///
 dcl-pr iv_multipart_addPartFromBytes extproc(*dclcase);
     handler pointer value;
+    fieldName varchar(100) ccsid(1208) value;
     content pointer value;
     length uns(10) value;
     encoding uns(3) value options(*nopass);
@@ -1534,15 +1549,4 @@ end-pr;
 dcl-pr iv_multipart_toStream extproc(*dclcase);
     handler pointer value;
     stream pointer value;
-end-pr;
-
-///
-// Finalize multipart message
-//
-// Finalizes this multipart message. No further parts are accepted to this multipart message.
-//
-// @param Multipart handler
-///
-dcl-pr iv_multipart_finalize extproc(*dclcase);
-    handler pointer;
 end-pr;

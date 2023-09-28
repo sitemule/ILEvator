@@ -189,7 +189,7 @@ dcl-proc test_singleFilePartBinary export;
     outstream.handle = %addr(buffer);
     
     multipart = iv_multipart_new(IV_MULTIPART_MEDIA_TYPE : BOUNDARY);
-    iv_multipart_addPartFromFile(multipart : 'test' : 'unittests/multipart/test6-input.txt' : IV_MULTIPART_ENCODING_BINARY);
+    iv_multipart_addPartFromFile(multipart : 'test' : 'unittests/multipart/test6-input.txt' : 'test6-input.txt' : IV_MULTIPART_ENCODING_BINARY);
     iv_multipart_finalize(multipart);
     
     iv_multipart_toStream(multipart : p_outstream);

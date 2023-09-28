@@ -95,7 +95,7 @@ dcl-proc iv_multipart_new export;
     handler.finalized = *off;
   
     if (%parms() = 0);
-        handler.mimeType = 'multipart/form-data';
+        handler.mimeType = IV_MULTIPART_MEDIA_TYPE;
     else;
         handler.mimeType = mimeType;
     endif;
@@ -120,7 +120,7 @@ dcl-proc iv_multipart_processRequest export;
 
     dcl-ds requestHandler likeds(iv_multipart_handler_t) based(handler);
     
-    iv_request_addHeader(request : 'Content-Type' : 'multipart/form-data; boundary=' + requestHandler.boundary);
+    iv_request_addHeader(request : 'Content-Type' : requestHandler.mimeType + '; boundary=' + requestHandler.boundary);
     iv_request_addHeader(request : 'Content-Length' : %char(requestHandler.contentSize));
     iv_request_setFile(request : requestHandler.tempFile);
 end-proc;
@@ -254,6 +254,7 @@ dcl-proc iv_multipart_addPartFromFile export;
         p_handler pointer value;
         fieldName varchar(100) ccsid(1208) value;
         path pointer value options(*string);
+        p_filename varchar(1000) ccsid(1208) value options(*nopass);
         p_encoding uns(3) value options(*nopass);
         headers pointer value options(*nopass);
     end-pi;
@@ -263,6 +264,7 @@ dcl-proc iv_multipart_addPartFromFile export;
     dcl-s encoding uns(3) inz(IV_MULTIPART_ENCODING_BASE64);
     dcl-s inputDesc int(10) inz(-1);
     dcl-s inputBuffer char(155648);
+    dcl-s filename varchar(1000) ccsid(1208);
     dcl-s rc int(10);
     
     if (handler.finalized);
@@ -270,6 +272,12 @@ dcl-proc iv_multipart_addPartFromFile export;
     endif;
     
     if (%parms() >= 4);
+        filename = p_filename;
+    else;
+        filename = getLastPathElement(%str(path : 10000));
+    endif;
+    
+    if (%parms() >= 5);
         encoding = p_encoding;
     endif;
 
@@ -281,12 +289,16 @@ dcl-proc iv_multipart_addPartFromFile export;
     if (fileDesc >= 0);
         writeBoundary(p_handler : fileDesc);
 
-        writeHeader(p_handler : fileDesc : 'Content-Disposition: form-data; name="' + iv_encode_url(fieldName) + '"');
+        // Unicode characters in filenames are described in https://datatracker.ietf.org/doc/html/rfc6266#section-5
+        writeHeader(p_handler : fileDesc : 'Content-Disposition: form-data; ' +
+                'name="' + iv_encode_url(fieldName) + '"; ' + 
+                'filename="' + iv_encode_url(filename) + '"');
+                // unicode chars in filename not working yet: 'filename*=utf-8''''' + iv_encode_url(filename));
         if (%elem(contentTransferEncodings) >= encoding);
             writeHeader(p_handler : fileDesc : 'Content-Transfer-Encoding: ' + %trim(contentTransferEncodings(encoding)));
         endif;
         
-        if (%parms() >= 5);
+        if (%parms() >= 6);
             if (not containsHeader(headers : 'content-type'));
                 writeHeader(p_handler : fileDesc : 'Content-Type: application/octet-stream');
             endif;
@@ -724,6 +736,26 @@ dcl-proc generateBoundary export;
         
     return boundary;
 end-proc;
+
+
+dcl-proc getLastPathElement export;
+    dcl-pi *n varchar(1000) ccsid(1208);
+        path varchar(10000) ccsid(1208) value;
+    end-pi;
+
+    dcl-s x uns(5);
+    dcl-s slash char(1) ccsid(1208) inz('/');
+    
+    x = %scanr(slash : path);
+    if (x = 0);
+        return path;
+    elseif (x = %len(path));
+        return path;
+    else;
+        return %subst(path : x+1);
+    endif;
+end-proc;
+
 
 **CTDATA contentTransferEncodings
 binary
