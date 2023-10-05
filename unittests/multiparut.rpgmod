@@ -17,8 +17,18 @@ ctl-opt nomain;
 /include 'multipart.rpginc'
 /include 'stream.rpginc'
 
+dcl-pr splitLines int(20) extproc('SPLITLINES');
+    buffer char(479232);
+    bufferLength int(20) const;
+    lastBlock ind const;
+end-pr;
 
 dcl-c O_RDONLY 1;
+dcl-c O_WRONLY 2;
+dcl-c O_CREATE 8;
+dcl-c S_IRUSR 256;
+dcl-c S_IWUSR 128;
+
 dcl-pr open int(10) extproc('open');
   path pointer value options(*string);
   openflags int(10) value;
@@ -30,6 +40,12 @@ dcl-pr read int(10) extproc('read');
   fildes int(10) value;
   buf pointer value;
   bytes uns(10) value;
+end-pr;
+
+dcl-pr write int(10) extproc('write');
+    fileDesc int(10) value;
+    buffer pointer value;
+    length uns(10) value;
 end-pr;
 
 dcl-pr close int(10) extproc('close');
@@ -64,6 +80,7 @@ dcl-pr test_singleBytesPart end-pr;
 dcl-pr test_singleFilePartBinary end-pr;
 dcl-pr test_singleFilePartBase64 end-pr;
 dcl-pr test_singleTextPartBase64 end-pr;
+dcl-pr test_splitLinesOnBigFile end-pr;
 
 dcl-c BOUNDARY 'ilevator-unittest-boundary';
 
@@ -326,6 +343,49 @@ dcl-proc test_multipleTextParts export;
 end-proc;
 
 
+dcl-proc test_splitLinesOnBigFile export;
+    dcl-c BASE64_INPUT_BLOCK_SIZE 466944;
+    dcl-s assumedResult varchar(1000000:4) ccsid(*hex);
+    dcl-s buffer varchar(1000000:4) ccsid(*hex);
+    dcl-s input varchar(1000000:4) ccsid(*hex);
+    dcl-s inputLength int(20);
+    dcl-s block char(479232) ccsid(*hex);
+    dcl-s splitLength uns(20);
+    dcl-s length uns(20);
+    
+    input = loadFile('unittests/multipart/yellow-sky-base64.txt');
+    assumedResult = loadFile('unittests/multipart/yellow-sky-base64-76.txt');
+    
+    inputLength = BASE64_INPUT_BLOCK_SIZE;
+    dsply %trimr('Input block length: ' + %char(inputLength));
+    block = %subst(input : 1 : inputLength);
+    splitLength = splitLines(block : BASE64_INPUT_BLOCK_SIZE : *off);
+    buffer = %subst(block : 1 : splitLength);
+    
+    inputLength = BASE64_INPUT_BLOCK_SIZE;
+    dsply %trimr('Input block length: ' + %char(inputLength));
+    block = %subst(input : BASE64_INPUT_BLOCK_SIZE + 1 : BASE64_INPUT_BLOCK_SIZE);
+    length = splitLines(block : inputLength : *off);
+    splitLength += length;
+    buffer += %subst(block : 1 : length);
+    
+    inputLength = %len(input) - BASE64_INPUT_BLOCK_SIZE - BASE64_INPUT_BLOCK_SIZE;
+    dsply %trimr('Input block length: ' + %char(inputLength));
+    block = %subst(input : BASE64_INPUT_BLOCK_SIZE + BASE64_INPUT_BLOCK_SIZE + 1);
+    length = splitLines(block : inputLength : *on);
+    splitLength += length;
+    buffer += %subst(block : 1 : length);
+    
+    // This is only for debug purposes:
+    // writeFile('/tmp/ilevator-test-expected.txt' : %addr(assumedResult : *data) : %len(assumedResult));
+    // writeFile('/tmp/ilevator-test-actual.txt' : %addr(buffer : *data) : %len(buffer));
+    
+    iEqual(%len(assumedResult) : %len(buffer));
+    assert(memcmp(%addr(assumedResult : *data) : %addr(buffer : *data) : %len(buffer)) = 0: 
+        'Multipart does not correspond with the assumed result.');
+end-proc;
+
+
 dcl-proc stream_memory_writer export;                               
     dcl-pi *n int(10);                                                 
         pStream pointer value;                                         
@@ -367,6 +427,33 @@ dcl-proc loadFile;
 
   return returnValue;
   
+  on-exit;
+    if (fd >= 0);
+      callp close(fd);
+    endif;
+end-proc;
+
+
+dcl-proc writeFile;
+  dcl-pi *n;
+    p_path varchar(1000) const;
+    buffer pointer const;
+    length uns(10) const;
+  end-pi;
+
+  dcl-s path varchar(1000);
+  dcl-s fd int(10);
+  dcl-s len int(10);
+  
+  path = projectSourceDir + p_path + x'00';
+
+  fd = open(%addr(path : *data) : O_WRONLY + O_CREATE : S_IRUSR + S_IWUSR);
+  if (fd >= 0);
+    len = write(fd : buffer : length);
+  else;
+    dsply 'Datei zum Schreiben nicht geöffnet.';
+  endif;
+
   on-exit;
     if (fd >= 0);
       callp close(fd);

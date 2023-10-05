@@ -128,7 +128,7 @@ dcl-proc test_multipartFileUploadUmlauteInFilename; // TODO  export when unicode
 end-proc;
 
 
-dcl-proc test_multipartFileUploadMb; // TODO  export when streaming support is implemented
+dcl-proc test_multipartFileUploadMb export;
     dcl-s httpClient pointer;
     dcl-s buffer varchar(65000:4) ccsid(1208);
     dcl-s multipart pointer;

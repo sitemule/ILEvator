@@ -25,6 +25,7 @@
 #include "ostypes.h"
 #include "parms.h"
 #include "request.h"
+#include "streamer.h"
 #include "strutil.h"
 #include "simpleList.h"
 #include "teraspace.h"
@@ -33,6 +34,10 @@
 #include "xlate.h"
 
 static UCHAR EOL [] = {CR, LF , 0};
+
+void streamRequest(PILEVATOR pIv, PVOID request);
+LONG socketStreamWriter(PSTREAM pStream, PUCHAR buf, ULONG len);
+
 
 /* --------------------------------------------------------------------------- *\
    wrapper for the message and trace to  the message log
@@ -269,17 +274,45 @@ API_STATUS sendRequest (PILEVATOR pIv)
     if (pIv->requestHandler)
         pIv->requestHandler->processRequest(pIv->requestHandler, request);
     
-    requestString = iv_request_toString(&request);
-    iv_request_dispose(request);
+    if (iv_request_needsStreaming(&request) == ON) {
+        // TODO handle errors
+        streamRequest(pIv, request);
+        return API_OK;
+    }
+    else {
+        requestString = iv_request_toString(&request);
+        iv_request_dispose(request);
     
-    rc = sockets_send (pIv->sockets, requestString.String, requestString.Length); 
-    teraspace_free((PVOID) requestString.String);
+        rc = sockets_send (pIv->sockets, requestString.String, requestString.Length); 
+        teraspace_free((PVOID) requestString.String);
+        
+        return (rc == requestString.Length ? API_OK : API_ERROR); 
+    }
+}
 
-    return (rc == requestString.Length ? API_OK : API_ERROR); 
+static void streamRequest(PILEVATOR pIv, PVOID request) 
+{
+    // create stream
+    PSTREAM socketOutputStream = stream_new(65535); // 64k , TODO how big should we make the buffer
+    // set stream write function 
+    socketOutputStream->writer = socketStreamWriter;
+    // set ILEvator instance
+    socketOutputStream->handle = pIv;
+  
+    iv_request_toStream(&request, &socketOutputStream);
+    
+    stream_delete (socketOutputStream);
+}
+
+static LONG socketStreamWriter(PSTREAM outputStream, PUCHAR buffer, ULONG length)
+{
+    PILEVATOR pIv = outputStream->handle;
+    int rc = sockets_send(pIv->sockets, buffer, length);
+    return rc;
 }
 
 /* --------------------------------------------------------------------------- */
-API_STATUS receiveHeader ( PILEVATOR pIv)
+API_STATUS receiveHeader(PILEVATOR pIv)
 {
 
     BOOL  headFound = FALSE;
@@ -421,3 +454,5 @@ void initialize(void)
 
     setlocale(LC_CTYPE , "POSIX"); 
 }
+
+

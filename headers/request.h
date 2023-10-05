@@ -14,5 +14,7 @@ LVARPUCHAR iv_request_toString(PVOID request);
 void iv_request_setBinaryBody(PVOID request, PVOID data, ULONG length);
 void iv_request_setTextBody(PVOID request, LVARCHAR body, ULONG ccsid);
 void iv_request_setTextBodyBytes(PVOID request, PVOID data, ULONG length, ULONG ccsid);
+LGL iv_request_needsStreaming(PVOID request);
+void iv_request_toStream(PVOID request, PVOID outputStream);
 
 #endif

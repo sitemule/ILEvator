@@ -362,8 +362,25 @@ dcl-pr iv_request_new pointer overload(
 // @param Stream file path
 ///
 dcl-pr iv_request_setFile extproc(*dclcase);
-  request pointer const;
-  file varchar(1024) const;
+    request pointer const;
+    file varchar(1024) const;
+end-pr;
+
+///
+// Check if request needs streaming
+// 
+// Checks if the request can provide to the content in a single 1Mb variable with
+// <code>iv_request_toString</code> or if it has to use the <code>stream</code>
+// module to return a formatted version of the request.
+// 
+// @param HTTP request
+// @return <code>*on</code> = request is too big to be returned with <code>iv_request_toString</code>
+//         else <code>*off</code>
+//
+// @info If the request size is unknown (f. e. multipart request) it will always be streamed.
+///
+dcl-pr iv_request_needsStreaming ind extproc(*dclcase);
+    request pointer const;
 end-pr;
 
 /endif

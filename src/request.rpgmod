@@ -637,6 +637,23 @@ dcl-proc iv_request_hasBody export;
 end-proc;
 
 
+dcl-proc iv_request_needsStreaming export;
+    dcl-pi *n ind;
+        p_request pointer const;
+    end-pi;
+    
+    dcl-ds request likeds(iv_request_t) based(p_request);
+    
+    if (request.file <> *blank);
+        return *on;
+    elseif (request.contentSize > 1000000);
+        return *on;
+    else;
+        return *off;
+    endif;
+end-proc;
+
+
 dcl-proc deallocateHeaders;
   dcl-pi *n;
     list pointer;
