@@ -8,7 +8,7 @@
 ///
 
 
-ctl-opt dftactgrp(*no) actgrp(*new) debug(*yes) bnddir('MIHAELIV/ILEVATOR') main(main);
+ctl-opt dftactgrp(*no) actgrp(*new) debug(*yes) bnddir('ILEVATOR') main(main);
 ctl-opt copyright('Sitemule.com  (C), 2022-2023');
 
 
