@@ -357,20 +357,17 @@ dcl-proc test_splitLinesOnBigFile export;
     assumedResult = loadFile('unittests/multipart/yellow-sky-base64-76.txt');
     
     inputLength = BASE64_INPUT_BLOCK_SIZE;
-    dsply %trimr('Input block length: ' + %char(inputLength));
     block = %subst(input : 1 : inputLength);
     splitLength = splitLines(block : BASE64_INPUT_BLOCK_SIZE : *off);
     buffer = %subst(block : 1 : splitLength);
     
     inputLength = BASE64_INPUT_BLOCK_SIZE;
-    dsply %trimr('Input block length: ' + %char(inputLength));
     block = %subst(input : BASE64_INPUT_BLOCK_SIZE + 1 : BASE64_INPUT_BLOCK_SIZE);
     length = splitLines(block : inputLength : *off);
     splitLength += length;
     buffer += %subst(block : 1 : length);
     
     inputLength = %len(input) - BASE64_INPUT_BLOCK_SIZE - BASE64_INPUT_BLOCK_SIZE;
-    dsply %trimr('Input block length: ' + %char(inputLength));
     block = %subst(input : BASE64_INPUT_BLOCK_SIZE + BASE64_INPUT_BLOCK_SIZE + 1);
     length = splitLines(block : inputLength : *on);
     splitLength += length;

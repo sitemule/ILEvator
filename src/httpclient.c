@@ -77,15 +77,12 @@ PUCHAR findEOL(PUCHAR p)
 /* --------------------------------------------------------------------------- */
 int getCcsid(PUCHAR mimeType)
 {
-    int ccsid;
-    
     UCHAR valueXlated[100];
     xlate_translateString(valueXlated, mimeType, 1252, 0);
-    
-    PVARCHAR contentType = teraspace_calloc(sizeof(VARCHAR));
-    str2vc(contentType, valueXlated);
-    ccsid = iv_mime_getCcsid(contentType);
-    teraspace_free(&contentType);
+     
+    VARCHAR contentType;
+    str2vc(&contentType, valueXlated);
+    int ccsid = iv_mime_getCcsid(&contentType);
 
     return ccsid;
 }
