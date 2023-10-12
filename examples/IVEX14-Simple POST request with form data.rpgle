@@ -14,8 +14,6 @@ ctl-opt copyright('Sitemule.com  (C), 2022-2023');
 
 /define RPG_HAS_OVERLOAD
 /include 'ilevator.rpgle'
-/include 'form.rpginc'
-/include 'varchar.rpginc'
 
 
 dcl-proc main;

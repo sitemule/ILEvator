@@ -13,7 +13,6 @@ ctl-opt copyright('Sitemule.com  (C), 2022-2023');
 
 
 /include 'ilevator.rpgle'
-/include 'bearer.rpginc'
 
 
 dcl-proc main;

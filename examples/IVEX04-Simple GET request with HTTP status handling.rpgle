@@ -26,7 +26,6 @@ ctl-opt copyright('Sitemule.com  (C), 2022-2023');
 
 
 /include 'ilevator.rpgle'
-/include 'encode.rpginc'
 
 dcl-ds programStatus psds qualified;
   procedure char(10) ;             // Module or main procedure name
