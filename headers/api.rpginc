@@ -879,8 +879,8 @@ end-pr;
 //       entries to the list.
 ///
 dcl-pr iv_buildList pointer extproc(*dclcase);
-    key1 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const;
-    value1 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const;
+    key1 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
+    value1 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const options(*nopass);
     key2 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
     value2 varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const options(*nopass);
     key3 varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const options(*nopass);
