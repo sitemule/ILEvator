@@ -1654,3 +1654,22 @@ dcl-pr iv_multipart_toStream extproc(*dclcase);
     handler pointer value;
     stream pointer value;
 end-pr;
+
+
+
+//
+// tunnel module
+//
+
+dcl-pr iv_tunnel_connect ind extproc(*dclcase);
+    client pointer value;
+    targetUrl pointer options(*string) value;
+    p_proxyUrl pointer options(*string) value;
+    headers pointer value options(*nopass);
+end-pr;
+
+dcl-pr iv_tunnel_send extproc(*dclcase);
+    client pointer value;
+    bytes pointer value;
+    length uns(10) value;
+end-pr;

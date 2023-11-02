@@ -93,6 +93,11 @@ ITREQHDLR:
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITREQHDLR) SRCSTMF('itreqhdlr.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/ITREQHDLR MODULE(($(BIN_LIB)/ITREQHDLR)) $(BINDFLAGS)"
 
+ITTUNNEL:
+	system -i "CHGATR OBJ('ittunnel.rpgmod') ATR(*CCSID) VALUE(1252)"
+	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITTUNNEL) SRCSTMF('ittunnel.rpgmod') $(RCFLAGS)"
+	system -i "CRTSRVPGM $(BIN_LIB)/ITTUNNEL MODULE(($(BIN_LIB)/ITTUNNEL)) $(BINDFLAGS)"
+
 clean:
 	-system -i "DLTMOD $(BIN_LIB)/ITGET"
 	-system -i "DLTMOD $(BIN_LIB)/ITPOST"
@@ -103,6 +108,7 @@ clean:
 	-system -i "DLTMOD $(BIN_LIB)/ITPUT"
 	-system -i "DLTMOD $(BIN_LIB)/ITPATCH"
 	-system -i "DLTMOD $(BIN_LIB)/ITREQHDLR"
+	-system -i "DLTMOD $(BIN_LIB)/ITTUNNEL"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITGET"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITPOST"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITDELETE"
@@ -112,6 +118,7 @@ clean:
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITPUT"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITPATCH"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITREQHDLR"
+	-system -i "DLTSRVPGM $(BIN_LIB)/ITTUNNEL"
 	$(MAKE) -C ileastic/ clean
 
 .PHONY:

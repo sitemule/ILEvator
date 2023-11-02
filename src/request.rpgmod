@@ -25,7 +25,8 @@ dcl-s UTF8_SPACE char(1) inz ccsid(*utf8);
 dcl-s UTF8_COLON char(1) inz(':') ccsid(*utf8);
 dcl-s UPPER char(26) ccsid(*utf8) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 dcl-s LOWER char(26) ccsid(*utf8) inz('abcdefghijklmnopqrstuvwxyz');
-
+dcl-c SERIALIZED_INIT_SIZE 1048576;
+  
 dcl-pr open int(10) extproc('open');
     path pointer value options(*string);
     openflags int(10) value;
@@ -140,7 +141,6 @@ dcl-proc iv_request_toString export;
     p_request pointer const;
   end-pi;
 
-  dcl-c SERIALIZED_INIT_SIZE 1048576;
   dcl-ds serialized likeds(LVARPUCHAR_t);
   dcl-s sizeAllocated uns(10);
   dcl-s sizeUsed uns(10);
@@ -169,21 +169,8 @@ dcl-proc iv_request_toString export;
   serialized.length = 0;
   serialized.string = teraspace_alloc(sizeAllocated);
 
-  // TODO CONNECT message has different request line, see HTTP/1.1 spec
-
-  data = request.method + UTF8_SPACE;
-  if (%len(request.url.path) = 0);
-    data += UTF8_SLASH;
-  else;
-    data += request.url.path;
-  endif;
-  if (%len(request.url.query) > 0);
-    data += UTF8_QUESTION_MARK + request.url.query;
-  endif;
-  data += ' HTTP/1.1' + CRLF;
-  data += 'Host: ' + request.url.host + UTF8_COLON + %char(request.url.port) + CRLF;
-  data += 'Connection: keep-alive' + CRLF;
-
+  buildMinimalHeader(data : request);
+  
   iterator = sList_setIterator(request.headers);
   dow (sList_foreach(iterator));
     headerName = %str(nodePayload.key.string : nodePayload.key.length);
@@ -276,7 +263,6 @@ dcl-proc iv_request_toStream export;
     outstream pointer const;
   end-pi;
 
-  dcl-c SERIALIZED_INIT_SIZE 1048576;
   dcl-ds serialized likeds(LVARPUCHAR_t);
   dcl-s sizeAllocated uns(10);
   dcl-s sizeUsed uns(10);
@@ -305,21 +291,8 @@ dcl-proc iv_request_toStream export;
   serialized.length = 0;
   serialized.string = teraspace_alloc(sizeAllocated);
 
-  // TODO CONNECT message has different request line, see HTTP/1.1 spec
-
-  data = request.method + UTF8_SPACE;
-  if (%len(request.url.path) = 0);
-    data += UTF8_SLASH;
-  else;
-    data += request.url.path;
-  endif;
-  if (%len(request.url.query) > 0);
-    data += UTF8_QUESTION_MARK + request.url.query;
-  endif;
-  data += ' HTTP/1.1' + CRLF;
-  data += 'Host: ' + request.url.host + UTF8_COLON + %char(request.url.port) + CRLF;
-  data += 'Connection: keep-alive' + CRLF;
-
+  buildMinimalHeader(data : request);
+  
   iterator = sList_setIterator(request.headers);
   dow (sList_foreach(iterator));
     headerName = %str(nodePayload.key.string : nodePayload.key.length);
@@ -724,3 +697,51 @@ dcl-proc getContentTypeHeader;
 
   return *blank;
 end-proc;
+
+
+dcl-proc buildMinimalHeader;
+  dcl-pi *n;
+    data varchar(SERIALIZED_INIT_SIZE) ccsid(*utf8);
+    request likeds(iv_request_t);
+  end-pi;
+
+  if (request.method = 'CONNECT');
+    buildConnectHeader(data : request);
+  else;
+    buildNonConnectHeader(data : request);
+  endif;
+end-proc;
+
+
+dcl-proc buildConnectHeader;
+  dcl-pi *n;
+    data varchar(SERIALIZED_INIT_SIZE) ccsid(*utf8);
+    request likeds(iv_request_t);
+  end-pi;
+
+  data = request.method + UTF8_SPACE + request.url.host + UTF8_COLON + %char(request.url.port) + ' HTTP/1.1' + CRLF;
+  data += 'Host: ' + request.url.host + UTF8_COLON + %char(request.url.port) + CRLF;
+  data += 'Connection: keep-alive' + CRLF;
+end-proc;
+
+
+dcl-proc buildNonConnectHeader;
+  dcl-pi *n;
+    data varchar(SERIALIZED_INIT_SIZE) ccsid(*utf8);
+    request likeds(iv_request_t);
+  end-pi;
+
+  data = request.method + UTF8_SPACE;
+  if (%len(request.url.path) = 0);
+    data += UTF8_SLASH;
+  else;
+    data += request.url.path;
+  endif;
+  if (%len(request.url.query) > 0);
+    data += UTF8_QUESTION_MARK + request.url.query;
+  endif;
+  data += ' HTTP/1.1' + CRLF;
+  data += 'Host: ' + request.url.host + UTF8_COLON + %char(request.url.port) + CRLF;
+  data += 'Connection: keep-alive' + CRLF;
+end-proc;
+

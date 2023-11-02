@@ -1,0 +1,38 @@
+**FREE
+
+///
+// Integration Test : HTTP Tunnel
+//
+// This module tests HTTP tunnelling through the proxy and connects with the echo service.
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'ilevator.rpgle'
+
+
+dcl-pr test_tunnel end-pr;
+
+
+dcl-proc test_tunnel export;
+    dcl-s httpClient pointer;
+    dcl-s buffer varchar(65000:4) ccsid(1208);
+    dcl-s msg char(50);
+    dcl-s rc ind;
+    
+    httpClient = iv_newHttpClient();
+    iv_setResponseDataBuffer(httpClient : %addr(buffer) : %size(buffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    rc = iv_tunnel_connect(httpClient : 'http://localhost:35802' : 'http://localhost:35801');
+    if (rc);
+        dsply %char(iv_getStatus(httpClient));
+    else;
+        dsply 'hat nicht geklappt.';
+    endif;
+    
+    on-exit;
+        iv_free(httpClient);
+end-proc;

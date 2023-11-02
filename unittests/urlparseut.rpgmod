@@ -57,6 +57,7 @@ dcl-pr test_proxyUrl end-pr;
 dcl-pr test_incompleteProxyUrl end-pr;
 dcl-pr test_hostWithoutNeedForEncoding end-pr;
 dcl-pr test_hostWithNeedFoEncoding end-pr;
+dcl-pr test_hostAndPort end-pr;
 
 
 dcl-proc test_emptyUrl export;
@@ -385,3 +386,12 @@ dcl-proc test_hostWithoutNeedForEncoding export;
   aEqual('local-358.local' : url.host);
 end-proc;
 
+
+dcl-proc test_hostAndPort export;
+  dcl-ds url likeds(iv_url_t);
+  dcl-s s varchar(1000);
+
+  url = iv_url_parse('http://localhost:35801');
+  aEqual('localhost' : url.host);
+  iEqual(35801 : url.port);
+end-proc;

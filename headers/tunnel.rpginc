@@ -1,0 +1,32 @@
+**FREE
+
+/if not defined (ILEVATOR_TUNNEL)
+
+/define ILEVATOR_TUNNEL
+
+// TODO brauchen wir eine eigene client ds um weitere meta daten zu halten?
+
+dcl-pr iv_tunnel_connect ind extproc(*dclcase);
+    client pointer value;
+    targetUrl pointer options(*string) value;
+    p_proxyUrl pointer options(*string) value;
+    headers pointer value options(*nopass);
+end-pr;
+
+dcl-pr iv_tunnel_send extproc(*dclcase);
+    client pointer value;
+    bytes pointer value;
+    length uns(10) value;
+end-pr;
+
+// TODO brauchen wir das?
+dcl-pr iv_tunnel_close extproc(*dclcase);
+    client pointer value;
+end-pr;
+
+// TODO können wir mit dem normal iv_free arbeiten?
+dcl-pr iv_tunnel_free extproc(*dclcase);
+    client pointer value;
+end-pr;
+
+/endif

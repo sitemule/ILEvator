@@ -7,6 +7,49 @@
 /define ILEVATOR_API
 
 
+dcl-ds ilevator_t qualified template align(*full);
+    sockets pointer;
+    method pointer;
+    url pointer;
+    timeout packed(9:3);
+    retries int(5);
+    useProxy ind ;
+    responseHeaderHasContentLength ind ;
+    responseIsChunked ind ;
+    headerList pointer;
+    
+    requestDataBuffer likeds(anychar_t);
+    responseHeaderBuffer likeds(anychar_t);
+    responseDataBuffer likeds(anychar_t);
+    responseDataFile pointer;
+    authProvider pointer;
+    requestHandler pointer;
+    
+    headerLen    int(10);
+    contentData pointer;
+    contentLength int(10);
+    contentLengthCalculated int(10);
+    
+    rawResponse pointer;
+    ccsid int(10);
+    status int(10);
+    
+    server    char(512);
+    port      int(10);
+    resource  char(32766);
+    host      char(512);
+    user      char(256);
+    password  char(256);
+    location  char(256);
+    message   char(256);
+    
+    buffer pointer;
+    bufferSize int(10);
+    bufferTotalLength int(10);
+    bufferEnd pointer;
+end-ds;
+
+
 ///
 // Template for UTF8 varchars. default to 2M 
 ///
