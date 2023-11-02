@@ -27,6 +27,7 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_buildList")
     EXPORT SYMBOL("iv_freeList")
     EXPORT SYMBOL("iv_addHeaderToList")
+    EXPORT SYMBOL("iv_addEntryToList")
     
     EXPORT SYMBOL("iv_joblog")
     

@@ -11,6 +11,7 @@
 ctl-opt nomain;
 
 
+/include 'api.rpginc'
 /include 'assert.rpginc'
 /include 'ceeapi.rpginc'
 /include 'form.rpginc'
@@ -20,6 +21,7 @@ ctl-opt nomain;
 dcl-pr test_formMapSingleField end-pr;
 dcl-pr test_formSingleField end-pr;
 dcl-pr test_formMultipleFields end-pr;
+dcl-pr test_formMultipleFieldsFromList end-pr;
 dcl-pr test_formEmptyParts end-pr;
 
 
@@ -88,6 +90,29 @@ dcl-proc test_formMultipleFields export;
   
   on-exit;
       iv_form_free(formData);
+end-proc;
+
+
+dcl-proc test_formMultipleFieldsFromList export;
+  dcl-ds formData likeds(LVARPUCHAR_t);
+  dcl-s expected varchar(1000) ccsid(*utf8);
+  dcl-s list pointer;
+  
+  list = iv_buildList();
+  iv_addEntryToList(list : 'grant_type' : 'client_credentials');
+  iv_addEntryToList(list : 'client_id' : 'mihael');
+  iv_addEntryToList(list : 'client_secret' : 'uwillneverknow');
+  
+  expected = 'grant_type=client_credentials&client_id=mihael&client_secret=uwillneverknow';
+  formData = iv_form_of(list);
+
+  iEqual(%len(expected) : formData.Length);
+  assert(memcmp(%addr(expected : *data) : formData.String : formData.Length) = 0 : 
+          'Form encoded value is not correctly encoded.');
+  
+  on-exit;
+      iv_form_free(formData);
+      iv_freeList(list);
 end-proc;
 
 

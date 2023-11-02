@@ -978,6 +978,32 @@ dcl-proc iv_addHeaderToList export;
 end-proc;
 
 
+dcl-proc iv_addEntryToList export;
+    dcl-pi *n;
+        list pointer value;
+        key pointer value options(*string);
+        value pointer value options(*string);
+    end-pi;
+
+    dcl-ds listKey likeds(LVARPUCHAR_t);
+    dcl-ds listValue likeds(LVARPUCHAR_t);
+    
+    if (strlen(key) = 0);
+      return;
+    endif;
+    
+    listKey.length = strlen(key);
+    listKey.string = teraspace_alloc(listKey.length + 1);
+    memcpy(listKey.string : key : listKey.length + 1);
+    
+    listValue.length = strlen(value);
+    listValue.string = teraspace_alloc(listValue.length + 1);
+    memcpy(listValue.string : value : listValue.length + 1);
+    
+    sList_pushLVPC(list : listKey : listValue);
+end-proc;
+
+
 dcl-proc loadConfigFromEnvVar;
     dcl-pi *n;
         client pointer const;

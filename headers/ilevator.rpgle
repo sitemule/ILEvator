@@ -944,6 +944,22 @@ dcl-pr iv_addHeaderToList extproc(*dclcase);
 end-pr;
 
 ///
+// Add entry to list
+//
+// Adds the passed entry (key/value) to the passed list. The key and value will be added
+// as is. Duplicate keys in the list are allowed.
+//
+// @param Pointer to the list (simple list)
+// @param Key
+// @param Value
+///
+dcl-pr iv_addEntryToList extproc(*dclcase);
+    list pointer value;
+    key pointer value options(*string);
+    value pointer value options(*string);
+end-pr;
+
+///
 // Set request handler
 //
 // Sets the request handler which will be called on every HTTP request.
