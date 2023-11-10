@@ -66,3 +66,30 @@ iv_freeList(list);
 ```
 
 Note: Don't forget to free the memory of the list with calling `iv_freeList`.
+
+
+## Sending Form Data
+
+Now we know how to build forms. ILEvator has a porcelain API for sending form data: `iv_postForm`.
+
+But if you need more control you can also use the low-level API `iv_execute`. The form data must
+be passed to the request buffer by calling `iv_setRequestDataBuffer`.
+
+```
+dcl-s client pointer;
+dcl-ds formData likeds(iv_lvarpuchar_t);
+
+formData = iv_form_of(
+    'name' : 'Jörg Müller' : 
+    'email' : 'jmueller@example.com'
+);
+
+client = iv_newHttpClient();
+iv_setRequestDataBuffer (client : formData.string : formData.length : IV_BYTES : IV_CCSID_BINARY);
+...
+
+iv_form_free(formData);
+iv_free(client);
+```
+
+

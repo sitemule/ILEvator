@@ -4,7 +4,7 @@
     "author" : "Mihael Schmidt",
     "language" : "en",
     "html": {
-        "theme": "daux-green",
+        "theme": "daux-blue",
         "auto_landing": false,
         "repo": "sitemule/ILEvator",
         "toggle_code": false,

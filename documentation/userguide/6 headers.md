@@ -9,10 +9,10 @@ some headers are only allowed once like `Host`, `Content-Length`, `Upgrade` or `
 ## Porcelain API
 
 When using the porcelain API like `iv_get` or `iv_post` you can add additional headers by passing
-a list of headers as a parameter to to function call.
+a list of headers as a parameter to to procedure call.
 
 The list can be created with `iv_buildList`. You can create an empty list or fill the list with
-initial values. The list is not immutable. You can later add values to the list by calling
+initial values. The list is not immutable. You can add values to the list by calling
 `iv_addHeaderToList`.
 
 ```
@@ -46,7 +46,7 @@ dcl-ds requestHandler_t qualified template;
 end-ds;
 ```
 
-The process function has a predefined procedure interface which needs to be implemented.
+The process procedure has a predefined procedure interface which needs to be implemented.
 
 ```
 dcl-pi *n;
@@ -55,7 +55,7 @@ dcl-pi *n;
 end-pi;
 ```
 
-So a function to add a header could look like this:
+So a procedure to add a header could look like this:
 
 ```
 dcl-proc addCustomHeader export;
@@ -70,10 +70,10 @@ dcl-proc addCustomHeader export;
 end-proc;
 ```
 
-Inside the process function you can use the request API of ILEvator to modify the request before
+Inside the process procedure you can use the request API of ILEvator to modify the request before
 it is sent to the server.
 
-Last but not least you need to set the pointer to your process function in the handler data
+Last but not least you need to set the pointer to your process procedure in the handler data
 structure.
 
 ```
