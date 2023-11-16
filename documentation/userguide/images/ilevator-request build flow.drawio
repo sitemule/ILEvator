@@ -1,0 +1,56 @@
+<mxfile host="app.diagrams.net" modified="2023-11-09T14:34:32.782Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/119.0" etag="kpgEEaIbCWJ9Kb5MJHyH" version="22.1.0" type="device">
+  <diagram name="Seite-1" id="ANAz80PDJ4lBJG6sXhY4">
+    <mxGraphModel dx="1050" dy="545" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="4l5Sg-ETTgqe9Kmm5gbx-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;fontColor=#000000;" edge="1" parent="1" source="4l5Sg-ETTgqe9Kmm5gbx-2" target="4l5Sg-ETTgqe9Kmm5gbx-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4l5Sg-ETTgqe9Kmm5gbx-2" value="build base &lt;br&gt;request object" style="rounded=1;whiteSpace=wrap;html=1;sketch=1;curveFitting=1;jiggle=2;opacity=50;fillColor=#0050ef;fontColor=#000000;strokeColor=#001DBC;" vertex="1" parent="1">
+          <mxGeometry x="60" y="160" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4l5Sg-ETTgqe9Kmm5gbx-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;fontColor=#000000;" edge="1" parent="1" source="4l5Sg-ETTgqe9Kmm5gbx-3" target="4l5Sg-ETTgqe9Kmm5gbx-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4l5Sg-ETTgqe9Kmm5gbx-3" value="add global headers to request" style="whiteSpace=wrap;html=1;rounded=1;sketch=1;curveFitting=1;jiggle=2;fontColor=#000000;fillColor=#0050ef;strokeColor=#001DBC;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="260" y="160" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4l5Sg-ETTgqe9Kmm5gbx-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;fontColor=#000000;" edge="1" parent="1" source="4l5Sg-ETTgqe9Kmm5gbx-5" target="4l5Sg-ETTgqe9Kmm5gbx-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4l5Sg-ETTgqe9Kmm5gbx-5" value="add one time headers to request" style="whiteSpace=wrap;html=1;rounded=1;sketch=1;curveFitting=1;jiggle=2;fontColor=#000000;fillColor=#0050ef;strokeColor=#001DBC;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="460" y="160" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4l5Sg-ETTgqe9Kmm5gbx-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;curved=1;sketch=1;curveFitting=1;jiggle=2;fontColor=#000000;" edge="1" parent="1" source="4l5Sg-ETTgqe9Kmm5gbx-7" target="4l5Sg-ETTgqe9Kmm5gbx-9">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="190" />
+              <mxPoint x="840" y="280" />
+              <mxPoint x="110" y="280" />
+              <mxPoint x="110" y="370" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4l5Sg-ETTgqe9Kmm5gbx-7" value="set message body on request" style="whiteSpace=wrap;html=1;rounded=1;sketch=1;curveFitting=1;jiggle=2;fontColor=#000000;fillColor=#0050ef;strokeColor=#001DBC;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="660" y="160" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4l5Sg-ETTgqe9Kmm5gbx-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;fontColor=#000000;" edge="1" parent="1" source="4l5Sg-ETTgqe9Kmm5gbx-9" target="4l5Sg-ETTgqe9Kmm5gbx-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4l5Sg-ETTgqe9Kmm5gbx-9" value="execute authentication provider" style="whiteSpace=wrap;html=1;rounded=1;sketch=1;curveFitting=1;jiggle=2;fontColor=#000000;fillColor=#60a917;strokeColor=#2D7600;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="160" y="340" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4l5Sg-ETTgqe9Kmm5gbx-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;fontColor=#000000;" edge="1" parent="1" source="4l5Sg-ETTgqe9Kmm5gbx-11" target="4l5Sg-ETTgqe9Kmm5gbx-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4l5Sg-ETTgqe9Kmm5gbx-11" value="execute request handler" style="whiteSpace=wrap;html=1;rounded=1;sketch=1;curveFitting=1;jiggle=2;fontColor=#000000;fillColor=#60a917;strokeColor=#2D7600;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="360" y="340" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4l5Sg-ETTgqe9Kmm5gbx-13" value="send request" style="whiteSpace=wrap;html=1;rounded=1;sketch=1;curveFitting=1;jiggle=2;fontColor=#000000;fillColor=#0050ef;strokeColor=#001DBC;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="560" y="340" width="120" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
