@@ -1,0 +1,67 @@
+**FREE
+
+///
+// Integration Test Execute
+//
+// This module tests the low-level API with the integration test backend.
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'ilevator.rpgle'
+/include 'psds.rpginc'
+
+
+dcl-pr test_executeWithAdditionalHeadersOnClient end-pr;
+dcl-pr test_executeWithAdditionalHeadersOnRequest end-pr;
+
+
+dcl-proc test_executeWithAdditionalHeadersOnClient export;
+    dcl-s httpClient pointer; 
+    dcl-s headers pointer;
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+
+    headers = iv_buildList(
+        'Custom-ILEvator' : 'my-custom-header'
+    );
+
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_addHeaders(httpClient : headers);
+    
+    iv_execute(httpClient : 'GET' : 'http://localhost:35801/api/headers/Custom-ILEvator'); 
+    iEqual(IV_HTTP_OK : iv_getStatus(httpClient));
+    aEqual('my-custom-header' : outbuffer);
+    
+    on-exit;
+        iv_free(httpClient);
+        iv_freeList(headers);
+end-proc;
+
+
+dcl-proc test_executeWithAdditionalHeadersOnRequest export;
+    dcl-s httpClient pointer; 
+    dcl-s headers pointer;
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+
+    headers = iv_buildList(
+        'Custom-ILEvator' : 'my-custom-header'
+    );
+
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_execute(httpClient : 'GET' : 'http://localhost:35801/api/headers/Custom-ILEvator' : headers); 
+    iEqual(IV_HTTP_OK : iv_getStatus(httpClient));
+    aEqual('my-custom-header' : outbuffer);
+    
+    on-exit;
+        iv_free(httpClient);
+        iv_freeList(headers);
+end-proc;

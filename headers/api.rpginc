@@ -486,12 +486,14 @@ end-pr;
 // @param Pointer to the HTTP client 
 // @param HTTP method
 // @param URL
+// @param Pointer to a simple list with additional HTTP headers
 // @return <code>*ON</code> if ok
 ///
 dcl-pr iv_execute ind extproc(*dclcase);
     client  pointer value;
     method  pointer options(*string) value;
     url     pointer options(*string) value;
+    headers pointer options(*nopass) value;
 end-pr;
 
 ///

@@ -64,6 +64,7 @@ dcl-ds ilevator_t qualified template align(*full);
     responseHeaderHasContentLength ind ;
     responseIsChunked ind ;
     headerList pointer;
+    requestHeaderList pointer;
     
     requestDataBuffer likeds(anychar_t);
     responseHeaderBuffer likeds(anychar_t);
@@ -133,6 +134,7 @@ dcl-proc iv_newHttpClient export;
     client.password = NULL;
     client.location = NULL;
     client.message = NULL;
+    client.requestHeaderList = *NULL;
     
     iv_addHeader(pClient : 'User-Agent' : 'ILEvator for IBM i/' + ILEVATOR_VERSION);
     
@@ -291,13 +293,18 @@ dcl-proc iv_execute export;
     dcl-pi *n ind;
         pClient pointer value;
         method pointer options(*string) value;
-        url pointer options(*string) value;     
+        url pointer options(*string) value;
+        headers pointer options(*nopass) value;
     end-pi;
 
     dcl-ds client likeds(ilevator_t) based(pClient);
     dcl-s apiStatus int(10) inz(IV_STATUS_RETRY);
     dcl-s try int(5);
     dcl-s ok like(ENUM);
+    
+    if (%parms() >= 4);
+        client.requestHeaderList = headers;
+    endif;
     
     client.method = teraspace_strTrimDup(method);
     client.url    = teraspace_strTrimDup(url);
