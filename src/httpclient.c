@@ -212,9 +212,9 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
 {
     PUCHAR temp;
     URL l_url;
-    LVARCHAR s;
+    VARCHAR s;
     
-    str2lvc(&s, url);
+    str2vc(&s, url);
     l_url = iv_url_parse(s);
     
     pIv->sockets->asSSL = ( strutil_beginsWith(l_url.protocol.String , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;

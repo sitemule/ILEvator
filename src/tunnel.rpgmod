@@ -2,6 +2,7 @@
 
 ctl-opt nomain thread(*concurrent);
 
+/copy QSYSINC/QRPGLESRC,QUSEC
 
 /include 'anychar.rpginc'
 /include 'api.rpginc'
@@ -44,67 +45,71 @@ dcl-proc iv_tunnel_connect export;
     client.method = teraspace_strTrimDup('CONNECT');
     client.url    = teraspace_strTrimDup(targetUrl);
     
+    printMemoryUsage();
+
     parseUrl(p_client : targetUrl); 
     proxyUrl = iv_url_parse(%str(p_proxyUrl : IV_URL_SIZE));
     
-    for try = 0 to client.retries;
-
-        ok = sockets_connect(
-            client.sockets : 
-            proxyUrl.host : 
-            proxyUrl.port : 
-            client.timeout * 1000 // from seconds to milliseconds
-        );
-        if (ok = TRUE);
-          apiStatus = IV_STATUS_OK;
-        else;
-          apiStatus = IV_STATUS_ERROR;
-          iter;
-        endif;
-
-        apiStatus = sendRequest(p_client);
-        if (apiStatus = IV_STATUS_ERROR);
-            leave; 
-        endif;
-        
-        apiStatus = receiveHeader(p_client);
-        if (apiStatus = IV_STATUS_ERROR);
-            leave; 
-        endif;
-        if (apiStatus = IV_STATUS_RETRY);
-            iter; 
-        endif;
-        
-        iv_debug('HTTP response status: %s' : %char(client.status));
-
-        // status 204 => no content
-        if (client.status = 204);
-            // No content, don't read any longer
-            apiStatus = IV_STATUS_OK;
-        elseif (client.responseIsChunked);
-            apiStatus = iv_chunked_receive(p_client);
-        else;
-            apiStatus = receiveData(p_client);
-        endif;
-
-        if (apiStatus = IV_STATUS_OK);
-            leave; 
-        endif;
-        if (apiStatus = IV_STATUS_ERROR);
-            leave; 
-        endif;
-        if (apiStatus = IV_STATUS_RETRY);
-            iter;
-        endif;
-        
-    endfor;
-
-    iv_anychar_finalize(%addr(client.responseHeaderBuffer));
-    iv_anychar_finalize(%addr(client.responseDataBuffer));
-
-    if (client.responseDataFile <> *null);
-        fclose(client.responseDataFile);
-    endif;
+    printMemoryUsage();
+//     
+//     for try = 0 to client.retries;
+// 
+//         ok = sockets_connect(
+//             client.sockets : 
+//             proxyUrl.host : 
+//             proxyUrl.port : 
+//             client.timeout * 1000 // from seconds to milliseconds
+//         );
+//         if (ok = TRUE);
+//           apiStatus = IV_STATUS_OK;
+//         else;
+//           apiStatus = IV_STATUS_ERROR;
+//           iter;
+//         endif;
+// 
+//         apiStatus = sendRequest(p_client);
+//         if (apiStatus = IV_STATUS_ERROR);
+//             leave; 
+//         endif;
+//         
+//         apiStatus = receiveHeader(p_client);
+//         if (apiStatus = IV_STATUS_ERROR);
+//             leave; 
+//         endif;
+//         if (apiStatus = IV_STATUS_RETRY);
+//             iter; 
+//         endif;
+//         
+//         iv_debug('HTTP response status: %s' : %char(client.status));
+// 
+//         // status 204 => no content
+//         if (client.status = 204);
+//             // No content, don't read any longer
+//             apiStatus = IV_STATUS_OK;
+//         elseif (client.responseIsChunked);
+//             apiStatus = iv_chunked_receive(p_client);
+//         else;
+//             apiStatus = receiveData(p_client);
+//         endif;
+// 
+//         if (apiStatus = IV_STATUS_OK);
+//             leave; 
+//         endif;
+//         if (apiStatus = IV_STATUS_ERROR);
+//             leave; 
+//         endif;
+//         if (apiStatus = IV_STATUS_RETRY);
+//             iter;
+//         endif;
+//         
+//     endfor;
+// 
+//     iv_anychar_finalize(%addr(client.responseHeaderBuffer));
+//     iv_anychar_finalize(%addr(client.responseDataBuffer));
+// 
+//     if (client.responseDataFile <> *null);
+//         fclose(client.responseDataFile);
+//     endif;
 
     return (apiStatus = IV_STATUS_OK);
 end-proc;
@@ -136,3 +141,89 @@ dcl-proc iv_tunnel_close export;
 
     // TODO
 end-proc;
+
+
+
+
+dcl-proc printMemoryUsage;
+    dcl-pr getActivationGroupAttr extpgm('QWVOLAGP');
+        receiver char(65535) options(*varsize);
+        recLength int(10) const;
+        listInfo char(80);
+        numberRecords int(10) const;
+        format char(8) const;
+        job char(26) const;
+        intJobId char(16) const;
+        error likeds(QUSEC) options(*varsize);
+    end-pr;
+   
+    dcl-pr closeList extpgm('QGYCLST');
+        listHandle char(4);
+        error int(10);
+    end-pr;
+ 
+    dcl-ds raga0100 qualified;
+        actGroupName char(10);
+        reserved1 char(6);
+        actGroupNumber int(10);
+        numberActGroups int(10);
+        numberHeaps int(10);
+        staticSize int(10);
+        heapSize int(10);
+        rootPgmName char(10);
+        rootPgmLib char(10);
+        rootPgmType char(1);
+        actGroupState char(1);
+        shrActGroupInd char(1);
+        inUse char(1);
+        reserved2 char(4);
+        actGroupNumberLong int(20);
+        reserved3 char(8);
+    end-ds;
+    
+    dcl-ds listInfoDs qualified;
+         listTotal int(10);
+         listReturned int(10);
+         listHandle char(4);
+         listRecLen int(10);
+         listComplete char(1);
+         listDate char(13);
+         listStatus char(1);
+         reserved1 char(1);
+         listLength int(10);
+         listFirst int(10);
+         reserved2 char(40);
+     end-ds;
+     
+     dcl-s receiver char(65355);
+     dcl-s formatPtr pointer;
+     dcl-ds format likeds(raga0100) based(formatPtr);
+     dcl-ds listInfo likeds(listInfoDs);
+     dcl-s i int(10);
+     dcl-s intRetVal int(10);
+     
+     clear QUSEC;
+     
+       getActivationGroupAttr( receiver :
+                               %len(receiver) :
+                               listInfo :
+                               %len(receiver) / %size(raga0100) :
+                               'RAGA0100' :
+                               '*' :
+                               '' :
+                               QUSEC);
+ 
+         for i = 0 to listInfo.listReturned - 1;
+           formatPtr = %addr(receiver) + (i * listInfo.listRecLen);
+           dsply %trimr(format.actGroupname + ' ' +
+                 %char(format.staticSize) + ' / ' +
+                 %char(format.heapSize) +
+                 '(' + %char(format.numberHeaps) + ')');
+         endfor;
+ 
+         // close list
+         closeList(listInfo.listHandle : intRetVal);
+end-proc;
+
+
+

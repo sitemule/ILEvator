@@ -26,7 +26,7 @@ dcl-c UNICODE_GREATER_THAN u'003E'; // >
 
 dcl-proc iv_url_parse export;
   dcl-pi *n likeds(iv_url_t);
-    pUrl varchar(100000) value;
+    pUrl varchar(32767) value;
   end-pi;
 
   dcl-ds url likeds(iv_url_t) inz(*likeds);
@@ -339,11 +339,11 @@ end-proc;
 
 
 dcl-proc iv_url_toString export;
-  dcl-pi *n varchar(100000);
+  dcl-pi *n varchar(32767);
     url likeds(iv_url_t) const;
   end-pi;
   
-  dcl-s s varchar(100000);
+  dcl-s s varchar(32767);
   
   if (%len(url.host) = 0);
     return *blank;

@@ -27,8 +27,8 @@ dcl-ds iv_url_t qualified template align(*full);
   password varchar(128 : 2) inz('');
   host varchar(1024 : 2) inz('localhost');
   port uns(5) inz(0);
-  path varchar(1048576 : 4) inz('');
-  query varchar(1048576 : 4) inz('');
+  path varchar(32767 : 2) inz('');
+  query varchar(32767 : 2) inz('');
   proxy varchar(1024 : 2) inz('');
   ipv6 ind inz(*off);
 end-ds;
@@ -46,7 +46,7 @@ end-ds;
 //       (encoded).
 ///
 dcl-pr iv_url_parse likeds(iv_url_t) extproc(*dclcase);
-  url varchar(100000) value;
+  url varchar(32767) value;
 end-pr;
 
 ///
@@ -57,7 +57,7 @@ end-pr;
 // @param URL (data structure)
 // @return URL as a string
 ///
-dcl-pr iv_url_toString varchar(100000) extproc(*dclcase);
+dcl-pr iv_url_toString varchar(32767) extproc(*dclcase);
   url likeds(iv_url_t) const;
 end-pr;
 

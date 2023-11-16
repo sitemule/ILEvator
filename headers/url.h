@@ -10,14 +10,14 @@ typedef _Packed struct _URL {
     VARCHAR128 password;
     VARCHAR1024 host;
     USHORT port;     
-    LVARCHAR path;
-    LVARCHAR query;
+    VARCHAR path;
+    VARCHAR query;
     VARCHAR1024 proxy;
     LGL ipv6;
 } URL, *PURL;
 
-URL iv_url_parse(LVARCHAR url);
+URL iv_url_parse(VARCHAR url);
 
-LVARCHAR iv_url_toString(PURL url);
+VARCHAR iv_url_toString(PURL url);
 
 #endif
