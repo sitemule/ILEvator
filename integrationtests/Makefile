@@ -25,7 +25,7 @@ DEFINE=RPG_HAS_OVERLOAD
 #-------------------------------------------------------------------------------
 
 
-OBJECTS = ITGET ITPOST ITDELETE ITHEAD ITMULTI ITOPTIONS ITPUT ITPATCH ITREQHDLR
+OBJECTS = ITGET ITPOST ITDELETE ITEXEC ITHEAD ITMULTI ITOPTIONS ITPUT ITPATCH ITREQHDLR
 SRVPGMS = $(RU_LIB)/RUTESTCASE $(ILEVATOR_LIB)/ILEVATOR
 
 # system and application include folder
@@ -93,6 +93,11 @@ ITREQHDLR:
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITREQHDLR) SRCSTMF('itreqhdlr.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/ITREQHDLR MODULE(($(BIN_LIB)/ITREQHDLR)) $(BINDFLAGS)"
 
+ITEXEC:
+	system -i "CHGATR OBJ('itexec.rpgmod') ATR(*CCSID) VALUE(1252)"
+	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITEXEC) SRCSTMF('itexec.rpgmod') $(RCFLAGS)"
+	system -i "CRTSRVPGM $(BIN_LIB)/ITEXEC MODULE(($(BIN_LIB)/ITEXEC)) $(BINDFLAGS)"
+
 ITTUNNEL:
 	system -i "CHGATR OBJ('ittunnel.rpgmod') ATR(*CCSID) VALUE(1252)"
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITTUNNEL) SRCSTMF('ittunnel.rpgmod') $(RCFLAGS)"
@@ -102,6 +107,7 @@ clean:
 	-system -i "DLTMOD $(BIN_LIB)/ITGET"
 	-system -i "DLTMOD $(BIN_LIB)/ITPOST"
 	-system -i "DLTMOD $(BIN_LIB)/ITDELETE"
+	-system -i "DLTMOD $(BIN_LIB)/ITEXEC"
 	-system -i "DLTMOD $(BIN_LIB)/ITHEAD"
 	-system -i "DLTMOD $(BIN_LIB)/ITMULTI"
 	-system -i "DLTMOD $(BIN_LIB)/ITOPTIONS"
@@ -112,6 +118,7 @@ clean:
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITGET"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITPOST"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITDELETE"
+	-system -i "DLTSRVPGM $(BIN_LIB)/ITEXEC"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITHEAD"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITMULTI"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITOPTIONS"

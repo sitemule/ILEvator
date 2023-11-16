@@ -1,0 +1,16 @@
+{
+    "title": "ILEvator",
+    "tagline" : "HTTP Client for the ILE environment",
+    "author" : "Mihael Schmidt",
+    "language" : "en",
+    "html": {
+        "theme": "daux-blue",
+        "auto_landing": false,
+        "repo": "sitemule/ILEvator",
+        "toggle_code": false,
+        "jump_buttons": false,
+        "buttons": {
+            "GitHub": "https://github.com/sitemule/ILEvator"
+        }
+    }
+}

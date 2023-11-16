@@ -418,6 +418,10 @@ dcl-proc iv_request_addHeaders export;
     dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
     dcl-s headerName varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8);
     dcl-s headerValue varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8);
+    
+    if (headers = *null);
+        return;
+    endif;
 
     iterator = sList_setIterator(headers);
     dow (sList_foreach(iterator));

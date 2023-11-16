@@ -508,12 +508,14 @@ end-pr;
 // @param Pointer to the HTTP client 
 // @param HTTP method
 // @param URL
+// @param Pointer to a simple list with additional HTTP headers
 // @return <code>*ON</code> if ok
 ///
 dcl-pr iv_execute ind extproc(*dclcase);
     client  pointer value;
     method  pointer options(*string) value;
     url     pointer options(*string) value;
+    headers pointer options(*nopass) value;
 end-pr;
 
 ///
@@ -941,6 +943,22 @@ dcl-pr iv_addHeaderToList extproc(*dclcase);
     list pointer value;
     headerKey varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8) const;
     headerValue varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8) const;
+end-pr;
+
+///
+// Add entry to list
+//
+// Adds the passed entry (key/value) to the passed list. The key and value will be added
+// as is. Duplicate keys in the list are allowed.
+//
+// @param Pointer to the list (simple list)
+// @param Key
+// @param Value
+///
+dcl-pr iv_addEntryToList extproc(*dclcase);
+    list pointer value;
+    key pointer value options(*string);
+    value pointer value options(*string);
 end-pr;
 
 ///

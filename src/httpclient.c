@@ -257,6 +257,7 @@ API_STATUS sendRequest (PILEVATOR pIv)
         ""
     );
     iv_request_addHeaders(request, pIv->headerList);
+    iv_request_addHeaders(request, pIv->requestHeaderList);
     
     if (pIv->requestDataBuffer.length > 0) {
         if (pIv->requestDataBuffer.type == IV_ANYCHAR_BYTES)
