@@ -5,7 +5,7 @@ import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
 
 public class ProxyEchoApplication {
 	public static void main(String[] args) throws Exception {
-		HttpProxyServer server = DefaultHttpProxyServer.bootstrap().withPort(35801).start();
+		HttpProxyServer server = DefaultHttpProxyServer.bootstrap().withAllowLocalOnly(false).withPort(35801).start();
 
 		EchoService echoService = new EchoService(35802);
 		echoService.start();

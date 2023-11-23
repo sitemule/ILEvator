@@ -14,24 +14,76 @@ ctl-opt nomain;
 /include 'ilevator.rpgle'
 
 
-dcl-pr test_tunnel end-pr;
+dcl-pr test_tunnel_connect end-pr;
+dcl-pr test_tunnel_echo end-pr;
+dcl-pr test_tunnel_website end-pr;
 
 
-dcl-proc test_tunnel export;
+dcl-proc test_tunnel_connect export;
     dcl-s httpClient pointer;
     dcl-s buffer varchar(65000:4) ccsid(1208);
-    dcl-s msg char(50);
     dcl-s rc ind;
     
     httpClient = iv_newHttpClient();
     iv_setResponseDataBuffer(httpClient : %addr(buffer) : %size(buffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
     
     rc = iv_tunnel_connect(httpClient : 'http://localhost:35802' : 'http://localhost:35801');
-    if (rc);
-        dsply %char(iv_getStatus(httpClient));
-    else;
-        dsply 'hat nicht geklappt.';
-    endif;
+    assert(rc : 'Not connected to the proxy.');
+    iEqual(200 : iv_getStatus(httpClient));
+    
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_tunnel_echo export;
+    dcl-s httpClient pointer;
+    dcl-s buffer varchar(65000:4) ccsid(1208);
+    dcl-s rc ind;
+    dcl-s data varchar(50) ccsid(1208);
+    dcl-s msg char(50);
+    dcl-s result int(10);
+    
+    httpClient = iv_newHttpClient();
+    iv_setResponseDataBuffer(httpClient : %addr(buffer) : %size(buffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    rc = iv_tunnel_connect(httpClient : 'http://localhost:35802' : 'http://localhost:35801');
+    assert(rc : 'Not connected to the proxy.');
+    iEqual(200 : iv_getStatus(httpClient));
+    
+    data = 'Hello World!';
+    result = iv_tunnel_send(httpClient : %addr(data : *data) : %len(data));
+    dsply %char(result);
+    
+    msg = buffer;
+    dsply msg;
+    
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_tunnel_website export;
+    dcl-s httpClient pointer;
+    dcl-s buffer varchar(65000:4) ccsid(1208);
+    dcl-s rc ind;
+    dcl-s data varchar(50) ccsid(1208);
+    dcl-s msg char(50);
+    dcl-s result int(10);
+    
+    httpClient = iv_newHttpClient();
+    iv_setResponseDataBuffer(httpClient : %addr(buffer) : %size(buffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    rc = iv_tunnel_connect(httpClient : 'http://www.rpgnextgen.com:80' : 'http://localhost:35801');
+    assert(rc : 'Not connected to the proxy.');
+    iEqual(200 : iv_getStatus(httpClient));
+    
+    data = 'Hello World!';
+    result = iv_tunnel_send(httpClient : %addr(data : *data) : %len(data));
+    dsply %char(result);
+    
+    msg = buffer;
+    dsply msg;
     
     on-exit;
         iv_free(httpClient);

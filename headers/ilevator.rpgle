@@ -1686,7 +1686,7 @@ dcl-pr iv_tunnel_connect ind extproc(*dclcase);
     headers pointer value options(*nopass);
 end-pr;
 
-dcl-pr iv_tunnel_send extproc(*dclcase);
+dcl-pr iv_tunnel_send int(10) extproc(*dclcase);
     client pointer value;
     bytes pointer value;
     length uns(10) value;
