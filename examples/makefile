@@ -13,7 +13,7 @@
 # BIN_LIB is the destination library for the demo programs.
 # NOTE: LIBLIST can be overwritten from the commandline, but defaults to the BIN_LIB
 BIN_LIB=ILEVATOR
-LIBLIST=$(BIN_LIB) NOXDB
+LIBLIST="$(BIN_LIB) NOXDB"
 
 # The shell we use
 SHELL=/QOpenSys/usr/bin/qsh
@@ -25,32 +25,13 @@ SHELL=/QOpenSys/usr/bin/qsh
 # to compile a single file and get erros to the editor
 # User-defined part end
 #-------------------------------------------------------------------------------
-OUTPUT=*NONE
-RCFLAGS=OPTION(*NOUNREF) DBGVIEW(*LIST)  OUTPUT($(OUTPUT)) INCDIR('./..')
-SQLRPGCFLAGS=OPTION(*NOUNREF) DBGVIEW(*LIST)  OUTPUT($(OUTPUT)) INCDIR(''./..'')
-FILTER=| grep '*RNF' | grep -v '*RNF7031'  | grep -v '*RNF5409'  | sed  "s!*!$<: &!"
-NOFILTER=>errorlist.txt
-OBJECT_DESCRIPTION=ILEvator http client example
-
-.SUFFIXES: .rpgle .sqlrpgle
- 
-# suffix rules
-.rpgle:
-	touch errorlist.txt ;\
-	setccsid 1252 errorlist.txt;\
-	liblist -a $(LIBLIST);\
-	setccsid 1252 $<;\
-	system -iK "CRTBNDRPG PGM($(BIN_LIB)/$@) SRCSTMF('$<') $(RCFLAGS) TEXT('$(OBJECT_DESCRIPTION)')" $(FILTER) ;\
-	
-.sqlrpgle:
-	liblist -a $(LIBLIST);\
-	setccsid 1252 $<;\
-	system -iK "CRTSQLRPGI OBJ($(BIN_LIB)/$@) SRCSTMF('$<') RPGPPOPT(*LVL2) COMPILEOPT('$(SQLRPGCFLAGS)') DBGVIEW(*NONE) TEXT('$(OBJECT_DESCRIPTION)')"
-
-OBJECTS = FlowRate
+RPG_OPT=OPTION(*EVENTF *NOXREF *NOUNREF) OUTPUT(*NONE) DBGVIEW(*LIST) INCDIR('./..' '/prj/ILEvator/headers')
+CCSID=500
+SHELL=/QOpenSys/usr/bin/qsh
 
 all: compile
+.ONESHELL:
+compile:
+	./compile.sh -f "$(SRC)"  -b $(BIN_LIB) -l $(LIBLIST) -c $(CCSID) -o "$(RPG_OPT)"
 
-compile: $(OBJECTS)
-
-.PHONY:
+.PHONY: compile
