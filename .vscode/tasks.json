@@ -62,26 +62,25 @@
         // NOTE: OBJECT are overridden by the command line, so OBJECT will be "this" files 
         {
             "label": "Compile current example file",
-            "command": "ssh -t my_ibm_i 'PATH=/QOpenSys/pkgs/bin:$PATH;cd /prj/ILEvator/examples/;gmake ${fileBasenameNoExtension} OUTPUT=*PRINT'",
+            "command": "ssh -t my_ibm_i 'PATH=/QOpenSys/pkgs/bin:$PATH;cd /prj/ILEvator/examples/;gmake compile SRC=\"${fileBasename}\"' ",
             "type": "shell",
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            // Use the standard less compilation problem matcher.
             "problemMatcher": {
                 "owner": "c",
                 "fileLocation": ["relative", "${workspaceRoot}/examples"],
                 "pattern": {
                     // FileName: *RNF7030 30    399 000022  The name or indicator A is not defined.
-                    "regexp": "^(.*):.*\\s{3,6}(\\d+)\\s{1}(\\d+)\\s{1}\\s+(.*)$",
+                    "regexp": "^\\./(.*):(\\d+),(\\d+),(.*)$",
                     "file": 1,
-                    "line": 3,
-                    //"column": 3,
+                    "line": 2,
+                    "column": 3,
                     // "severity": 4,
                     "message": 4
                 }
-            }
+            }       
         }
     ]
 }
