@@ -48,6 +48,7 @@ void  sockets_setTrace(PSOCKETS ps, PUCHAR traceFileName);
 void  sockets_putTrace(PSOCKETS ps, PUCHAR Ctlstr, ...);
 
 BOOL  sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, LONG TimeOut);
+BOOL  sockets_set_secure (PSOCKETS ps);
 BOOL  sockets_handshakeSSL (PSOCKETS ps);
 LONG  sockets_send (PSOCKETS ps, PUCHAR Buf, LONG Len);
 LONG  sockets_sendXlate (PSOCKETS ps, PUCHAR Buf, LONG Len);

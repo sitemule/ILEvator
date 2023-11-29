@@ -27,6 +27,17 @@ dcl-pr sockets_connect int(3) extproc(*CWIDEN:'sockets_connect');
     timeout int(10) value;
 end-pr;
 
+
+dcl-pr sockets_copy_socket int(3) extproc(*CWIDEN:'sockets_copy_socket');
+    toSockets  pointer value;
+    fromSockets  pointer value;
+end-pr;
+
+
+dcl-pr sockets_set_secure int(3) extproc(*CWIDEN:'sockets_set_secure');
+    sockets  pointer value;
+end-pr;
+
 dcl-pr sockets_send int(10) extproc(*dclcase);
     sockets pointer value;
     buffer pointer value;

@@ -272,13 +272,10 @@ dcl-proc iv_execute export;
     dcl-s  apiStatus int(10) inz(IV_STATUS_RETRY);
     dcl-s  try int(5);
     dcl-s  ok like(ENUM);
+    dcl-s  success ind; 
     
     if (%parms() >= 4);
         client.requestHeaderList = headers;
-    endif;
-
-    if client.proxyTunnel <> *NULL;
-        connect_using_proxy_tunnel (client );
     endif;
 
     client.method = teraspace_strTrimDup(method);
@@ -290,9 +287,17 @@ dcl-proc iv_execute export;
     iv_debug('Server: %s' : %str(%addr(client.server):200) );
     iv_debug('Host: %s' : %str(%addr(client.host):200) );
     iv_debug('Resource: %s' : %str(%addr(client.resource):200) );
-     
+
+    if client.proxyTunnel <> *NULL;
+        success = connect_using_proxy_tunnel (client);
+        if not success;
+            return *OFF;
+        endif;
+    endif;
+
     for try = 0 to client.retries;
 
+        // Already connect by proxy 
         if client.proxyTunnel = *NULL;
 
             ok = sockets_connect(
@@ -360,17 +365,18 @@ end-proc;
 
 dcl-proc connect_using_proxy_tunnel ;
 
-    dcl-pi *n ;
+    dcl-pi *n ind;
         client likeds(ilevator_t);
     end-pi;
     dcl-s  try int(5);
     dcl-s  ok like(ENUM);
 
-    dcl-s  apiStatus int(10) inz(IV_STATUS_RETRY);
-    dcl-s  pProxy    pointer;
-    dcl-ds proxy     likeds(ilevator_t) based(pProxy);
+    dcl-s  apiStatus  int(10) inz(IV_STATUS_RETRY);
+    dcl-s  pProxy     pointer;
+    dcl-ds proxy      likeds(ilevator_t) based(pProxy);
 
     pProxy = client.proxyTunnel;
+
     proxy.method = teraspace_strTrimDup('CONNECT');
     
     parseUrl(pProxy : proxy.url); 
@@ -383,9 +389,7 @@ dcl-proc connect_using_proxy_tunnel ;
             proxy.port : 
             proxy.timeout * 1000 // from seconds to milliseconds
         );
-        if (ok = TRUE);
-            apiStatus = IV_STATUS_OK;
-        else;
+        if (ok <> TRUE);
             apiStatus = IV_STATUS_ERROR;
             iter;
         endif;
@@ -401,8 +405,9 @@ dcl-proc connect_using_proxy_tunnel ;
 
         if (apiStatus = IV_STATUS_OK);
             // Inherit the proxy socket on the main client 
-            client.sockets = proxy.sockets; 
-            leave; 
+            sockets_copy_socket ( client.sockets : proxy.sockets);
+            sockets_set_secure (client.sockets);
+            return *ON; // Success
         endif;
 
         if (apiStatus = IV_STATUS_ERROR);
@@ -412,6 +417,9 @@ dcl-proc connect_using_proxy_tunnel ;
         endif;
         
     endfor;
+    
+    return *OFF; // This far !! error 
+    
 end-proc;
 
 

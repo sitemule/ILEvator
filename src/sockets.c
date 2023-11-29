@@ -363,6 +363,53 @@ static BOOL initialize_gsk_environment (PSOCKETS ps)
     return TRUE;
 
 } 
+
+// ----------------------------------------------------------------------------------------
+void sockets_copy_socket (PSOCKETS to_ps , PSOCKETS from_ps)
+{
+    to_ps->socket = from_ps->socket;
+}
+// ----------------------------------------------------------------------------------------
+BOOL sockets_set_secure (PSOCKETS ps)
+{
+    BOOL   ok; 
+    LONG   rc;
+
+    // No need to hoist if no SSL/TLS
+    if (! ps->asSSL) return TRUE; 
+
+    // Always initilize
+    ok = initialize_gsk_environment (ps);
+    if (!ok) {
+        return FALSE;
+    }
+
+    // open a secure session
+    errno = 0;
+    rc = gsk_secure_soc_open(ps->my_env_handle, &ps->my_session_handle);
+    if (rc != GSK_OK) {
+        sockets_setSSLmsg(ps,rc, "gsk_secure_soc_open");
+        sockets_close(ps);
+        return FALSE;
+    }
+
+    if (set_attr (ps, ps->my_session_handle, GSK_FD , ps->socket
+        , "Set GSK_FD associate socket with the secure session")) {
+        return FALSE;
+    }
+
+    // initiate the SSL handshake
+    errno = 0;
+    rc = gsk_secure_soc_init(ps->my_session_handle);
+    if (rc != GSK_OK) {
+        sockets_setSSLmsg(ps,rc, "initiate the SSL handshake");
+        sockets_close(ps);
+        return FALSE;
+    }  
+    
+    return TRUE;
+
+}
 // ----------------------------------------------------------------------------------------
 BOOL sockets_connect(PSOCKETS ps, PUCHAR serverIP, LONG serverPort, LONG timeOut)
 {
@@ -374,21 +421,6 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR serverIP, LONG serverPort, LONG timeOut
     BOOL   ok; 
 
     ps->timeOut = timeOut;
-
-    if (ps->asSSL) {
-
-        // Always initilize
-        ok = initialize_gsk_environment (ps);
-        if (!ok) {
-            return FALSE;
-        }
-
-        // if (ps->isInitialized == FALSE) {
-        //     initialize_gsk (ps);
-        // } else {
-        //     sleep(1);  // Detach the process due to bug in SSL
-        // }
-    }
 
     // Get a socket descriptor
     ps->socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -455,28 +487,9 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR serverIP, LONG serverPort, LONG timeOut
 
 
     if (ps->asSSL) {
-        // open a secure session
-        errno = 0;
-        rc = gsk_secure_soc_open(ps->my_env_handle, &ps->my_session_handle);
-        if (rc != GSK_OK) {
-            sockets_setSSLmsg(ps,rc, "gsk_secure_soc_open");
-            sockets_close(ps);
+        if (! sockets_set_secure (ps)) {
             return FALSE;
         }
-
-        if (set_attr (ps, ps->my_session_handle, GSK_FD , ps->socket
-            , "Set GSK_FD associate socket with the secure session")) {
-            return FALSE;
-        }
-
-        // initiate the SSL handshake
-        errno = 0;
-        rc = gsk_secure_soc_init(ps->my_session_handle);
-        if (rc != GSK_OK) {
-            sockets_setSSLmsg(ps,rc, "initiate the SSL handshake");
-            sockets_close(ps);
-            return FALSE;
-        }  
     }
 
     /*
