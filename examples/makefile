@@ -27,7 +27,6 @@ SHELL=/QOpenSys/usr/bin/qsh
 #-------------------------------------------------------------------------------
 RPG_OPT=OPTION(*EVENTF *NOXREF *NOUNREF) OUTPUT(*NONE) DBGVIEW(*LIST) INCDIR('./..' '/prj/ILEvator/headers')
 CCSID=500
-SHELL=/QOpenSys/usr/bin/qsh
 
 all: compile
 .ONESHELL:

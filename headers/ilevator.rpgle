@@ -500,6 +500,19 @@ dcl-pr iv_setResponseFile extproc(*dclcase);
     fileCcsid     int(10)  options(*nopass) value;
 end-pr;
 
+
+///
+// Set the URL for a CONNECT tunnel proxy
+//
+// @param Pointer to the HTTP client 
+// @param URL of the CONNECT proxy 
+///
+dcl-pr iv_setProxyTunnel extproc(*dclcase);
+    client        pointer value;
+    url           pointer options(*string) value;
+end-pr;
+
+
 ///
 // Execute HTTP request
 //

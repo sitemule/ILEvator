@@ -88,6 +88,7 @@ typedef struct _ILEVATOR {
     LONG         bufferSize;  
     LONG         bufferTotalLength;   
     PUCHAR       bufferEnd;
+    struct _ILEVATOR * proxyTunnel;
 } ILEVATOR, *PILEVATOR;
 
 

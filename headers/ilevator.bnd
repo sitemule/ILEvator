@@ -72,4 +72,7 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     
     EXPORT SYMBOL("iv_tunnel_connect")
     EXPORT SYMBOL("iv_tunnel_send")
+
+    EXPORT SYMBOL("iv_setProxyTunnel")
+    
 ENDPGMEXP

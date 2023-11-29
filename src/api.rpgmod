@@ -120,6 +120,7 @@ dcl-proc iv_free export;
     sList_free(client.headerList);
     teraspace_free(client.authProvider);
     teraspace_free(client.buffer);
+    iv_free (client.proxyTunnel);
     teraspace_free(pClient);
 end-proc;
 
@@ -206,6 +207,19 @@ dcl-proc iv_setRequestDataBuffer export;
     );
 end-proc;
 
+dcl-proc iv_setProxyTunnel  export;
+    dcl-pi *n;
+        pClient pointer value;
+        url pointer options(*string) value;        
+    end-pi;
+    
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-ds proxy  likeds(ilevator_t) based(client.proxyTunnel);
+    client.proxyTunnel = iv_newHttpClient();
+    proxy.url    = teraspace_strTrimDup(url);
+    
+end-proc;
+
 
 dcl-proc iv_setResponseFile export;
     dcl-pi *n;
@@ -255,14 +269,18 @@ dcl-proc iv_execute export;
     end-pi;
 
     dcl-ds client likeds(ilevator_t) based(pClient);
-    dcl-s apiStatus int(10) inz(IV_STATUS_RETRY);
-    dcl-s try int(5);
-    dcl-s ok like(ENUM);
+    dcl-s  apiStatus int(10) inz(IV_STATUS_RETRY);
+    dcl-s  try int(5);
+    dcl-s  ok like(ENUM);
     
     if (%parms() >= 4);
         client.requestHeaderList = headers;
     endif;
-    
+
+    if client.proxyTunnel <> *NULL;
+        connect_using_proxy_tunnel (client );
+    endif;
+
     client.method = teraspace_strTrimDup(method);
     client.url    = teraspace_strTrimDup(url);
     
@@ -275,17 +293,20 @@ dcl-proc iv_execute export;
      
     for try = 0 to client.retries;
 
-        ok = sockets_connect(
-            client.sockets : 
-            client.server : 
-            client.port : 
-            client.timeout * 1000 // from seconds to milliseconds
-        );
-        if (ok = TRUE);
-          apiStatus = IV_STATUS_OK;
-        else;
-          apiStatus = IV_STATUS_ERROR;
-          iter;
+        if client.proxyTunnel = *NULL;
+
+            ok = sockets_connect(
+                client.sockets : 
+                client.server : 
+                client.port : 
+                client.timeout * 1000 // from seconds to milliseconds
+            );
+            if (ok = TRUE);
+                apiStatus = IV_STATUS_OK;
+            else;
+                apiStatus = IV_STATUS_ERROR;
+                iter;
+            endif;
         endif;
 
         apiStatus = sendRequest(pClient);
@@ -334,6 +355,63 @@ dcl-proc iv_execute export;
     endif;
 
     return (apiStatus = IV_STATUS_OK);
+end-proc;
+
+
+dcl-proc connect_using_proxy_tunnel ;
+
+    dcl-pi *n ;
+        client likeds(ilevator_t);
+    end-pi;
+    dcl-s  try int(5);
+    dcl-s  ok like(ENUM);
+
+    dcl-s  apiStatus int(10) inz(IV_STATUS_RETRY);
+    dcl-s  pProxy    pointer;
+    dcl-ds proxy     likeds(ilevator_t) based(pProxy);
+
+    pProxy = client.proxyTunnel;
+    proxy.method = teraspace_strTrimDup('CONNECT');
+    
+    parseUrl(pProxy : proxy.url); 
+    
+    for try = 0 to proxy.retries;
+
+        ok = sockets_connect(
+            proxy.sockets : 
+            proxy.host : 
+            proxy.port : 
+            proxy.timeout * 1000 // from seconds to milliseconds
+        );
+        if (ok = TRUE);
+            apiStatus = IV_STATUS_OK;
+        else;
+            apiStatus = IV_STATUS_ERROR;
+            iter;
+        endif;
+
+        apiStatus = sendRequest(pProxy);
+        if (apiStatus = IV_STATUS_ERROR);
+            leave; 
+        endif;
+        
+        apiStatus = receiveHeader(pProxy);
+
+        iv_debug('HTTP CONNECT proxy response status: %s' : %char(proxy.status));
+
+        if (apiStatus = IV_STATUS_OK);
+            // Inherit the proxy socket on the main client 
+            client.sockets = proxy.sockets; 
+            leave; 
+        endif;
+
+        if (apiStatus = IV_STATUS_ERROR);
+            leave; 
+        elseif (apiStatus = IV_STATUS_RETRY);
+            iter; 
+        endif;
+        
+    endfor;
 end-proc;
 
 
