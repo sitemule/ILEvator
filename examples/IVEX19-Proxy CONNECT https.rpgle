@@ -27,7 +27,10 @@ dcl-proc main;
     dcl-s buffer varchar(65000:4) ccsid(1208);
     
     httpClient = iv_newHttpClient();
-    iv_setCertificate (httpClient : '/prj/ilevator/ilevator.kdb');
+    iv_setCertificate(httpClient : '/prj/ilevator/ilevator.kdb' : 'ilevator');
+    // iv_setCertificate(httpClient : '/tmp/proxy.pem' );
+    
+
     iv_setProxyTunnel (httpClient : 'http://fwdprx.workmule.dk:3128');
 
     iv_setResponseDataBuffer(

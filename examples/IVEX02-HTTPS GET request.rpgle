@@ -26,7 +26,7 @@ dcl-proc main;
     httpClient = iv_newHttpClient(); 
     iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
     
-    iv_setCertificate(httpClient : '/path/to/ilevator/ilevator.kdb' : 'ilevator');
+    iv_setCertificate(httpClient : '/prj/ilevator/ilevator.kdb' : 'ilevator');
 
     iv_execute(httpClient : 'GET' : 'https://google.com'); 
     if (iv_getStatus(httpClient) <> IV_HTTP_OK);
