@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="../css/iledocs.css" />
+<link rel="stylesheet" href="css/iledocs.css" />
 <div class="iledocs">
 
 <div class="iledocs-page-toc">
@@ -90,6 +90,10 @@
 
 <tr>
 <td><a href="#proc_iv_request_setContentType">iv_request_setContentType</a></td><td>Set HTTP request content type</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_request_setFile">iv_request_setFile</a></td><td>Set the HTTP request body (file content)</td>
 </tr>
 
 <tr>
@@ -561,6 +565,34 @@ Pointer</span>
 Varchar (IV_REQUEST_HEADER_VALUE_SIZE)</span>
  [const]</code>
  &mdash; Content type</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_request_setFile">iv_request_setFile</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_request_setFile</span>
+(
+Pointer request, Varchar file)
+</code>
+<p>Sets the stream file as the message body content. The content of the file will be
+copied to the message body as is.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [const]</code>
+ &mdash; HTTP request</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (1024)</span>
+ [const]</code>
+ &mdash; Stream file path</li>
 </ol>
 
 <h3 class="iledocs-procedure-header"><a name="proc_iv_request_setFormBody">iv_request_setFormBody</a></h3>

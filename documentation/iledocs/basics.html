@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="../css/iledocs.css" />
+<link rel="stylesheet" href="css/iledocs.css" />
 <div class="iledocs">
 
 <div class="iledocs-page-toc">
@@ -39,6 +39,10 @@ generic <code>iv_execute</code> procedure.
 
 <h3>Procedures</h3>
 <table class="iledocs-table">
+
+<tr>
+<td><a href="#proc_iv_addEntryToList">iv_addEntryToList</a></td><td>Add entry to list</td>
+</tr>
 
 <tr>
 <td><a href="#proc_iv_addHeader">iv_addHeader</a></td><td>Added HTTP header</td>
@@ -137,6 +141,10 @@ generic <code>iv_execute</code> procedure.
 </tr>
 
 <tr>
+<td><a href="#proc_iv_setProxyTunnel">iv_setProxyTunnel</a></td><td>Set the HTTP tunneling proxy</td>
+</tr>
+
+<tr>
 <td><a href="#proc_iv_setRequestDataBuffer">iv_setRequestDataBuffer</a></td><td>Set request buffer</td>
 </tr>
 
@@ -174,6 +182,40 @@ generic <code>iv_execute</code> procedure.
 
 </table>
 <hr/>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_addEntryToList">iv_addEntryToList</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_addEntryToList</span>
+(
+Pointer list, Pointer key, Pointer value)
+</code>
+<p>Adds the passed entry (key/value) to the passed list. The key and value will be added
+as is. Duplicate keys in the list are allowed.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the list (simple list)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; Key</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; Value</li>
+</ol>
 
 <h3 class="iledocs-procedure-header"><a name="proc_iv_addHeader">iv_addHeader</a></h3>
 <code class="iledocs-code">
@@ -297,13 +339,13 @@ HTTP request.</p>
 <code>
 <span class="iledocs-code-returnType">
 Varchar (IV_HEADER_NAME_SIZE)</span>
- [const]</code>
+ [nopass, const]</code>
  &mdash; Key 1</li>
 <li>
 <code>
 <span class="iledocs-code-returnType">
 Varchar (IV_HEADER_VALUE_SIZE)</span>
- [const]</code>
+ [nopass, const]</code>
  &mdash; Value 1</li>
 <li>
 <code>
@@ -470,7 +512,7 @@ Varchar
 Boolean</span>
 <span class="iledocs-code-name">iv_execute</span>
 (
-Pointer client, Pointer method, Pointer url)
+Pointer client, Pointer method, Pointer url, Pointer headers)
 </code>
 <p>Executes the HTTP request with the passed client.</p>
 
@@ -494,6 +536,12 @@ Pointer</span>
 Pointer</span>
  [string, value]</code>
  &mdash; URL</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [nopass, value]</code>
+ &mdash; Pointer to a simple list with additional HTTP headers</li>
 </ol>
 
 <h4 class="iledocs-procedure-subheader">Return Value</h4>
@@ -1048,6 +1096,33 @@ Pointer</span>
 Pointer</span>
  [string, value]</code>
  &mdash; IFS path to the trace file</li>
+</ol>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_setProxyTunnel">iv_setProxyTunnel</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_setProxyTunnel</span>
+(
+Pointer client, Pointer url)
+</code>
+<p>Sets the URL for the proxy used for HTTP tunneling.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [string, value]</code>
+ &mdash; URL of the proxy</li>
 </ol>
 
 <h3 class="iledocs-procedure-header"><a name="proc_iv_setRequestDataBuffer">iv_setRequestDataBuffer</a></h3>
