@@ -1,16 +1,17 @@
 {
     "title": "ILEvator",
-    "tagline" : "HTTP Client for the ILE environment",
+    "tagline": "HTTP client for the ILE environment",
+    "image": "images/user-guide-landing-page.jpg",
     "author" : "Mihael Schmidt",
     "language" : "en",
     "html": {
         "theme": "daux-blue",
-        "auto_landing": false,
+        "auto_landing": true,
         "repo": "sitemule/ILEvator",
         "toggle_code": false,
         "jump_buttons": false,
         "buttons": {
-            "GitHub": "https://github.com/sitemule/ILEvator"
+            "API docs": "https://iledocs.rpgnextgen.com"
         }
     }
 }
