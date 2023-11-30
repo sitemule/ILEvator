@@ -375,7 +375,9 @@ API_STATUS receiveHeader(PILEVATOR pIv)
                     // MEGA HACK !! The parsurl is called twice ( WHY WHY WHY !!!) and brigs back the original url 
                     strcpy (pIv->url , pIv->location);
 
-                    sockets_close(pIv->sockets);
+                    // talking to the final end point OR negotiating with the proxy -> close socket
+                    if (pIv->proxyTunnel == NULL) sockets_close(pIv->sockets);
+                    
                     iv_debug("redirected to %s", pIv->location);
                     return API_RETRY;
                 }

@@ -502,10 +502,12 @@ end-pr;
 
 
 ///
-// Set the URL for a CONNECT tunnel proxy
+// Set the HTTP tunneling proxy
 //
-// @param Pointer to the HTTP client 
-// @param URL of the CONNECT proxy 
+// Sets the URL for the proxy used for HTTP tunneling.
+//
+// @param Pointer to the HTTP client
+// @param URL of the proxy 
 ///
 dcl-pr iv_setProxyTunnel extproc(*dclcase);
     client        pointer value;
@@ -1686,21 +1688,3 @@ dcl-pr iv_multipart_toStream extproc(*dclcase);
     stream pointer value;
 end-pr;
 
-
-
-//
-// tunnel module
-//
-
-dcl-pr iv_tunnel_connect ind extproc(*dclcase);
-    client pointer value;
-    targetUrl pointer options(*string) value;
-    p_proxyUrl pointer options(*string) value;
-    headers pointer value options(*nopass);
-end-pr;
-
-dcl-pr iv_tunnel_send int(10) extproc(*dclcase);
-    client pointer value;
-    bytes pointer value;
-    length uns(10) value;
-end-pr;

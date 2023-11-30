@@ -524,10 +524,12 @@ dcl-pr iv_setResponseFile extproc(*dclcase);
 end-pr;
 
 ///
-// Set the URL for a CONNECT tunnel proxy
+// Set the HTTP tunneling proxy
 //
-// @param Pointer to the HTTP client 
-// @param URL of the CONNECT proxy 
+// Sets the URL for the proxy used for HTTP tunneling.
+//
+// @param Pointer to the HTTP client
+// @param URL of the proxy 
 ///
 dcl-pr iv_setProxyTunnel extproc(*dclcase);
     client        pointer value;
