@@ -1,17 +1,7 @@
 **FREE
 
 ///
-// ILEvator Example : Multipart form data
-//
-// This example does a POST request with multipart form data as the message body.
-// The first part of the multipart message is a text part. The second part is a 
-// file.
-//
-// This example can be used as a template for uploading a file to a web service
-// which accepts the media type multipart/form-data.
-//
-// When using the multipart module be aware that you have to free the memory of
-// the multipart request handler by calling iv_multipart_free(multipart).
+// ILEvator Example : Using proxy 
 ///
 
 

@@ -42,7 +42,7 @@ print_event() {
 
 # --- Main line --------------------------
 
-while getopts ":f:o:b:l:c:" opt; do
+while getopts ":f:o:b:l:c:s:" opt; do
   case $opt in
     f) file_name="$OPTARG"
     ;;
@@ -53,6 +53,8 @@ while getopts ":f:o:b:l:c:" opt; do
     l) libl="$OPTARG"
     ;;
     c) ccsid="$OPTARG"
+    ;;
+    s) sqloptions="$OPTARG"
     ;;
     \?) echo "Invalid option -$OPTARG" >&2
     exit 1
@@ -65,6 +67,9 @@ while getopts ":f:o:b:l:c:" opt; do
     ;;
   esac
 done
+
+ 
+optionsq=$(echo ${options} | sed "s/'/''/g" )
 
 wordlist=$(echo ${file_name} | tr ' ' '+' )
 wordlist=$(echo ${wordlist} | tr '.' ' ' )
@@ -93,25 +98,25 @@ touch error.txt
 setccsid 1208 error.txt
 setccsid 1208 "${file_name}"
 run "CRTSRCPF $obj_lib/srctemp RCDLEN(240) ccsid($ccsid)"
-run "CPYFRMSTMF FROMSTMF('$file_name') TOMBR('/QSYS.LIB/$obj_lib.LIB/srctemp.file/srctemp.mbr')  MBROPT(*REPLACE)"
+run "CPYFRMSTMF FROMSTMF('$file_name') TOMBR('/QSYS.LIB/$obj_lib.LIB/srctemp.file/srctemp.mbr')  MBROPT(*REPLACE) STMFCCSID(1252)"
 
 if [ "$midext" = "srvpgm" ]
 then
   if [ "$extension" = "sqlrpgle" ]
   then
-  	run "CRTSQLRPGI obj($obj_lib/$object_name) OBJTYPE(*SRVPGM) SRCFILE($obj_lib/srctemp) SRCMBR(SRCTEMP) RPGPPOPT(*LVL2) TEXT('$text') COMPILEOPT('$options') DBGVIEW(*NONE) ')"
+  	run "CRTSQLRPGI obj($obj_lib/$object_name) OBJTYPE(*SRVPGM) SRCFILE($obj_lib/srctemp) SRCMBR(SRCTEMP)  TEXT('$text') COMPILEOPT('$optionsq') $sqloptions"
   else
-    run "CRTRPGMOD  MODULE($obj_lib/$object_name) SRCFILE($obj_lib/srctemp) SRCMBR(SRCTEMP) TEXT('$text')  $options"
+    run "CRTRPGMOD  MODULE($obj_lib/$object_name) SRCFILE($obj_lib/srctemp) SRCMBR(SRCTEMP) TEXT('$text') $options"
     run "CRTSRVPGM  SRVPGM($obj_lib/$object_name) DETAIL(*BASIC) EXPORT(*ALL)"
   fi
 else
   if [ "$extension" = "sqlrpgle" ]
   then
-  	run "CRTSQLRPGI obj($obj_lib/$object_name) OBJTYPE(*PGM) SRCFILE($obj_lib/srctemp) SRCMBR(SRCTEMP) TEXT('$text') RPGPPOPT(*LVL2) COMPILEOPT('$options') DBGVIEW(*NONE) ')"
+  	run "CRTSQLRPGI obj($obj_lib/$object_name) OBJTYPE(*PGM) SRCFILE($obj_lib/srctemp) SRCMBR(SRCTEMP) TEXT('$text')  COMPILEOPT('$optionsq') $sqloptions"
   else
     run "CRTBNDRPG  PGM($obj_lib/$object_name) SRCFILE($obj_lib/srctemp) SRCMBR(SRCTEMP) TEXT('$text') $options"
   fi
 fi
 print_event "${file_name}" ${obj_lib} ${object_name}
-run "DLTF $obj_lib/srctemp"
+#run "DLTF $obj_lib/srctemp"
 exit

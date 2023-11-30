@@ -13,7 +13,7 @@
 # BIN_LIB is the destination library for the demo programs.
 # NOTE: LIBLIST can be overwritten from the commandline, but defaults to the BIN_LIB
 BIN_LIB=ILEVATOR
-LIBLIST="$(BIN_LIB) NOXDB"
+LIBLIST="$(BIN_LIB) NOXDB SMSDB"
 
 # The shell we use
 SHELL=/QOpenSys/usr/bin/qsh
@@ -26,11 +26,13 @@ SHELL=/QOpenSys/usr/bin/qsh
 # User-defined part end
 #-------------------------------------------------------------------------------
 RPG_OPT=OPTION(*EVENTF *NOXREF *NOUNREF) OUTPUT(*NONE) DBGVIEW(*LIST) INCDIR('./..' '/prj/ILEvator/headers')
+SQL_OPT=RPGPPOPT(*NONE)
 CCSID=500
+
 
 all: compile
 .ONESHELL:
 compile:
-	./compile.sh -f "$(SRC)"  -b $(BIN_LIB) -l $(LIBLIST) -c $(CCSID) -o "$(RPG_OPT)"
+	./compile.sh -f "$(SRC)"  -b $(BIN_LIB) -l $(LIBLIST) -c $(CCSID) -o "$(RPG_OPT)" -s "$(SQL_OPT)" 
 
 .PHONY: compile
