@@ -8,10 +8,12 @@
 # the rpg modules and the binder source file are also created in BIN_LIB.
 # binder source file and rpg module can be remove with the clean step (make clean)
 BIN_LIB=ILEVATOR
+
 DBGVIEW=*ALL
 TARGET_CCSID=*JOB
 TARGET_RLS=*CURRENT
 OUTPUT=*NONE
+ACTGRP=QILE
 
 #
 # User-defined part end
@@ -95,7 +97,7 @@ compile: setHeaderCcsid modules ilevator.srvpgm
 %.srvpgm:
 	-system -q "CRTSRCPF FILE($(BIN_LIB)/QSRVSRC) RCDLEN(200)"
 	system "CPYFRMSTMF FROMSTMF('headers/$*.bnd') TOMBR('/QSYS.lib/$(BIN_LIB).lib/QSRVSRC.file/$*.mbr') MBROPT(*replace)"
-	system -q -kpieb "CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE($(MODULES)) SRCFILE($(BIN_LIB)/QSRVSRC) ACTGRP(QILE) ALWLIBUPD(*YES) BNDSRVPGM(QICU/QXICUUC40) DETAIL(*BASIC) TGTRLS($(TARGET_RLS))"
+	system -q -kpieb "CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE($(MODULES)) SRCFILE($(BIN_LIB)/QSRVSRC) ACTGRP($(ACTGRP)) ALWLIBUPD(*YES) BNDSRVPGM(QICU/QXICUUC40) DETAIL(*BASIC) TGTRLS($(TARGET_RLS))"
 
 ilevator.bnd:
 	-system -q "DLTBNDDIR BNDDIR($(BIN_LIB)/ILEVATOR)"
@@ -202,6 +204,7 @@ clean:
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/INIT) OBJTYPE(*MODULE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/JOBLOG) OBJTYPE(*MODULE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/MIME) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/MULTIPART) OBJTYPE(*MODULE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/REQUEST) OBJTYPE(*MODULE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/SOCKETS) OBJTYPE(*MODULE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/URL) OBJTYPE(*MODULE)"

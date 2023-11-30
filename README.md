@@ -5,6 +5,10 @@ It is a http client for the ILE environment on IBM i.
 This project is premature - don't waste time cloning it yet - but stay tuned.
 
 
+### Requirements
+
+The project uses the [ICU](https://icu.unicode.org/) project (International Components for Unicode).
+ICU is available on IBM i in the library `QICU`. It binds to the service program `QICU/QXICUUC40`.
 
 
 ### Installation
