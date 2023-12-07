@@ -40,6 +40,7 @@
 #include "parms.h"
 #include "sockets.h"
 #include "message.h"
+#include "debug.h"
 
 // #include "e2aa2e.h"
 #include "xlate.h"
@@ -374,6 +375,8 @@ BOOL sockets_set_secure (PSOCKETS ps)
 {
     BOOL   ok; 
     LONG   rc;
+    char * negotiatedTlsVersion;
+    int negotiatedTlsVersionLength;
 
     // No need to hoist if no SSL/TLS
     if (! ps->asSSL) return TRUE; 
@@ -406,6 +409,19 @@ BOOL sockets_set_secure (PSOCKETS ps)
         sockets_close(ps);
         return FALSE;
     }  
+    
+    // query negotiated TLS version
+    rc = gsk_attribute_get_buffer(
+            ps->my_session_handle, 
+            GSK_CONNECT_SEC_TYPE, 
+            &negotiatedTlsVersion , 
+            &negotiatedTlsVersionLength);
+    if (rc == GSK_OK) {
+        iv_debug("Negotiated TLS version: %.*s", negotiatedTlsVersionLength, negotiatedTlsVersion);
+    }
+    else {
+        sockets_setSSLmsg(ps,rc, "Failed to query negotiated the TLS version");
+    }
     
     return TRUE;
 
