@@ -11,10 +11,6 @@ some headers are only allowed once like `Host`, `Content-Length`, `Upgrade` or `
 When using the porcelain API like `iv_get` or `iv_post` you can add additional headers by passing
 a list of headers as a parameter to to procedure call.
 
-The list can be created with `iv_buildList`. You can create an empty list or fill the list with
-initial values. The list is not immutable. You can add values to the list by calling
-`iv_addHeaderToList`.
-
 ```
 dcl-s headers pointer;
 
@@ -32,6 +28,95 @@ be freed manually by calling `iv_freeList`.
 ```
 iv_freeList(headers);
 ```
+
+
+## Low Level API
+
+The low level API supports setting HTTP headers global for that HTTP client instance. Those
+HTTP headers will be added to each HTTP request made with this client instance, see 
+`iv_addHeader` and `iv_addHeaders`.
+
+```
+dcl-proc main;
+    dcl-s httpClient pointer;
+    dcl-s buffer varchar(65000:4) ccsid(1208);
+    dcl-s headers pointer;
+    
+    headers = iv_buildList(
+        'accept-language' : 'dk,de;q=0.5' :
+        'authentication'  : 'Bearer my_token'
+    );
+    
+    httpClient = iv_newHttpClient();
+    iv_addHeaders(httpClient : headers);
+    iv_setResponseDataBuffer(httpClient : %addr(buffer) : %size(buffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+
+    iv_execute(httpClient : 'GET' : 'http://localhost');
+    if (iv_getStatus(httpClient) = IV_HTTP_OK);
+        // everything ok
+    else;
+        // not ok
+    endif;
+
+    on-exit;
+        iv_free(httpClient);
+        iv_freeList(headers);
+end-proc;
+```
+
+Headers can also be passed to the `iv_execute` procedure call. These headers will be appended
+after the headers previously set on the HTTP client instance.
+
+```
+dcl-proc main;
+    dcl-s httpClient pointer;
+    dcl-s buffer varchar(65000:4) ccsid(1208);
+    dcl-s headers pointer;
+    
+    headers = iv_buildList(
+        'accept-language' : 'dk,de;q=0.5' :
+        'authentication'  : 'Bearer my_token'
+    );
+    
+    httpClient = iv_newHttpClient();
+    iv_setResponseDataBuffer(httpClient : %addr(buffer) : %size(buffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+
+    iv_execute(httpClient : 'GET' : 'http://localhost' : headers);
+    if (iv_getStatus(httpClient) = IV_HTTP_OK);
+        // everything ok
+    else;
+        // not ok
+    endif;
+
+    on-exit;
+        iv_free(httpClient);
+        iv_freeList(headers);
+end-proc;
+```
+
+Note: The headers list is built dynamically and as such allocates memory dynamically. This memory 
+must be freed manually by calling `iv_freeList`.
+
+
+## Dynamic Header List
+
+The list can be created with `iv_buildList`. You can create an empty list or fill the list with
+initial values. The list is not immutable. You can add values to the list by calling
+`iv_addHeaderToList`.
+
+```
+    dcl-s headers pointer;
+    
+    headers = iv_buildList();
+    iv_addHeaderToList(headers : 'accept-language' : 'dk,de;q=0.5');
+    iv_addHeaderToList(headers : 'authentication' : 'Bearer my_token');
+
+    string = iv_get('http://localhost' : IV_MEDIA_TYPE_JSON : headers);
+
+    iv_freeList(headers);
+end-proc;
+```
+
 
 ## Request Handler
 

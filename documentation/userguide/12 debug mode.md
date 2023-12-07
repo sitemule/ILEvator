@@ -3,8 +3,12 @@ title : Debug Mode
 ---
 
 ILEvator supports writing debug messages into the job log. These messages are of type `*INFO`.
-To active debug messages the environment variable `ILEVATOR_DEBUG` needs to be set to `1` which
+To activate debug messages the environment variable `ILEVATOR_DEBUG` needs to be set to `1` which
 maps to `*ON`. By default this is turned off.
+
+```
+ADDENVVAR ILEVATOR_DEBUG '1'
+```
 
 The environment variable needs to be set before the first call of any procedure from the service
 program `ILEVATOR` (more precisely before activating the service program). Once set it cannot be
