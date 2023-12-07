@@ -1088,6 +1088,23 @@ dcl-proc iv_setRequestHandler export;
     client.requestHandler = handler;
 end-proc;
 
+dcl-proc iv_configureTlsVersion export;
+    dcl-pi *n;
+        p_client pointer value;
+        tlsVersion int(10) value;
+        status ind value;
+    end-pi;
+    
+    dcl-ds client likeds(ilevator_t) based(p_client); 
+    dcl-s tlsStatus int(10) inz(0);
+
+    if (status);
+        tlsStatus = 1;
+    endif;
+    
+    sockets_setTls(client.sockets : tlsVersion : tlsStatus);
+end-proc;
+
 
 **CTDATA listedHttpStatusCodes
   400

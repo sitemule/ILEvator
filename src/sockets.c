@@ -45,12 +45,26 @@
 // #include "e2aa2e.h"
 #include "xlate.h"
 
+static void configureTlsVersions(PSOCKETS ps);
+static void enableTls(PSOCKETS ps, LONG tlsVersion, LONG status);
+
 
 /* --------------------------------------------------------------------------- */
 PSOCKETS sockets_new(void)
 {   
     // Get mem and set to zero
     PSOCKETS ps = teraspace_calloc(sizeof(SOCKETS));
+    
+    // enable all TLS versions by default
+    ps->tls[0].version = GSK_PROTOCOL_TLSV10;
+    ps->tls[0].enabled = 1;
+    ps->tls[1].version = GSK_PROTOCOL_TLSV11;
+    ps->tls[1].enabled = 1;
+    ps->tls[2].version = GSK_PROTOCOL_TLSV12;
+    ps->tls[2].enabled = 1;
+    ps->tls[3].version = GSK_PROTOCOL_TLSV13;
+    ps->tls[3].enabled = 1;
+    
     return ps;
 }
 
@@ -307,6 +321,8 @@ static BOOL initialize_gsk_environment (PSOCKETS ps)
         return FALSE;
     }
 
+    configureTlsVersions(ps);
+
     // set auth-passthru
     errno = 0;
     rc = gsk_attribute_set_enum(ps->my_env_handle,
@@ -362,8 +378,48 @@ static BOOL initialize_gsk_environment (PSOCKETS ps)
     ps->isInitialized = TRUE;  // done - we are initialized
 
     return TRUE;
-
 } 
+
+static void configureTlsVersions(PSOCKETS ps) {
+    char * enabled = getenv("ILEVATOR_TLS_10");
+    if (enabled != NULL) {
+        enableTls(ps, GSK_PROTOCOL_TLSV10, strcmp(enabled, "1") == 0? GSK_TRUE : GSK_FALSE);
+    }
+    else {
+        enableTls(ps, GSK_PROTOCOL_TLSV10, ps->tls[0].enabled);
+    }
+    
+    enabled = getenv("ILEVATOR_TLS_11");
+    if (enabled != NULL) {
+        enableTls(ps, GSK_PROTOCOL_TLSV11, strcmp(enabled, "1") == 0 ? GSK_TRUE : GSK_FALSE);
+    }
+    else {
+        enableTls(ps, GSK_PROTOCOL_TLSV11, ps->tls[1].enabled);
+    }
+    
+    enabled = getenv("ILEVATOR_TLS_12");
+    if (enabled != NULL) {
+        enableTls(ps, GSK_PROTOCOL_TLSV12, strcmp(enabled, "1") == 0 ? GSK_TRUE : GSK_FALSE);
+    }
+    else {
+        enableTls(ps, GSK_PROTOCOL_TLSV12, ps->tls[2].enabled);
+    }
+    
+    enabled = getenv("ILEVATOR_TLS_13");
+    if (enabled != NULL) {
+        enableTls(ps, GSK_PROTOCOL_TLSV13, strcmp(enabled, "1") == 0 ? GSK_TRUE : GSK_FALSE);
+    }
+    else {
+        enableTls(ps, GSK_PROTOCOL_TLSV13, ps->tls[3].enabled);
+    }
+}
+
+static void enableTls(PSOCKETS ps, LONG tlsVersion, LONG status) {
+    LONG rc = gsk_attribute_set_enum(ps->my_env_handle, tlsVersion, status);
+    if (rc != GSK_OK) {
+        sockets_setSSLmsg(ps,rc, "Could not set TLS version");
+    }
+}
 
 // ----------------------------------------------------------------------------------------
 void sockets_copy_socket (PSOCKETS to_ps , PSOCKETS from_ps)
@@ -420,7 +476,7 @@ BOOL sockets_set_secure (PSOCKETS ps)
         iv_debug("Negotiated TLS version: %.*s", negotiatedTlsVersionLength, negotiatedTlsVersion);
     }
     else {
-        sockets_setSSLmsg(ps,rc, "Failed to query negotiated the TLS version");
+        sockets_setSSLmsg(ps,rc, "Failed to query the negotiated TLS version");
     }
     
     return TRUE;
@@ -667,6 +723,24 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG timeOut)
     }
     return (amtRead); // The returned lenght 
 }
+
+void sockets_setTls(PSOCKETS ps, LONG tlsVersion, LONG status) {
+    switch(tlsVersion) {
+        case GSK_PROTOCOL_TLSV10:
+            ps->tls[0].enabled = status;
+            break;
+        case GSK_PROTOCOL_TLSV11:
+            ps->tls[1].enabled = status;
+            break;
+        case GSK_PROTOCOL_TLSV12:
+            ps->tls[2].enabled = status;
+            break;
+        case GSK_PROTOCOL_TLSV13:
+            ps->tls[3].enabled = status;
+            break;
+    }
+}
+
 /* -------------------------------------------------------------------------- */
 /* 
 LONG sockets_receiveXlate (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG timeOut)

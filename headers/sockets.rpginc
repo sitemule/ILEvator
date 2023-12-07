@@ -49,4 +49,10 @@ dcl-pr sockets_setTrace extproc(*CWIDEN:'sockets_setTrace');
     traceFile  pointer options(*string) value;
 end-pr;
 
+dcl-pr sockets_setTls extproc(*CWIDEN:'sockets_setTls');
+    sockets  pointer value;
+    version int(10) value; // see GSK_PROTOCOL_TLSVxx
+    status int(10) value;  // 0 = disabled , 1 = enabled
+end-pr;
+
 /endif

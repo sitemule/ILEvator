@@ -30,6 +30,7 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_addEntryToList")
     EXPORT SYMBOL("iv_setProxyTunnel")
     EXPORT SYMBOL("iv_joblog")
+    EXPORT SYMBOL("iv_configureTlsVersion")
     
     EXPORT SYMBOL("iv_basicauth_new")
     

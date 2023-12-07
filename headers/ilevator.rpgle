@@ -369,6 +369,22 @@ dcl-c IV_HTTP_NOT_EXTENDED 510;
 ///
 dcl-c IV_HTTP_NETWORK_AUTH_REQUIRED 511;
 
+///
+// Configuration constant for TLS 1.0
+///
+dcl-c IV_TLS_10 436;
+///
+// Configuration constant for TLS 1.1
+///
+dcl-c IV_TLS_11 437;
+///
+// Configuration constant for TLS 1.2
+///
+dcl-c IV_TLS_12 438;
+///
+// Configuration constant for TLS 1.3
+///
+dcl-c IV_TLS_13 4030;
 
 ///
 // Any media type.
@@ -1688,3 +1704,20 @@ dcl-pr iv_multipart_toStream extproc(*dclcase);
     stream pointer value;
 end-pr;
 
+///
+// Configure TLS version
+//
+// Enables or disables a specific TLS version for communication with the server.
+//
+// @param Pointer to the HTTP client
+// @param TLS version (see IV_TLS_x)
+// @param <code>*on</code> = enabled , <code>*off</code> = disabled
+//
+// @info This effects only communication via the HTTPS protocol. Communicating via
+//       HTTP is unaffected by this setting.
+///
+dcl-pr iv_configureTlsVersion extproc(*dclcase);
+    client pointer value;
+    tlsVersion int(10) value;
+    status ind value;
+end-pr;
