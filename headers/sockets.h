@@ -48,7 +48,7 @@ typedef struct _SOCKETS {
 // Prototypes
 PSOCKETS sockets_new(void);
 void  sockets_free (PSOCKETS ps);
-void  sockets_setSSL(PSOCKETS ps,USESSL asSSL, PUCHAR certificateFile , PUCHAR keyringPassword);
+void  sockets_setKeystore(PSOCKETS ps,USESSL asSSL, PUCHAR certificateFile , PUCHAR keyringPassword);
 void  sockets_setTrace(PSOCKETS ps, PUCHAR traceFileName);
 void  sockets_putTrace(PSOCKETS ps, PUCHAR Ctlstr, ...);
 

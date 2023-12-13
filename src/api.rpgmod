@@ -447,7 +447,7 @@ dcl-proc iv_setCertificate export;
         certificatePassword = %addr(empty_str);
     endif;
 
-    sockets_setSSL(
+    sockets_setKeystore(
         client.sockets :
         SECURE_HANDSHAKE_IMEDIATE :
         certificateFile :

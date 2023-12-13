@@ -7,7 +7,7 @@ dcl-c PLAIN_SOCKET 0;
 dcl-c SECURE_HANDSHAKE_IMEDIATE 1;
 dcl-c SECURE_HANDSHAKE_LATER 2;
 
-dcl-pr sockets_setSSL extproc(*CWIDEN:'sockets_setSSL');
+dcl-pr sockets_setKeystore extproc(*CWIDEN:'sockets_setKeystore');
     sockets pointer value;
     useSSL  int(3)  value;
     certificateFile pointer options(*string) value;

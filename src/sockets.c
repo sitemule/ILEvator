@@ -85,7 +85,7 @@ void  sockets_free(PSOCKETS ps)
 /* --------------------------------------------------------------------------- *\
    Define if SSL is used
 \* --------------------------------------------------------------------------- */
-void sockets_setSSL(PSOCKETS ps,USESSL asSSL, PUCHAR certificateFile , PUCHAR keyringPassword)
+void sockets_setKeystore(PSOCKETS ps,USESSL asSSL, PUCHAR certificateFile , PUCHAR keyringPassword)
 {
     strcpy(ps->certificateFile, certificateFile);
     strcpy(ps->keyringPassword, keyringPassword);
