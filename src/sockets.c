@@ -55,15 +55,21 @@ PSOCKETS sockets_new(void)
     // Get mem and set to zero
     PSOCKETS ps = teraspace_calloc(sizeof(SOCKETS));
     
+    // disable SSLv3 by default
+    ps->ssl[0].version = GSK_PROTOCOL_SSLV3;
+    ps->ssl[0].enabled = GSK_PROTOCOL_SSLV3_OFF;
+
     // enable all TLS versions by default
-    ps->tls[0].version = GSK_PROTOCOL_TLSV10;
-    ps->tls[0].enabled = 1;
-    ps->tls[1].version = GSK_PROTOCOL_TLSV11;
-    ps->tls[1].enabled = 1;
-    ps->tls[2].version = GSK_PROTOCOL_TLSV12;
-    ps->tls[2].enabled = 1;
-    ps->tls[3].version = GSK_PROTOCOL_TLSV13;
-    ps->tls[3].enabled = 1;
+    ps->tls[0].version = GSK_PROTOCOL_TLSV1;
+    ps->tls[0].enabled = GSK_TRUE;
+    ps->tls[1].version = GSK_PROTOCOL_TLSV10;
+    ps->tls[1].enabled = GSK_TRUE;
+    ps->tls[2].version = GSK_PROTOCOL_TLSV11;
+    ps->tls[2].enabled = GSK_TRUE;
+    ps->tls[3].version = GSK_PROTOCOL_TLSV12;
+    ps->tls[3].enabled = GSK_TRUE;
+    ps->tls[4].version = GSK_PROTOCOL_TLSV13;
+    ps->tls[4].enabled = GSK_TRUE;
     
     return ps;
 }
@@ -75,7 +81,7 @@ void  sockets_free(PSOCKETS ps)
     sockets_close(ps);
 
     if (ps->trace) {
-        sockets_putTrace(ps, "\r\n---  End of Communcation ---\r\n");
+        sockets_putTrace(ps, "\r\n---  End of Communication ---\r\n");
         fclose(ps->trace);
         ps->trace = NULL;
     }
@@ -99,7 +105,7 @@ void sockets_setTrace(PSOCKETS ps,PUCHAR tracefilename)
     if (tracefilename && *tracefilename > ' ') {
         strcpy(ps->tracefilename, tracefilename);
         ps->trace = fopen(tracefilename ,"ab,codepage=1252");
-        sockets_putTrace(ps, "\r\n---  Start of Communcation ---\r\n");
+        sockets_putTrace(ps, "\r\n---  Start of Communication ---\r\n");
     } else {
         strcpy(ps->tracefilename,"");
         ps->trace = NULL;
@@ -338,7 +344,7 @@ static BOOL initialize_gsk_environment (PSOCKETS ps)
     // Initialize the secure environment
     rc = gsk_environment_init(ps->my_env_handle);
 
-    // Not registeret yet - do it
+    // Not registered yet - do it
     if (rc == GSK_AS400_ERROR_NOT_REGISTERED) {
         UCHAR  varRec [512];
         PLONG  pVarRecCount = (PLONG) varRec;
@@ -381,20 +387,37 @@ static BOOL initialize_gsk_environment (PSOCKETS ps)
 } 
 
 static void configureTlsVersions(PSOCKETS ps) {
-    char * enabled = getenv("ILEVATOR_TLS_10");
+    // https://www.ibm.com/docs/en/i/7.4?topic=ssw_ibm_i_74/apis/gsk_attribute_set_enum.html
+    char * enabled = getenv("ILEVATOR_SSL_3");
+    if (enabled != NULL) {
+        enableTls(ps, GSK_PROTOCOL_SSLV3, strcmp(enabled, "1") == 0? GSK_PROTOCOL_SSLV3_ON : GSK_PROTOCOL_SSLV3_OFF);
+    }
+    else {
+        enableTls(ps, GSK_PROTOCOL_SSLV3, ps->ssl[0].enabled);
+    }
+
+    enabled = getenv("ILEVATOR_TLS_1");
+    if (enabled != NULL) {
+        enableTls(ps, GSK_PROTOCOL_TLSV1, strcmp(enabled, "1") == 0? GSK_PROTOCOL_TLSV1_ON : GSK_PROTOCOL_TLSV1_OFF);
+    }
+    else {
+        enableTls(ps, GSK_PROTOCOL_TLSV1, ps->tls[0].enabled);
+    }
+
+    enabled = getenv("ILEVATOR_TLS_10");
     if (enabled != NULL) {
         enableTls(ps, GSK_PROTOCOL_TLSV10, strcmp(enabled, "1") == 0? GSK_TRUE : GSK_FALSE);
     }
     else {
-        enableTls(ps, GSK_PROTOCOL_TLSV10, ps->tls[0].enabled);
+        enableTls(ps, GSK_PROTOCOL_TLSV10, ps->tls[1].enabled);
     }
-    
+
     enabled = getenv("ILEVATOR_TLS_11");
     if (enabled != NULL) {
         enableTls(ps, GSK_PROTOCOL_TLSV11, strcmp(enabled, "1") == 0 ? GSK_TRUE : GSK_FALSE);
     }
     else {
-        enableTls(ps, GSK_PROTOCOL_TLSV11, ps->tls[1].enabled);
+        enableTls(ps, GSK_PROTOCOL_TLSV11, ps->tls[2].enabled);
     }
     
     enabled = getenv("ILEVATOR_TLS_12");
@@ -402,7 +425,7 @@ static void configureTlsVersions(PSOCKETS ps) {
         enableTls(ps, GSK_PROTOCOL_TLSV12, strcmp(enabled, "1") == 0 ? GSK_TRUE : GSK_FALSE);
     }
     else {
-        enableTls(ps, GSK_PROTOCOL_TLSV12, ps->tls[2].enabled);
+        enableTls(ps, GSK_PROTOCOL_TLSV12, ps->tls[3].enabled);
     }
     
     enabled = getenv("ILEVATOR_TLS_13");
@@ -410,7 +433,7 @@ static void configureTlsVersions(PSOCKETS ps) {
         enableTls(ps, GSK_PROTOCOL_TLSV13, strcmp(enabled, "1") == 0 ? GSK_TRUE : GSK_FALSE);
     }
     else {
-        enableTls(ps, GSK_PROTOCOL_TLSV13, ps->tls[3].enabled);
+        enableTls(ps, GSK_PROTOCOL_TLSV13, ps->tls[4].enabled);
     }
 }
 
@@ -724,19 +747,30 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG timeOut)
     return (amtRead); // The returned lenght 
 }
 
+void sockets_setSsl(PSOCKETS ps, LONG sslVersion, LONG status) {
+    switch(sslVersion) {
+        case GSK_PROTOCOL_SSLV3:
+            ps->ssl[0].enabled = status;
+            break;
+    }
+}
+
 void sockets_setTls(PSOCKETS ps, LONG tlsVersion, LONG status) {
     switch(tlsVersion) {
-        case GSK_PROTOCOL_TLSV10:
+        case GSK_PROTOCOL_TLSV1:
             ps->tls[0].enabled = status;
             break;
-        case GSK_PROTOCOL_TLSV11:
+        case GSK_PROTOCOL_TLSV10:
             ps->tls[1].enabled = status;
             break;
-        case GSK_PROTOCOL_TLSV12:
+        case GSK_PROTOCOL_TLSV11:
             ps->tls[2].enabled = status;
             break;
-        case GSK_PROTOCOL_TLSV13:
+        case GSK_PROTOCOL_TLSV12:
             ps->tls[3].enabled = status;
+            break;
+        case GSK_PROTOCOL_TLSV13:
+            ps->tls[4].enabled = status;
             break;
     }
 }

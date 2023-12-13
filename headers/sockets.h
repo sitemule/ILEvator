@@ -21,6 +21,11 @@ typedef enum {
    SECURE_HANDSHAKE_LATER = 2
 } USESSL , *PUSESSL;
 
+typedef struct _SOCKETS_SSL_CONFIG {
+    LONG version;
+    LONG enabled;
+} SOCKETS_SSL_CONFIG;
+
 typedef struct _SOCKETS_TLS_CONFIG {
     LONG version;
     LONG enabled;
@@ -41,7 +46,8 @@ typedef struct _SOCKETS {
     validationCallBack valCallBack;
     int rcvTotalLen;
     BOOL   isSecure;
-    struct _SOCKETS_TLS_CONFIG tls[4];
+    struct _SOCKETS_SSL_CONFIG ssl[1];
+    struct _SOCKETS_TLS_CONFIG tls[5];
 } SOCKETS, *PSOCKETS;
 
 
@@ -64,6 +70,7 @@ LONG  sockets_printf (PSOCKETS ps, PUCHAR Ctlstr , ...);
 LONG  sockets_printfXlate (PSOCKETS ps, PUCHAR Ctlstr , ...);
 LONG  sockets_printfCcsXlate   (PSOCKETS ps, int fromCcsId, int toCcsId, PUCHAR Ctlstr , ...);
 void  sockets_close(PSOCKETS ps);
+void  sockets_setSsl(PSOCKETS ps, LONG sslVersion, LONG status);
 void  sockets_setTls(PSOCKETS ps, LONG tlsVersion, LONG status);
 
 #define  SOCK_INVALID -1

@@ -51,7 +51,6 @@ dcl-ds ilevator_t qualified template align(*full);
     proxyTunnel pointer;
 end-ds;
 
-
 ///
 // Template for UTF8 varchars. default to 2M 
 ///
@@ -392,6 +391,15 @@ dcl-c IV_HTTP_NOT_EXTENDED 510;
 ///
 dcl-c IV_HTTP_NETWORK_AUTH_REQUIRED 511;
 
+///
+// Configuration constant for SSL 3
+///
+dcl-c IV_SSL_3 404;
+
+///
+// Configuration constant for TLS 1
+///
+dcl-c IV_TLS_1 407;
 ///
 // Configuration constant for TLS 1.0
 ///
@@ -1025,6 +1033,24 @@ end-pr;
 dcl-pr iv_setRequestHandler extproc(*dclcase);
     client pointer value;
     handler pointer value;
+end-pr;
+
+///
+// Configure SSL version
+//
+// Enables or disables a specific SSL version for communication with the server.
+//
+// @param Pointer to the HTTP client
+// @param SSL version (see IV_SSL_x)
+// @param <code>*on</code> = enabled , <code>*off</code> = disabled
+//
+// @info This effects only communication via the HTTPS protocol. Communicating via
+//       HTTP is unaffected by this setting.
+///
+dcl-pr iv_configureSslVersion extproc(*dclcase);
+    client pointer value;
+    sslVersion int(10) value;
+    status ind value;
 end-pr;
 
 ///
