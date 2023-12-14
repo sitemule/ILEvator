@@ -385,6 +385,9 @@ dcl-c IV_TLS_12 438;
 // Configuration constant for TLS 1.3
 ///
 dcl-c IV_TLS_13 4030;
+// Configuration constant for SSL 3
+///
+dcl-c IV_SSL_3 404;
 
 ///
 // Any media type.
