@@ -12,6 +12,11 @@ run() {
     printf "Error: [%d] when executing command: '$cmd'" $ret_code
   fi
 }
+runignore() {
+  cmd="$1"
+  #!DEBUG# echo $cmd
+  system  -q -kpieb $cmd
+}
 
 
 # --- Interpreat the EVENT file   ---------------------
@@ -97,7 +102,7 @@ done
 touch error.txt
 setccsid 1208 error.txt
 setccsid 1208 "${file_name}"
-run "CRTSRCPF $obj_lib/srctemp RCDLEN(240) ccsid($ccsid)"
+runignore "CRTSRCPF $obj_lib/srctemp RCDLEN(240) ccsid($ccsid)"
 run "CPYFRMSTMF FROMSTMF('$file_name') TOMBR('/QSYS.LIB/$obj_lib.LIB/srctemp.file/srctemp.mbr')  MBROPT(*REPLACE) STMFCCSID(1252)"
 
 if [ "$midext" = "srvpgm" ]

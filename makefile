@@ -26,7 +26,7 @@ ACTGRP=QILE
 #
 
 
-TGTCCSID = $(if $(filter V7R3M0,$(TARGET_RLS)), "" , TGTCCSID($(TARGET_CCSID)))
+##TGTCCSID = $(if $(filter V7R3M0,$(TARGET_RLS)), "" , TGTCCSID($(TARGET_CCSID)))
 
 INCLUDE='headers/' 'ext/headers' '/QIBM/include'
 
