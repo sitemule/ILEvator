@@ -15,6 +15,7 @@ TARGET_RLS=*CURRENT
 OUTPUT=*NONE
 ACTGRP=QILE
 
+
 #
 # User-defined part end
 #-----------------------------------------------------------
@@ -30,7 +31,6 @@ ifeq ($(shell expr $(OS_VERSION) \>= 7.3), 1)
 DEFINE=RPG_HAS_OVERLOAD
 TGTCCSID=TGTCCSID($(TARGET_CCSID))
 endif
-
 
 INCLUDE='headers/' 'ext/headers' '/QIBM/include'
 
@@ -102,7 +102,7 @@ compile: setHeaderCcsid modules ilevator.srvpgm
 ilevator.bnd:
 	-system -q "DLTBNDDIR BNDDIR($(BIN_LIB)/ILEVATOR)"
 	system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/ILEVATOR)"
-	system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/ILEVATOR) OBJ(($(BIN_LIB)/ILEVATOR *SRVPGM *IMMED))"
+	system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/ILEVATOR) OBJ((*LIBL/ILEVATOR *SRVPGM *IMMED))"
 
 ## The MODULES binddir is only used for unittest so unexposed features can be tested individually.
 ## However, made available in this general makefile.
