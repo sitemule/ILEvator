@@ -25,12 +25,8 @@ ACTGRP=QILE
 # Do not touch below
 #
 
-## OS version dependent defines
-OS_VERSION=$(shell uname -v).$(shell uname -r)
-ifeq ($(shell expr $(OS_VERSION) \>= 7.3), 1)
-DEFINE=RPG_HAS_OVERLOAD
-TGTCCSID=TGTCCSID($(TARGET_CCSID))
-endif
+
+TGTCCSID = $(if $(filter V7R3M0,$(TARGET_RLS)), "" , TGTCCSID($(TARGET_CCSID)))
 
 INCLUDE='headers/' 'ext/headers' '/QIBM/include'
 
