@@ -1,9 +1,9 @@
 **FREE
 
 ///
-// ILEvator Example : HTTPS GET request
+// ILEvator Example : HTTPS GET request to VAX 360
 //
-// This example does a GET request to Google.
+// This example does a GET request to VAX 360.
 // 
 // The certificate store (key store) needs to be set before making any HTTP requests.
 // No password needs to be specified for the certificate store if the permissions 

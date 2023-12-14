@@ -10,8 +10,9 @@
         "repo": "sitemule/ILEvator",
         "toggle_code": false,
         "jump_buttons": false,
-        "buttons": {
-            "API docs": "https://iledocs.rpgnextgen.com"
+        "links" : {
+            "API Docs": "https://iledocs.rpgnextgen.com",
+            "Sitemule" : "https://sitemule.github.io"
         }
     }
 }

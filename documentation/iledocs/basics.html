@@ -61,6 +61,14 @@ generic <code>iv_execute</code> procedure.
 </tr>
 
 <tr>
+<td><a href="#proc_iv_configureSslVersion">iv_configureSslVersion</a></td><td>Configure SSL version</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_configureTlsVersion">iv_configureTlsVersion</a></td><td>Configure TLS version</td>
+</tr>
+
+<tr>
 <td><a href="#proc_iv_decodeBase64">iv_decodeBase64</a></td><td>Base64 decode value</td>
 </tr>
 
@@ -408,6 +416,80 @@ Pointer
 <h4 class="iledocs-procedure-subheader">Info</h4>
 <div class="iledocs-box iledocs-info">The procedure <code>iv_addHeaderToList</code> can be used to add more
 entries to the list.</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_configureSslVersion">iv_configureSslVersion</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_configureSslVersion</span>
+(
+Pointer client, Integer sslVersion, Boolean status)
+</code>
+<p>Enables or disables a specific SSL version for communication with the server.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (10)</span>
+ [value]</code>
+ &mdash; SSL version (see IV_SSL_x)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Boolean</span>
+ [value]</code>
+ &mdash; <code>*on</code> = enabled , <code>*off</code> = disabled
+</li>
+</ol>
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">This effects only communication via the HTTPS protocol. Communicating via
+HTTP is unaffected by this setting.</div>
+
+<h3 class="iledocs-procedure-header"><a name="proc_iv_configureTlsVersion">iv_configureTlsVersion</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+void
+</span>
+<span class="iledocs-code-name">iv_configureTlsVersion</span>
+(
+Pointer client, Integer tlsVersion, Boolean status)
+</code>
+<p>Enables or disables a specific TLS version for communication with the server.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (10)</span>
+ [value]</code>
+ &mdash; TLS version (see IV_TLS_x)</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Boolean</span>
+ [value]</code>
+ &mdash; <code>*on</code> = enabled , <code>*off</code> = disabled
+</li>
+</ol>
+<h4 class="iledocs-procedure-subheader">Info</h4>
+<div class="iledocs-box iledocs-info">This effects only communication via the HTTPS protocol. Communicating via
+HTTP is unaffected by this setting.</div>
 
 <h3 class="iledocs-procedure-header"><a name="proc_iv_decodeBase64">iv_decodeBase64</a></h3>
 <code class="iledocs-code">

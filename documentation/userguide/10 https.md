@@ -14,15 +14,15 @@ The keystore can also be registered by using environment variables.
 The ILEvator project comes with a keystore file `ilevator.kdb`.
 
 
-## TLS Version
+## SSL/TLS Version
 
-By default ILEvator and the target server will try to negotiate the newest/highest TLS version
-supported by both parties. ILEvator allows to disabled specific TLS versions. This can either be
-made by a procedure call or by setting an environment variable.
+By default ILEvator and the target server will try to negotiate the newest/highest SSL/TLS version
+supported by both parties. ILEvator allows to disabled specific SSL/TLS versions. This can either 
+be made by a procedure call or by setting an environment variable.
 
 > Environment variables take precedence over settings made by procedure calls.
 
-### Procedure Call
+### Configure TLS Version
 
 Calling `iv_configureTlsVersion` will enable or disable the TLS version for negotiation with the
 server. A constant is available for each TLS version like `IV_TLS_13` for TLS version 1.3.
@@ -34,15 +34,27 @@ iv_configureTlsVersion(httpClient : IV_TLS_13 : *off);
 This setting will only affect the HTTP client instance you passed as the first parameter. Multiple
 client instances can be created side by side with different TLS version settings.
 
+### Configure SSL Version
+
+ILEvator also supports configuring SSL 3 for HTTPS communication.
+
+```
+iv_configureSslVersion(httpClient : IV_SSL_3 : *on);
+```
+
+This setting will only affect the HTTP client instance you passed as the first parameter. Multiple
+client instances can be created side by side with different SSL version settings.
+
 
 ### Environment Variable
 
-Each TLS version can also be enabled/disabled with the setting of an environment variable. 
+Each SSL/TLS version can also be enabled/disabled with the setting of an environment variable. 
 
 - TLS 1.0 : `ILEVATOR_TLS_10`
 - TLS 1.1 : `ILEVATOR_TLS_11`
 - TLS 1.2 : `ILEVATOR_TLS_12`
 - TLS 1.3 : `ILEVATOR_TLS_13`
+- SSL 3 : `ILEVATOR_SSL_3`
 
 Setting the value of the environment variable to `0` disables the TLS version and `1` enables the TLS version.
 
@@ -58,7 +70,7 @@ Enable TLS version 1.3:
 ADDENVVAR ILEVATOR_TLS_13 '1'
 ```
 
-Setting the TLS version via environment variables affects all HTTP client instances in the job.
+Note: Setting the SSL/TLS version via environment variables affects all HTTP client instances in the job.
 
 
 ## Keystore File
