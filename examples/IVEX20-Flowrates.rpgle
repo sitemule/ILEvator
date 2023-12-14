@@ -33,6 +33,7 @@ dcl-proc example1;
     dcl-s pflow  pointer; 
     dcl-s eur    packed(11:5);
     dcl-s outbuf varchar(65000:4);
+    dcl-s json   varchar(3000);
 
     pHttp = iv_newHttpClient(); 
     
@@ -40,6 +41,7 @@ dcl-proc example1;
     iv_execute (pHttp : 'GET' : 'http://www.floatrates.com/daily/dkk.json'); 
     if iv_getStatus(pHttp) = IV_HTTP_OK ; 
         pflow = json_parsestring(outbuf); 
+        json = json_astext(pflow);
         eur = json_getnum(pflow:'eur.inverseRate');
         json_joblog('DKK to EUR: ' + %char(eur));
     endif;
@@ -49,4 +51,5 @@ dcl-proc example1;
 on-exit;
     iv_free(pHttp); 
     json_delete(pflow);
+
 end-proc;
