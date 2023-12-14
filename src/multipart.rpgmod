@@ -757,7 +757,8 @@ dcl-proc getLastPathElement export;
     dcl-s x uns(5);
     dcl-s slash char(1) ccsid(1208) inz('/');
     
-    x = %scanr(slash : path);
+    // x = %scanr(slash : path);
+     x = scanr(slash : path);
     if (x = 0);
         return path;
     elseif (x = %len(path));
@@ -765,6 +766,28 @@ dcl-proc getLastPathElement export;
     else;
         return %subst(path : x+1);
     endif;
+end-proc;
+
+// %scanr polyfill for 7.2
+dcl-proc scanr  ;
+    dcl-pi *n uns(5);
+        scanFor  varchar(256) ccsid(1208) const options(*varsize);
+        inString varchar(10000) ccsid(1208) const options(*varsize);
+    end-pi;
+
+    dcl-s pos   uns(5); 
+    dcl-s i     uns(5); 
+
+    i =  %scan ( scanFor : inString : 1);
+    dow i > 0;
+        pos = i;
+        if i < %len(inString);
+            i =  %scan ( scanFor : inString : i +1);
+        else;
+            i =0;
+        endif;
+    enddo;
+    return pos;
 end-proc;
 
 

@@ -15,6 +15,11 @@
 #include <gskssl.h>
 #include "ostypes.h"
 
+// pollyfill for 7.2
+#ifndef GSK_PROTOCOL_TLSV13
+  #define GSK_PROTOCOL_TLSV13 4030
+#endif
+
 typedef enum {
    PLAIN_SOCKET = 0,
    SECURE_HANDSHAKE_IMEDIATE = 1,
