@@ -7,7 +7,7 @@ dcl-c PLAIN_SOCKET 0;
 dcl-c SECURE_HANDSHAKE_IMEDIATE 1;
 dcl-c SECURE_HANDSHAKE_LATER 2;
 
-dcl-pr sockets_setSSL extproc(*CWIDEN:'sockets_setSSL');
+dcl-pr sockets_setKeystore extproc(*CWIDEN:'sockets_setKeystore');
     sockets pointer value;
     useSSL  int(3)  value;
     certificateFile pointer options(*string) value;
@@ -47,6 +47,12 @@ end-pr;
 dcl-pr sockets_setTrace extproc(*CWIDEN:'sockets_setTrace');
     sockets  pointer value;
     traceFile  pointer options(*string) value;
+end-pr;
+
+dcl-pr sockets_setSsl extproc(*CWIDEN:'sockets_setSsl');
+    sockets  pointer value;
+    version int(10) value; // see GSK_PROTOCOL_SSLV3
+    status int(10) value;  // 513 = disabled , 512 = enabled
 end-pr;
 
 dcl-pr sockets_setTls extproc(*CWIDEN:'sockets_setTls');

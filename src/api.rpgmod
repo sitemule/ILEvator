@@ -52,6 +52,17 @@ dcl-c FALSE 0;
 dcl-c TRUE 1;
 dcl-c NULL x'00';
 
+// GSK constants...
+dcl-c GSK_FALSE 0;
+dcl-c GSK_TRUE 1;
+dcl-c GSK_PROTOCOL_TLSV1 407;       // Enables or disables the TLS Version 1.0 protocol. enumValue must specify one of the following:
+dcl-c GSK_PROTOCOL_TLSV1_ON 518;    // Enable TLS Version 1.0.
+dcl-c GSK_PROTOCOL_TLSV1_OFF 519;   // Disable TLS Version 1.0.
+dcl-c GSK_PROTOCOL_SSLV3 404;       // Enables or disables the SSL Version 3 protocol. enumValue must specify one of the following:
+dcl-c GSK_PROTOCOL_SSLV3_ON 512;    // Enable SSL Version 3.
+dcl-c GSK_PROTOCOL_SSLV3_OFF 513;   // Disable SSL Version 3.
+
+
 dcl-s listedHttpStatusCodes int(5) dim(41) ctdata;
 
 dcl-c DEFAULT_TIMEOUT 30.000; // 30 seconds
@@ -447,7 +458,7 @@ dcl-proc iv_setCertificate export;
         certificatePassword = %addr(empty_str);
     endif;
 
-    sockets_setSSL(
+    sockets_setKeystore(
         client.sockets :
         SECURE_HANDSHAKE_IMEDIATE :
         certificateFile :
@@ -1080,12 +1091,29 @@ end-proc;
 dcl-proc iv_setRequestHandler export;
     dcl-pi *n;
         p_client pointer value;
-        handler pointer value;        
+        handler pointer value;
     end-pi;
 
     dcl-ds client likeds(ilevator_t) based(p_client); 
     
     client.requestHandler = handler;
+end-proc;
+
+dcl-proc iv_configureSslVersion export;
+    dcl-pi *n;
+        p_client pointer value;
+        sslVersion int(10) value;
+        status ind value;
+    end-pi;
+    
+    dcl-ds client likeds(ilevator_t) based(p_client); 
+    dcl-s sslStatus int(10) inz(GSK_PROTOCOL_SSLV3_OFF);
+
+    if (status);
+        sslStatus = GSK_PROTOCOL_SSLV3_ON;
+    endif;
+    
+    sockets_setSsl(client.sockets : sslVersion : sslStatus);
 end-proc;
 
 dcl-proc iv_configureTlsVersion export;
@@ -1096,10 +1124,16 @@ dcl-proc iv_configureTlsVersion export;
     end-pi;
     
     dcl-ds client likeds(ilevator_t) based(p_client); 
-    dcl-s tlsStatus int(10) inz(0);
+    dcl-s tlsStatus int(10) inz(GSK_FALSE);
 
-    if (status);
-        tlsStatus = 1;
+    if (tlsVersion = GSK_PROTOCOL_TLSV1);
+        if (status);
+            tlsStatus = GSK_PROTOCOL_TLSV1_ON;
+        else;
+            tlsStatus = GSK_PROTOCOL_TLSV1_OFF;
+        endif;
+    elseif (status);
+        tlsStatus = GSK_TRUE;
     endif;
     
     sockets_setTls(client.sockets : tlsVersion : tlsStatus);
