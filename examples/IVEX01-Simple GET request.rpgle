@@ -24,7 +24,7 @@ ctl-opt copyright('Sitemule.com  (C), 2022-2023');
 dcl-proc main;
     dcl-s string varchar(IV_BUFFER_SIZE:4) ccsid(1208);
     
-    string = iv_get('http://localhost:80');
+    string = iv_get('http://google.com');
 
     iv_joblog(string);
 end-proc;

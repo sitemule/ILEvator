@@ -1,0 +1,21 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "IBMiDebug",
+            "request": "launch",
+            "name": "IBM i Debug: Launch a batch debug session",
+            "user": "",
+            "password": "",
+            "host": "",
+            "port": 8005,
+            "library": "ILEVATOR",
+            "program": "IVEX22",
+            "startBatchJobCommand": "",
+            "updateProductionFiles": false
+        }
+    ]
+}

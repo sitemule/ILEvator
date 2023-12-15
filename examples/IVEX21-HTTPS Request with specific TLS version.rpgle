@@ -25,7 +25,7 @@ dcl-proc main;
 
     httpClient = iv_newHttpClient(); 
 
-    # Set ADDENVVAR ILEVATOR_DEBUG '1' before running, to view transaction.
+    //# Set ADDENVVAR ILEVATOR_DEBUG '1' before running, to view transaction.
     iv_configureTlsVersion(httpClient : IV_SSL_3  : *off);
     iv_configureTlsVersion(httpClient : IV_TLS_10 : *off);
     iv_configureTlsVersion(httpClient : IV_TLS_11 : *off);

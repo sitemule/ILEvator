@@ -5,7 +5,7 @@
 # --- Command runner ----------------------------------
 run() {
   cmd="$1"
-  #!DEBUG# echo $cmd
+  #!DEBUG#   echo $cmd
   system  -q -kpieb $cmd
   ret_code=$?
   if [ ${ret_code} != 0 ]; then
@@ -13,8 +13,8 @@ run() {
   fi
 }
 runignore() {
-  cmd="$1"
-  #!DEBUG# echo $cmd
+  cmd="$1"  #!DEBUG# 
+  echo $cmd
   system  -q -kpieb $cmd
 }
 
