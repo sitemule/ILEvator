@@ -44,8 +44,8 @@ dcl-ds ilevator_t qualified template align(*full);
     message   char(256);
     
     buffer pointer;
-    bufferSize int(10);
-    bufferTotalLength int(10);
+    bufferSize uns(10);
+    bufferTotalLength uns(10);
     bufferEnd pointer;
     proxyTunnel pointer;
 end-ds;

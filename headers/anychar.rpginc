@@ -35,5 +35,10 @@ dcl-pr iv_anychar_get_length uns(10) extproc(*CWIDEN : 'iv_anychar_get_length');
   anychar pointer value;
 end-pr;
 
+dcl-pr iv_anychar_set_length  extproc(*CWIDEN : 'iv_anychar_set_length');
+  anychar pointer value;
+  length  uns(10);
+end-pr;
+
 
 /endif

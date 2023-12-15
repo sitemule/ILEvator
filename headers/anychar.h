@@ -35,6 +35,7 @@ void iv_anychar_set (
 void iv_anychar_append ( PANYCHAR pAt, PUCHAR pBuf, ULONG length );
 void iv_anychar_finalize ( PANYCHAR pAt );
 ULONG iv_anychar_get_length ( PANYCHAR pAt );
+void  iv_anychar_set_length ( PANYCHAR pAt , ULONG length );
 
 
 #endif

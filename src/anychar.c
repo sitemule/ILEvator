@@ -69,7 +69,13 @@ void iv_anychar_finalize ( PANYCHAR pAt )
 /* --------------------------------------------------------------------------- */
 ULONG iv_anychar_get_length ( PANYCHAR pAt )
 {
-    if (pAt->size == 0 ) return 0;
+    if (pAt == NULL || pAt->size == 0 ) return 0;
     return pAt->length;
 
+}
+/* --------------------------------------------------------------------------- */
+VOID iv_anychar_set_length ( PANYCHAR pAt , ULONG length)
+{
+    if (pAt == NULL ) return;
+    pAt->length = length;
 }
