@@ -16,7 +16,7 @@ end-ds;
 dcl-pr iv_anychar_set extproc(*CWIDEN : 'iv_anychar_set');
     anychar pointer value;
     buffer pointer value;
-    bufferSize int(10) value;
+    bufferSize uns(10) value;
     bufferType int(5) value;
     bufferXlate int(5) value;
 end-pr;
@@ -24,11 +24,16 @@ end-pr;
 dcl-pr iv_anychar_append extproc(*CWIDEN : 'iv_anychar_append');
     anychar pointer value;
     string pointer value;
-    length int(10) value;
+    length uns(10) value;
 end-pr;
 
 dcl-pr iv_anychar_finalize extproc(*CWIDEN : 'iv_anychar_finalize');
   anychar pointer value;
 end-pr;
+
+dcl-pr iv_anychar_get_length uns(10) extproc(*CWIDEN : 'iv_anychar_get_length');
+  anychar pointer value;
+end-pr;
+
 
 /endif

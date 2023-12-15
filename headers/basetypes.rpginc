@@ -1,0 +1,77 @@
+**free
+/if defined (BASETYPES_H)
+/eof
+/endif
+
+/define BASETYPES_H
+
+
+dcl-ds ilevator_t qualified template align(*full);
+    sockets pointer;
+    method pointer;
+    url pointer;
+    timeout packed(9:3);
+    retries int(5);
+    useProxy ind ;
+    responseHeaderHasContentLength ind ;
+    responseIsChunked ind ;
+    headerList pointer;
+    requestHeaderList pointer;
+    
+    requestDataBuffer likeds(anychar_t);
+    responseHeaderBuffer likeds(anychar_t);
+    responseDataBuffer likeds(anychar_t);
+    responseDataFile pointer;
+    authProvider pointer;
+    requestHandler pointer;
+    
+    headerLen    int(10);
+    contentData pointer;
+    contentLength int(10);
+    contentLengthCalculated int(10);
+    
+    rawResponse pointer;
+    ccsid int(10);
+    status int(10);
+    
+    server    char(512);
+    port      int(10);
+    resource  char(32766);
+    host      char(512);
+    user      char(256);
+    password  char(256);
+    location  char(256);
+    message   char(256);
+    
+    buffer pointer;
+    bufferSize int(10);
+    bufferTotalLength int(10);
+    bufferEnd pointer;
+    proxyTunnel pointer;
+end-ds;
+
+dcl-s ENUM int(3) template;
+dcl-c FALSE 0;
+dcl-c TRUE 1;
+dcl-c NULL x'00';
+
+// GSK constants...
+dcl-c GSK_FALSE 0;
+dcl-c GSK_TRUE 1;
+dcl-c GSK_PROTOCOL_TLSV1 407;       // Enables or disables the TLS Version 1.0 protocol. enumValue must specify one of the following:
+dcl-c GSK_PROTOCOL_TLSV1_ON 518;    // Enable TLS Version 1.0.
+dcl-c GSK_PROTOCOL_TLSV1_OFF 519;   // Disable TLS Version 1.0.
+dcl-c GSK_PROTOCOL_SSLV3 404;       // Enables or disables the SSL Version 3 protocol. enumValue must specify one of the following:
+dcl-c GSK_PROTOCOL_SSLV3_ON 512;    // Enable SSL Version 3.
+dcl-c GSK_PROTOCOL_SSLV3_OFF 513;   // Disable SSL Version 3.
+
+dcl-c DEFAULT_TIMEOUT 30.000; // 30 seconds
+dcl-c DEFAULT_RETRIES 2;
+dcl-c NO_RETRIES 0;
+
+dcl-s UPPER char(26) ccsid(*utf8) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+dcl-s LOWER char(26) ccsid(*utf8) inz('abcdefghijklmnopqrstuvwxyz');
+
+dcl-c ILEVATOR_VERSION '0.1.0';
+
+

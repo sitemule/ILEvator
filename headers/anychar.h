@@ -28,11 +28,13 @@ typedef struct _ANYCHAR {
 void iv_anychar_set (
     PANYCHAR pAt,
     PUCHAR pBuffer,
-    LONG  bufferSize,
+    ULONG  bufferSize,
     SHORT bufferType,
     SHORT bufferXlate
 );
-void iv_anychar_append ( PANYCHAR pAt, PUCHAR pBuf, LONG length );
+void iv_anychar_append ( PANYCHAR pAt, PUCHAR pBuf, ULONG length );
 void iv_anychar_finalize ( PANYCHAR pAt );
+ULONG iv_anychar_get_length ( PANYCHAR pAt );
+
 
 #endif
