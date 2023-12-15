@@ -6,14 +6,10 @@ ctl-opt nomain thread(*concurrent);
 
 /include 'encode.rpginc'
 /include 'url.rpginc'
+/include 'clib.rpginc'
+
 
 dcl-c DOMAIN_NAME_VALID_CHARS 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.0123456789';
-
-dcl-pr memcmp int(10)  extproc('memcmp');
-  buffer1 pointer value;
-  buffer2 pointer value;
-  count uns(10) value;
-end-pr;
 
 dcl-s SCHEME_SEPARATOR char(3) inz('://');
 dcl-c UNICODE_HASH u'0023';

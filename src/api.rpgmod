@@ -7,13 +7,11 @@ ctl-opt nomain thread(*concurrent);
 /include 'chunked.rpginc'
 /include 'debug.rpginc'
 /include 'httpclient.rpginc'
-/include 'libc.rpginc'
 /include 'message.rpginc'
 /include 'simpleList.rpginc'
 /include 'sockets.rpginc'
 /include 'teraspace.rpginc'
-/include 'ifs.rpginc'
-
+/include 'clib.rpginc'
 
 
 
@@ -1035,9 +1033,6 @@ dcl-proc loadConfigFromEnvVar;
         client pointer const;
     end-pi;
 
-    dcl-pr getenv pointer extproc('getenv');
-        *n pointer value options(*string : *trim);
-    end-pr;
   
     dcl-s certValue pointer;
     dcl-s passValue pointer;

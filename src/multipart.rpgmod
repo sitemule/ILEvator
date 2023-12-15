@@ -6,7 +6,6 @@ ctl-opt nomain thread(*concurrent);
 
 /include 'base64.rpginc'
 /include 'encode.rpginc'
-/include 'libc.rpginc'
 /include 'message.rpginc'
 /include 'mime.rpginc'
 /include 'multipart.rpginc'
@@ -15,48 +14,8 @@ ctl-opt nomain thread(*concurrent);
 /include 'stream.rpginc'
 /include 'teraspace.rpginc'
 /include 'xlate.rpginc'
+/include 'clib.rpginc'
 
-dcl-pr CEERAN0 extproc('CEERAN0');
-    seed int(10);
-    randomNumber float(8);
-    feedback char(12) options(*omit);
-end-pr;
-
-dcl-pr unlink int(10) extproc('unlink');
-    path pointer value options(*string : *trim);
-end-pr;
-
-dcl-pr open int(10) extproc('open');
-    path pointer value options(*string);
-    openflags int(10) value;
-    mode uns(10) value options(*nopass);
-    ccsid uns(10) value options(*nopass);
-    textCreateId uns(10) value options(*nopass);
-end-pr;
-
-dcl-pr read int(10) extproc('read');
-    fileDesc int(10) value;
-    buffer pointer value;
-    length uns(10) value;
-end-pr;
-
-dcl-pr write int(10) extproc('write');
-    fileDesc int(10) value;
-    buffer pointer value;
-    length uns(10) value;
-end-pr;
-     
-dcl-pr close int(10) extproc('close');
-    fileDesc int(10) value;
-end-pr;
-
-dcl-c S_IRUSR 256;
-dcl-c S_IWUSR 128;
-     
-dcl-c O_RDONLY 1;
-dcl-c O_WRONLY 2;
-dcl-c O_CREATE 8;
-dcl-c O_APPEND 256;
 
 dcl-c IV_MULTIPART_HEADER_NAME_SIZE 1024;
 dcl-c IV_MULTIPART_HEADER_VALUE_SIZE 16384;

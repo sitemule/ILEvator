@@ -18,57 +18,9 @@ ctl-opt nomain;
 /include 'stream.rpginc'
 /include 'teraspace.rpginc'
 /include 'varchar.rpginc'
+/include 'clib.rpginc'
 
 
-dcl-c S_IRUSR 256;
-dcl-c S_IWUSR 128;
-     
-dcl-c O_RDONLY 1;
-dcl-c O_WRONLY 2;
-dcl-c O_CREATE 8;
-
-dcl-pr open int(10) extproc('open');
-  path pointer value options(*string);
-  openflags int(10) value;
-  mode uns(10) value options(*nopass);
-  ccsid uns(10) value options(*nopass);
-end-pr;
-
-dcl-pr read int(10) extproc('read');
-  fildes int(10) value;
-  buf pointer value;
-  bytes uns(10) value;
-end-pr;
-
-dcl-pr write int(10) extproc('write');
-    fileDesc int(10) value;
-    buffer pointer value;
-    length uns(10) value;
-end-pr;
-
-dcl-pr close int(10) extproc('close');
-  fildes int(10) value;
-end-pr;
-
-dcl-pr unlink int(10) extproc('unlink');
-    path pointer value options(*string : *trim);
-end-pr;
-
-dcl-pr memcmp int(10) extproc('memcmp');
-  buffer1 pointer value;
-  buffer2 pointer value;
-  count uns(10) value;
-end-pr;
-
-dcl-pr memcpy pointer extproc('memcpy');
-  target pointer value;
-  source pointer value;
-  count uns(10) value;
-end-pr;
-
-dcl-pr getenv pointer extproc('getenv');
-    envvar pointer value options(*string : *trim);
-end-pr;
 
 dcl-s stream_buffer_t varchar(10000) ccsid(*utf8) template;
 

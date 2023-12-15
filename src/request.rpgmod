@@ -4,7 +4,6 @@ ctl-opt nomain thread(*concurrent);
 
 
 /include 'debug.rpginc'
-/include 'libc.rpginc'
 /include 'message.rpginc'
 /include 'mime.rpginc'
 /include 'request.rpginc'
@@ -14,6 +13,8 @@ ctl-opt nomain thread(*concurrent);
 /include 'url.rpginc'
 /include 'varchar.rpginc'
 /include 'xlate.rpginc'
+/include 'clib.rpginc'
+
 
 
 dcl-c ASCII 367;
@@ -27,25 +28,6 @@ dcl-s UPPER char(26) ccsid(*utf8) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 dcl-s LOWER char(26) ccsid(*utf8) inz('abcdefghijklmnopqrstuvwxyz');
 dcl-c SERIALIZED_INIT_SIZE 1048576;
   
-dcl-pr open int(10) extproc('open');
-    path pointer value options(*string);
-    openflags int(10) value;
-    mode uns(10) value options(*nopass);
-    ccsid uns(10) value options(*nopass);
-    textCreateId uns(10) value options(*nopass);
-end-pr;
-
-dcl-pr read int(10) extproc('read');
-    fileDesc int(10) value;
-    buffer pointer value;
-    length uns(10) value;
-end-pr;
-
-dcl-pr close int(10) extproc('close');
-    fileDesc int(10) value;
-end-pr;
-
-dcl-c O_RDONLY 1;
 
 dcl-ds iv_request_t qualified template;
   method varchar(10);

@@ -3,14 +3,10 @@
 ctl-opt nomain thread(*concurrent);
 
 
-dcl-pr cvthc extproc('cvthc');
-   hex pointer value;
-   chars pointer value;
-   hexLength int(10) value;
-end-pr;
 
 /include 'debug.rpginc'
 /include 'encode.rpginc'
+/include 'clib.rpginc'
 
 
 dcl-s NOT_RESERVED_CHARS char(65) ccsid(*utf8) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.');

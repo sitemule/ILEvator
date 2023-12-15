@@ -15,7 +15,7 @@ ctl-opt nomain;
 /include 'assert.rpginc'
 /include 'ceeapi.rpginc'
 /include 'form.rpginc'
-/include 'libc.rpginc'
+/include 'clib.rpginc'
 /include 'simpleList.rpginc'
 
 dcl-pr test_formMapSingleField end-pr;

@@ -16,9 +16,9 @@ RU_LIB=*LIBL
 # This library contains the ILEASTIC modules.
 ILEVATOR_LIB=$(BIN_LIB)
 
-OUTPUT=*NONE
+OUTPUT=*PRINT
 
-DEFINE=RPG_HAS_OVERLOAD
+##DEFINE=RPG_HAS_OVERLOAD
 
 #
 # User-defined part end

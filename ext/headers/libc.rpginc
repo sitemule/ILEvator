@@ -1,3 +1,8 @@
+      *-------------------------------------------------------------------------
+      * DEPRICATED - Used prototypes are move into the core project
+      * and converted to free format
+      * It is left in the project until all prototypes a converted 
+      *-------------------------------------------------------------------------
       /if not defined(QUSEC)
       /define QUSEC
       /copy QSYSINC/QRPGLESRC,QUSEC

@@ -17,12 +17,8 @@ ctl-opt nomain;
 //
 /include 'assert.rpginc'
 /include 'base64.rpginc'
+/include 'clib.rpginc'
 
-dcl-pr memcpy pointer extproc('memcpy');
-  dest   pointer value;
-  source pointer value;
-  count  uns(10) value;
-end-pr;
 
 //
 // Prototypes

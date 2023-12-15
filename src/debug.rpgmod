@@ -5,6 +5,7 @@ ctl-opt nomain thread(*concurrent);
 
 /include 'debug.rpginc'
 /include 'message.rpginc'
+/include 'clib.rpginc'
 
 
 dcl-s enabled ind inz(*off) static(*allthread);
@@ -58,9 +59,6 @@ end-proc;
 dcl-proc iv_debug_init export;
     dcl-pi *n int(10) end-pi;
 
-    dcl-pr getenv pointer extproc('getenv');
-        *n pointer value options(*string : *trim);
-    end-pr;
   
     dcl-s value pointer;
   

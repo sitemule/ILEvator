@@ -5,6 +5,7 @@
 
 /define BASETYPES_H
 
+/include 'anychar.rpginc'
 
 dcl-ds ilevator_t qualified template align(*full);
     sockets pointer;
