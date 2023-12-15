@@ -8,7 +8,7 @@
 void iv_anychar_set (
     PANYCHAR pAt,
     PUCHAR pBuffer,
-    LONG  bufferSize,
+    ULONG  bufferSize,
     SHORT bufferType,
     SHORT bufferXlate
 )
@@ -38,9 +38,9 @@ void iv_anychar_set (
     }    
 }
 /* --------------------------------------------------------------------------- */
-void iv_anychar_append ( PANYCHAR pAt, PUCHAR pBuf, LONG length )
+void iv_anychar_append ( PANYCHAR pAt, PUCHAR pBuf, ULONG length )
 {
-    LONG bytesLeft;
+    ULONG bytesLeft;
     if (pAt->size == 0 ) return;
 
     bytesLeft = pAt->size - pAt->length; 
@@ -64,5 +64,12 @@ void iv_anychar_finalize ( PANYCHAR pAt )
             break;
         }
     }    
+
+}
+/* --------------------------------------------------------------------------- */
+ULONG iv_anychar_get_length ( PANYCHAR pAt )
+{
+    if (pAt->size == 0 ) return 0;
+    return pAt->length;
 
 }

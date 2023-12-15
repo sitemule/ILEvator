@@ -12,67 +12,13 @@ ctl-opt nomain thread(*concurrent);
 /include 'simpleList.rpginc'
 /include 'sockets.rpginc'
 /include 'teraspace.rpginc'
+/include 'ifs.rpginc'
 
 
-dcl-pr fopen pointer extproc('_C_IFS_fopen');
-    filename pointer value options(*string);
-    mode pointer value options(*string);
-end-pr;
-
-dcl-pr fclose int(10) extproc('_C_IFS_fclose');
-    stream pointer value;
-end-pr;
-
-dcl-pr unlink int(10) extproc(*dclcase);
-    path pointer value options(*string);
-end-pr;
-
-dcl-pr access int(10) extproc('access');
-    path pointer value options(*string);
-    mode int(10) value;
-end-pr;
-
-
-
-//
-// Access mode flags for access() and accessx()
-//
-// F_OK = File Exists
-// R_OK = Read Access
-// W_OK = Write Access
-// X_OK = Execute or Search
-//
-dcl-c F_OK 0;
-dcl-c R_OK 4;
-dcl-c W_OK 2;
-dcl-c X_OK 1;
-
-dcl-s ENUM int(3) template;
-dcl-c FALSE 0;
-dcl-c TRUE 1;
-dcl-c NULL x'00';
-
-// GSK constants...
-dcl-c GSK_FALSE 0;
-dcl-c GSK_TRUE 1;
-dcl-c GSK_PROTOCOL_TLSV1 407;       // Enables or disables the TLS Version 1.0 protocol. enumValue must specify one of the following:
-dcl-c GSK_PROTOCOL_TLSV1_ON 518;    // Enable TLS Version 1.0.
-dcl-c GSK_PROTOCOL_TLSV1_OFF 519;   // Disable TLS Version 1.0.
-dcl-c GSK_PROTOCOL_SSLV3 404;       // Enables or disables the SSL Version 3 protocol. enumValue must specify one of the following:
-dcl-c GSK_PROTOCOL_SSLV3_ON 512;    // Enable SSL Version 3.
-dcl-c GSK_PROTOCOL_SSLV3_OFF 513;   // Disable SSL Version 3.
 
 
 dcl-s listedHttpStatusCodes int(5) dim(41) ctdata;
 
-dcl-c DEFAULT_TIMEOUT 30.000; // 30 seconds
-dcl-c DEFAULT_RETRIES 2;
-dcl-c NO_RETRIES 0;
-
-dcl-s UPPER char(26) ccsid(*utf8) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-dcl-s LOWER char(26) ccsid(*utf8) inz('abcdefghijklmnopqrstuvwxyz');
-
-dcl-c ILEVATOR_VERSION '0.1.0';
 
 
 dcl-proc iv_newHttpClient export;
@@ -176,6 +122,18 @@ dcl-proc iv_setResponseHeaderBuffer export;
     );
 end-proc;
 
+
+dcl-proc iv_getResponseDataLength  export;
+    dcl-pi *n uns(10);
+        pClient pointer value;
+    end-pi;
+    
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    
+    return iv_anychar_get_length( 
+        %addr(client.responseDataBuffer) 
+    );
+end-proc;
 
 dcl-proc iv_setResponseDataBuffer export;
     dcl-pi *n;

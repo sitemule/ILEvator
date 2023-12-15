@@ -42,6 +42,7 @@
 ///
 dcl-s IV_LONGUTF8VARCHAR varchar(2097152:4) ccsid(*utf8) template;
 
+
 dcl-c IV_STATUS_OK 0;
 dcl-c IV_STATUS_RETRY 1;
 dcl-c IV_STATUS_ERROR 2;
@@ -395,6 +396,7 @@ dcl-c IV_TLS_12 438;
 ///
 dcl-c IV_TLS_13 4030;
 
+
 ///
 // Any media type.
 ///
@@ -509,6 +511,19 @@ dcl-pr iv_setResponseDataBuffer extproc(*dclcase);
     bufferType    int(5) value;
     bufferCcsid   int(10) value;
 end-pr;
+
+///
+// returns the length of the result in the response data buffer
+// this is usefull  if the buffer is BYTE buffer
+//
+// @param Pointer to the HTTP client 
+// @return nuber of bytes returned in the response buffer
+///
+
+dcl-pr iv_getResponseDataLength uns(10) extproc(*dclcase);
+    pClient pointer value;
+end-pr;
+
 
 ///
 // Set response output file
@@ -968,7 +983,7 @@ dcl-pr iv_freeList extproc(*dclcase);
 end-pr;
 
 ///
-// Added HTTP header to list
+// Add HTTP header to list
 //
 // Adds the passed HTTP header (key/value) to the passed list of headers.
 // <p>

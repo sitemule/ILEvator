@@ -1,3 +1,5 @@
+/* Signature will not change - so any new exporst are added to the tail -
+   We prommis to always be backwards compatible within major versions */ 
 STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_newHttpClient")
     EXPORT SYMBOL("iv_free")
@@ -32,20 +34,15 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_joblog")
     EXPORT SYMBOL("iv_configureSslVersion")
     EXPORT SYMBOL("iv_configureTlsVersion")
-    
     EXPORT SYMBOL("iv_basicauth_new")
-    
     EXPORT SYMBOL("iv_bearer_new")
-    
     EXPORT SYMBOL("iv_encode_path")
     EXPORT SYMBOL("iv_encode_query")
     EXPORT SYMBOL("iv_encode_punycode")
     EXPORT SYMBOL("iv_encode_ace")
-    
     EXPORT SYMBOL("iv_form_ofMap")
     EXPORT SYMBOL("iv_form_ofString")
     EXPORT SYMBOL("iv_form_free")
-    
     EXPORT SYMBOL("iv_request_addHeader")
     EXPORT SYMBOL("iv_request_addHeaders")
     EXPORT SYMBOL("iv_request_dispose")
@@ -63,7 +60,6 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_request_setFormBody")
     EXPORT SYMBOL("iv_request_toString")
     EXPORT SYMBOL("iv_request_toStream")
-    
     EXPORT SYMBOL("iv_multipart_new")
     EXPORT SYMBOL("iv_multipart_free")
     EXPORT SYMBOL("iv_multipart_finalize")
@@ -71,4 +67,6 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_multipart_addPartFromFile")
     EXPORT SYMBOL("iv_multipart_addPartFromBytes")
     EXPORT SYMBOL("iv_multipart_toStream")
+    EXPORT SYMBOL("iv_getResponseDataLength")
+
 ENDPGMEXP
