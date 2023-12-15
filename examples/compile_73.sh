@@ -5,18 +5,12 @@
 # --- Command runner ----------------------------------
 run() {
   cmd="$1"
-  #!DEBUG#   echo $cmd
-  system  -kpieb $cmd
+  #!DEBUG# echo $cmd
+  system  -q -kpieb $cmd
   ret_code=$?
   if [ ${ret_code} != 0 ]; then
     printf "Error: [%d] when executing command: '$cmd'" $ret_code
   fi
-}
-# ingore error, note we do not use the -i for run in ile, so the return does not pop up 
-runignore() {
-  cmd="$1"  
-  #!DEBUG# echo $cmd
-  system  -qkpeb $cmd
 }
 
 
@@ -27,7 +21,7 @@ print_event() {
   obj_lib="$2"
   object_name="$3"
 
-  runignore "CPYTOSTMF  FROMMBR('/qsys.lib/$obj_lib.lib/EVFEVENT.file/$object_name.mbr') TOSTMF('/tmp/eventfile.txt') STMFOPT(*REPLACE) STMFccsid(1252)"
+  run "CPYTOSTMF  FROMMBR('/qsys.lib/$obj_lib.lib/EVFEVENT.file/$object_name.mbr') TOSTMF('/tmp/eventfile.txt') STMFOPT(*REPLACE) STMFccsid(1252)"
 
   while IFS= read -r line
   do
@@ -47,7 +41,6 @@ print_event() {
 
 
 # --- Main line --------------------------
-#DEBUG: set -x
 
 while getopts ":f:o:b:l:c:s:" opt; do
   case $opt in
@@ -104,14 +97,14 @@ done
 touch error.txt
 setccsid 1208 error.txt
 setccsid 1208 "${file_name}"
-runignore "CRTSRCPF $obj_lib/srctemp RCDLEN(240) ccsid($ccsid)"
-runignore "CPYFRMSTMF FROMSTMF('$file_name') TOMBR('/QSYS.LIB/$obj_lib.LIB/srctemp.file/srctemp.mbr')  MBROPT(*REPLACE) STMFCCSID(1252)"
+run "CRTSRCPF $obj_lib/srctemp RCDLEN(240) ccsid($ccsid)"
+run "CPYFRMSTMF FROMSTMF('$file_name') TOMBR('/QSYS.LIB/$obj_lib.LIB/srctemp.file/srctemp.mbr')  MBROPT(*REPLACE) STMFCCSID(1252)"
 
 if [ "$midext" = "srvpgm" ]
 then
   if [ "$extension" = "sqlrpgle" ]
   then
-  	run "CRTSQLRPGI obj($obj_lib/$object_name) OBJTYPE(*SRVPGM) SRCFILE($obj_lib/srctemp) SRCMBR(SRCTEMP)  TEXT('$text') COMPILEOPT('$optionsq') $sqloptions"
+  	run "CRTSQLRPGI obj($obj_lib/$object_name) TGTRLS(V7R3M0) OBJTYPE(*SRVPGM) SRCFILE($obj_lib/srctemp) SRCMBR(SRCTEMP)  TEXT('$text') COMPILEOPT('$optionsq') $sqloptions"
   else
     run "CRTRPGMOD  MODULE($obj_lib/$object_name) SRCFILE($obj_lib/srctemp) SRCMBR(SRCTEMP) TEXT('$text') $options"
     run "CRTSRVPGM  SRVPGM($obj_lib/$object_name) DETAIL(*BASIC) EXPORT(*ALL)"
@@ -119,10 +112,11 @@ then
 else
   if [ "$extension" = "sqlrpgle" ]
   then
-  	run "CRTSQLRPGI obj($obj_lib/$object_name) OBJTYPE(*PGM) SRCFILE($obj_lib/srctemp) SRCMBR(SRCTEMP) TEXT('$text')  COMPILEOPT('$optionsq') $sqloptions"
+  	run "CRTSQLRPGI obj($obj_lib/$object_name) TGTRLS(V7R3M0) OBJTYPE(*PGM) SRCFILE($obj_lib/srctemp) SRCMBR(SRCTEMP) TEXT('$text')  COMPILEOPT('$optionsq') $sqloptions"
   else
     run "CRTBNDRPG  PGM($obj_lib/$object_name) SRCFILE($obj_lib/srctemp) SRCMBR(SRCTEMP) TEXT('$text') $options"
   fi
 fi
 print_event "${file_name}" ${obj_lib} ${object_name}
+run "DLTF $obj_lib/srctemp"
 exit

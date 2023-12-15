@@ -14,7 +14,6 @@
 ctl-opt dftactgrp(*no) actgrp(*new) debug(*yes) bnddir('ILEVATOR') main(main);
 ctl-opt copyright('Sitemule.com  (C), 2022-2023');
 
-
 /include 'ilevator.rpgle'
 
 
@@ -35,7 +34,6 @@ dcl-proc main;
     else;
         iv_joblog(outbuffer);
     endif;
-    
     on-exit;
         iv_free(httpClient);
 end-proc;

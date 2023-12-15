@@ -2,8 +2,8 @@
 # Build examples for ILEvator
 #
 # This works for:
-#  make              compiles all demo programs
-#  make helloworld   only compiles this single file
+#  gmake              compiles all demo programs
+#  gmake helloworld   only compiles this single file
 #
 
 #-------------------------------------------------------------------------------
@@ -14,6 +14,7 @@
 # NOTE: LIBLIST can be overwritten from the commandline, but defaults to the BIN_LIB
 BIN_LIB=ILEVATOR
 LIBLIST="$(BIN_LIB) NOXDB SMSDB"
+OUTPUT=*NONE
 
 # The shell we use
 SHELL=/QOpenSys/usr/bin/qsh
@@ -25,14 +26,13 @@ SHELL=/QOpenSys/usr/bin/qsh
 # to compile a single file and get erros to the editor
 # User-defined part end
 #-------------------------------------------------------------------------------
-RPG_OPT=OPTION(*EVENTF *NOXREF *NOUNREF) OUTPUT(*NONE) DBGVIEW(*LIST) INCDIR('./..' '/prj/ILEvator/headers')
+RPG_OPT=OPTION(*EVENTF *NOXREF *NOUNREF *NOSHOWCPY *NOEXPDDS) OUTPUT($(OUTPUT)) DBGVIEW(*COPY) INCDIR('./..' '/prj/ILEvator/headers')
 SQL_OPT=RPGPPOPT(*NONE)
 CCSID=277
 
 
-all: compile
+all: compile 
 .ONESHELL:
 compile:
 	./compile.sh -f "$(SRC)"  -b $(BIN_LIB) -l $(LIBLIST) -c $(CCSID) -o "$(RPG_OPT)" -s "$(SQL_OPT)" 
-
 .PHONY: compile

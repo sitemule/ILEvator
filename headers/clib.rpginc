@@ -103,8 +103,8 @@ dcl-pr strlen uns(10) extproc('strlen');
   string pointer value;
 end-pr;
 
-Dcl-PR tmpnamIFS Pointer EXTPROC('_C_IFS_TMPNAM');
-  buffer         Char(39)   OPTIONS(*OMIT);
+Dcl-PR tmpnamIFS pointer EXTPROC('_C_IFS_tmpnam');
+  buffer         char(39)   options(*omit);
 End-PR;
 
 
