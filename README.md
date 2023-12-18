@@ -5,11 +5,6 @@ It is a http client for the ILE environment on IBM i.
 This project is premature - don't waste time cloning it yet - but stay tuned.
 
 
-### Requirements
-
-The project uses the [ICU](https://icu.unicode.org/) project (International Components for Unicode).
-ICU is available on IBM i in the library `QICU`. It binds to the service program `QICU/QXICUUC40`.
-
 
 ### Installation
 
@@ -42,3 +37,17 @@ ssh my_ibm_i
 cd /prj/ILEvator
 gmake clean release
 ```
+
+### Requirements
+
+If you are requesting resources using unicode-URL then please noteice:  
+The project will use the [ICU](https://icu.unicode.org/) project (International Components for Unicode).
+ICU is available on IBM i in the library `QICU`. It binds to the service program `QICU/QXICUUC40`.
+
+
+### Documentation 
+The documentation is placed on github.io and can be viewed here:
+
+https://sitemule.github.io/ilevator/
+
+Also, please open the `examples` folder and get some inspiration.
