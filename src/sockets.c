@@ -220,12 +220,8 @@ static BOOL set_attr (PSOCKETS ps, gsk_handle hndl, int attr , int value, PUCHAR
 static BOOL initialize_gsk_environment (PSOCKETS ps)
 {
     LONG   rc;
-    struct sockaddr_in serveraddr;
-    struct hostent * hostp;
-    struct sockaddr peeraddr;
     PUCHAR appId = "ICEBREAK_SECURE_CLIENT";
     int    appIdLen = strlen(appId);
-    PUCHAR keyringPassword;
 
     // open a gsk environment
     errno = 0;
@@ -339,6 +335,26 @@ static BOOL initialize_gsk_environment (PSOCKETS ps)
         sockets_setSSLmsg(ps,rc, "set auth-passthru");
         sockets_close(ps);
         return FALSE;
+    }
+
+    // SNI ( Server network indentity )
+    if (*ps->hostName> '\0') {
+        rc = gsk_attribute_set_buffer(
+            ps->my_env_handle,
+            GSK_SSL_EXTN_SERVERNAME_REQUEST,
+            // GSK_SSL_EXTN_SERVERNAME_CRITICAL_REQUEST, // << use this if the name has to match 100% 
+            ps->hostName,
+            strlen(ps->hostName)
+        );
+
+        /* Error is OK, for older GSkit versions - TODO text if it is a verssion issue or not*/
+        /* 
+        if (rc != GSK_OK) {
+            sockets_setSSLmsg(ps,rc, "SNI error, GSK_SSL_EXTN_SERVERNAME_REQUEST not set");
+            sockets_close(ps);
+            return FALSE;
+        }
+        */ 
     }
 
     // Initialize the secure environment
@@ -479,6 +495,7 @@ BOOL sockets_set_secure (PSOCKETS ps)
         , "Set GSK_FD associate socket with the secure session")) {
         return FALSE;
     }
+    
 
     // initiate the SSL handshake
     errno = 0;
@@ -491,10 +508,12 @@ BOOL sockets_set_secure (PSOCKETS ps)
     
     // query negotiated TLS version
     rc = gsk_attribute_get_buffer(
-            ps->my_session_handle, 
-            GSK_CONNECT_SEC_TYPE, 
-            &negotiatedTlsVersion , 
-            &negotiatedTlsVersionLength);
+        ps->my_session_handle, 
+        GSK_CONNECT_SEC_TYPE, 
+        &negotiatedTlsVersion , 
+        &negotiatedTlsVersionLength
+    );
+
     if (rc == GSK_OK) {
         iv_debug("Negotiated TLS version: %.*s", negotiatedTlsVersionLength, negotiatedTlsVersion);
     }
@@ -536,6 +555,8 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR serverIP, LONG serverPort, LONG timeOut
     if (strspn (serverIP , "0123456789.") == strlen( serverIP)) {
         serveraddr.sin_addr.s_addr   = inet_addr( serverIP);
     } else {
+
+        strcpy ( ps->hostName , serverIP);
 
         // get host address
         hostp = gethostbyname(serverIP);

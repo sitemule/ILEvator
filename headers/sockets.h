@@ -53,6 +53,7 @@ typedef struct _SOCKETS {
     BOOL   isSecure;
     struct _SOCKETS_SSL_CONFIG ssl[1];
     struct _SOCKETS_TLS_CONFIG tls[5];
+    UCHAR  hostName [256]; 
 } SOCKETS, *PSOCKETS;
 
 
