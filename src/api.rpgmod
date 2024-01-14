@@ -1033,9 +1033,9 @@ dcl-proc loadConfigFromEnvVar;
         client pointer const;
     end-pi;
 
-  
     dcl-s certValue pointer;
     dcl-s passValue pointer;
+    dcl-s traceFileName pointer;
     
     certValue = getenv('ILEVATOR_CERTIFICATE');
     passValue = getenv('ILEVATOR_CERTIFICATE_PASSWORD');
@@ -1045,6 +1045,11 @@ dcl-proc loadConfigFromEnvVar;
     elseif (certValue <> *null);
         iv_setCertificate(client : certValue);
     endif;
+    
+    traceFileName = getenv('ILEVATOR_TRACE_STMF');
+    if (traceFileName <> *null); 
+        iv_setCommTrace(client : traceFileName);
+    endif;  
 end-proc;
 
 
