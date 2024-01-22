@@ -337,8 +337,8 @@ static BOOL initialize_gsk_environment (PSOCKETS ps)
         return FALSE;
     }
 
-    // SNI ( Server network indentity )
-    if (*ps->hostName> '\0') {
+    // SNI ( Server Network Indentity )
+    if (*ps->hostName > '\0') {
         rc = gsk_attribute_set_buffer(
             ps->my_env_handle,
             GSK_SSL_EXTN_SERVERNAME_REQUEST,
@@ -358,6 +358,7 @@ static BOOL initialize_gsk_environment (PSOCKETS ps)
     }
 
     // Initialize the secure environment
+    errno = 0;
     rc = gsk_environment_init(ps->my_env_handle);
 
     // Not registered yet - do it
@@ -394,7 +395,14 @@ static BOOL initialize_gsk_environment (PSOCKETS ps)
             sockets_close(ps);
             return FALSE;
         }
+    } 
+    else if (rc != GSK_OK) {
+        sockets_setSSLmsg(ps,rc, "gsk_environment_init");
+        sockets_close(ps);
+        return FALSE;
     }
+
+
 
     // So far ? - We are ready
     ps->isInitialized = TRUE;  // done - we are initialized
@@ -461,9 +469,10 @@ static void enableTls(PSOCKETS ps, LONG tlsVersion, LONG status) {
 }
 
 // ----------------------------------------------------------------------------------------
-void sockets_copy_socket (PSOCKETS to_ps , PSOCKETS from_ps)
+void sockets_copy_socket (PSOCKETS to_ps , PSOCKETS from_ps, PUCHAR hostName)
 {
     to_ps->socket = from_ps->socket;
+    strcpy(to_ps->hostName , hostName);
 }
 // ----------------------------------------------------------------------------------------
 BOOL sockets_set_secure (PSOCKETS ps)

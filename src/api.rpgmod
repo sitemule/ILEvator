@@ -379,7 +379,7 @@ dcl-proc connect_using_proxy_tunnel ;
 
         if (apiStatus = IV_STATUS_OK);
             // Inherit the proxy socket on the main client 
-            sockets_copy_socket ( client.sockets : proxy.sockets);
+            sockets_copy_socket ( client.sockets : proxy.sockets : client.host);
             sockets_set_secure (client.sockets);
             return *ON; // Success
         endif;

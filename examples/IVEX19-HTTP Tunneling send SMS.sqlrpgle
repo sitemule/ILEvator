@@ -17,6 +17,8 @@ Dcl-F Opr00 Usage(*Input) Keyed;
 /copy noxdb/QRPGLEREF,JSONParser
 
 exec sql set option commit=*NONE;
+// test: 
+// call IVEX19 ( (122 (*DEC 9 0)) '  ' '1' '0' )
 
 dcl-pi *N;
 	Optk           packed (9);
@@ -143,7 +145,7 @@ dcl-proc http_request;
 
     httpClient = iv_newHttpClient();
 
-    // iv_setCertificate(httpClient : '/home/jmc/mitm.kdb' : 'john' );
+    iv_setCertificate(httpClient : '/bluenote/bluenote2.kdb' : 'default' );
 
 	// format like: 'http://fwdprx.workmule.dk:3128'
 	if proxyUrl > '';
