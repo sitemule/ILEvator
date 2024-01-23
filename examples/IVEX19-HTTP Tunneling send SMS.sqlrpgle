@@ -145,7 +145,7 @@ dcl-proc http_request;
 
     httpClient = iv_newHttpClient();
 
-    iv_setCertificate(httpClient : '/bluenote/bluenote2.kdb' : 'default' );
+    iv_setCertificate(httpClient : '/bluenote/default.kdb' : 'default' );
 
 	// format like: 'http://fwdprx.workmule.dk:3128'
 	if proxyUrl > '';
