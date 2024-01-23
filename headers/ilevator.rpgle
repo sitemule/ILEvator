@@ -568,8 +568,8 @@ end-pr;
 ///
 dcl-pr iv_execute ind extproc(*dclcase);
     client  pointer value;
-    method  pointer options(*string) value;
-    url     pointer options(*string) value;
+    method  pointer options(*string:*trim) value;
+    url     pointer options(*string:*trim) value;
     headers pointer options(*nopass) value;
 end-pr;
 
