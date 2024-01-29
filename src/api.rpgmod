@@ -163,21 +163,31 @@ dcl-proc iv_setRequestDataBuffer export;
         bufferCcsid int(10) value;        
     end-pi;
     
-    dcl-ds client likeds(ilevator_t) based(pClient);
-    
-    iv_anychar_set( 
-        %addr(client.requestDataBuffer) :
-        buffer :
-        bufferSize :
-        bufferType :
-        bufferCcsid
-    );
-    if bufferType = IV_BYTES;
-        iv_anychar_set_length ( 
-            %addr(client.requestDataBuffer) :
-            bufferSize
-        );
+    dcl-ds client  likeds(ilevator_t) based(pClient);
+    dcl-s  pAnyChar pointer;
+    dcl-ds anyChar likeds(anychar_t)  based(pAnyChar);
+
+    dcl-s  twoBytesLength  int(5) based(buffer);
+    dcl-s  fourBytesLength int(10) based(buffer);        
+
+    pAnyChar =  %addr(client.requestDataBuffer);
+    anyChar.ccsid = bufferCcsid;
+    anyChar.type = bufferType;
+
+    if     bufferType  = IV_BYTES;
+        anyChar.data   = buffer; 
+        anyChar.size   = bufferSize;
+        anyChar.length = bufferSize;
+    elseif bufferType  = IV_VARCHAR2;
+        anyChar.data   = buffer + 2; 
+        anyChar.size   = twoBytesLength + 2;
+        anyChar.length = twoBytesLength;
+    elseif bufferType  = IV_VARCHAR4;
+        anyChar.data   = buffer + 4; 
+        anyChar.size   = fourBytesLength + 4;
+        anyChar.length = fourBytesLength;
     endif;
+
 
 end-proc;
 
@@ -347,15 +357,20 @@ dcl-proc connect_using_proxy_tunnel ;
 
     dcl-s  apiStatus  int(10) inz(IV_STATUS_RETRY);
     dcl-s  pProxy     pointer;
+
     dcl-ds proxy      likeds(ilevator_t) based(pProxy);
 
     pProxy = client.proxyTunnel;
 
     proxy.method = teraspace_strTrimDup('CONNECT');
     
-    parseUrl(pProxy : proxy.url); 
     
+
     for try = 0 to proxy.retries;
+
+        parseUrl(pProxy : proxy.url); 
+
+        iv_debug('Connecting to proxy : %s %s' : %char(proxy.host) : %char(proxy.port));
 
         ok = sockets_connect(
             proxy.sockets : 
@@ -368,6 +383,9 @@ dcl-proc connect_using_proxy_tunnel ;
             iter;
         endif;
 
+        proxy.host = client.host;
+        proxy.port = client.port; 
+        
         apiStatus = sendRequest(pProxy);
         if (apiStatus = IV_STATUS_ERROR);
             leave; 

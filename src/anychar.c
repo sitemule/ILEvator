@@ -16,7 +16,6 @@ void iv_anychar_set (
     pAt->type  = bufferType;
     pAt->xlate = bufferXlate;
     pAt->length = 0;
-    pAt->type = bufferType;
     
     switch (pAt->type) {
         case  IV_ANYCHAR_BYTES    :  {

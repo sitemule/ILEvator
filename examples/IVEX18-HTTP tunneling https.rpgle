@@ -4,6 +4,11 @@
 // ILEvator Example : using proxy 
 ///
 
+// ADDENVVAR ENVVAR(ILEVATOR_TRACE_STMF) VALUE('/tmp/comtrace.txt')
+// ADDENVVAR ENVVAR(ILEVATOR_DEBUG) VALUE('1')
+// addlible ilevator 
+// strdbg ivex18
+// call  ivex18
 
 ctl-opt dftactgrp(*no) actgrp(*new) debug(*yes) bnddir('ILEVATOR') main(main);
 ctl-opt copyright('Sitemule.com  (C), 2022-2023');
@@ -37,7 +42,7 @@ dcl-proc main;
         iv_joblog('Invalid status: ' + %char(iv_getStatus(httpClient)));
     endif;
 
-    iv_joblog(%char(buffer));
+    // iv_joblog(%char(buffer));
     return;
 
     

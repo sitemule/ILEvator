@@ -161,9 +161,19 @@ dcl-proc http_request;
 
 	if OPSNID > ''; 
 	    iv_setAuthProvider(httpClient : 
-			iv_basicauth_new(OPSNID : OPSNPN)
+			iv_basicauth_new(%trim(OPSNID) : %trim(OPSNPN))
 		);
 	endif;
+
+	reqBuffer = json_AsJsonText16M ( pRequest );
+
+    iv_setRequestDataBuffer(
+        httpClient : 
+        %addr(reqBuffer) : 
+        %len(reqBuffer) : 
+        IV_VARCHAR4 : 
+        IV_CCSID_JOB
+    );
 
     iv_setResponseDataBuffer(
         httpClient : 
@@ -173,15 +183,7 @@ dcl-proc http_request;
         IV_CCSID_JOB
     );
 
-    iv_setRequestDataBuffer(
-        httpClient : 
-        %addr(reqBuffer) : 
-        %size(reqBuffer) : 
-        IV_VARCHAR4 : 
-        IV_CCSID_JOB
-    );
 
-	rspBuffer = json_AsJsonText16M ( pRequest );
 
     iv_execute (httpClient : 'POST' : url); 
 
