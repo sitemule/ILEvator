@@ -27,8 +27,8 @@ dcl-proc iv_basicauth_new export;
     authPtr = teraspace_alloc(%size(iv_auth_t));
     
     auth.processRequest = %paddr(iv_basicauth_processRequest);
-    auth.username = username;
-    auth.password = password;
+    auth.username = %trimr(username:x'20');
+    auth.password = %trimr(password:x'20');
     
     return authPtr;
 end-proc;
