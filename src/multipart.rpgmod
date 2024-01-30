@@ -88,7 +88,7 @@ end-proc;
 dcl-proc iv_multipart_free export;
     dcl-pi *n;
         p_handler pointer;
-        boundary pointer const options(*string : *nopass);
+        boundary pointer value options(*string : *nopass);
     end-pi;
 
     dcl-ds handler likeds(iv_multipart_handler_t) based(p_handler);

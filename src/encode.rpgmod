@@ -168,7 +168,7 @@ dcl-proc iv_encode_punycode export;
       sourceLength int(10) value;
       dest pointer value;
       destLength int(10) value;
-      caseFlags pointer const;
+      caseFlags pointer value;
       errorCode int(10);
     end-pr;
 

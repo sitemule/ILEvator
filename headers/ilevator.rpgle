@@ -1299,7 +1299,7 @@ end-pr;
 // @info The HTTP header value will be percent-encoded.
 ///
 dcl-pr iv_request_addHeader extproc(*dclcase);
-  request pointer const;
+  request pointer value;
   name varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8) const;
   value varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
 end-pr;
@@ -1336,7 +1336,7 @@ end-pr;
 // @return HTTP header value or <code>*blank</code> 
 ///
 dcl-pr iv_request_getHeader varchar(8000) ccsid(*utf8) extproc(*dclcase);
-  request pointer const;
+  request pointer value;
   name varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8) const;
 end-pr;
 
@@ -1351,7 +1351,7 @@ end-pr;
 // @param MIME type
 ///
 dcl-pr iv_request_setAcceptMimeType extproc(*dclcase);
-  request pointer const;
+  request pointer value;
   mimeType varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
 end-pr;
 
@@ -1365,7 +1365,7 @@ end-pr;
 // @param Content type
 ///
 dcl-pr iv_request_setContentType extproc(*dclcase);
-  request pointer const;
+  request pointer value;
   contentType varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
 end-pr;
 
@@ -1486,8 +1486,8 @@ end-pr;
 // @info The stream fill be flushed after passing the request content to the stream.
 ///
 dcl-pr iv_request_toStream extproc(*dclcase);
-  request pointer const;
-  outstream pointer const;
+  request pointer value;
+  outstream pointer value;
 end-pr;
 
 ///
@@ -1505,7 +1505,7 @@ end-pr;
 // @return <code>*on</code> if the request has a text body else <code>*off</code>
 ///
 dcl-pr iv_request_hasTextBody ind extproc(*dclcase);
-  request pointer const;
+  request pointer value;
 end-pr;
 
 ///
@@ -1517,7 +1517,7 @@ end-pr;
 // @return <code>*on</code> if the request has any message body else <code>*off</code>
 ///
 dcl-pr iv_request_hasBody ind extproc(*dclcase);
-  request pointer const;
+  request pointer value;
 end-pr;
 
 /if defined (RPG_HAS_OVERLOAD)
@@ -1560,7 +1560,7 @@ dcl-pr iv_request_new pointer overload(
 // @param Stream file path
 ///
 dcl-pr iv_request_setFile extproc(*dclcase);
-  request pointer const;
+  request pointer value;
   file varchar(1024) const;
 end-pr;
 
@@ -1621,7 +1621,7 @@ end-pr;
 ///
 dcl-pr iv_multipart_free extproc(*dclcase);
     handler pointer;
-    boundaryId pointer const options(*string : *nopass);
+    boundaryId pointer value options(*string : *nopass);
 end-pr;
 
 ///

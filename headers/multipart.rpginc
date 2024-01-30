@@ -74,7 +74,7 @@ end-pr;
 ///
 dcl-pr iv_multipart_free extproc(*dclcase);
     handler pointer;
-    boundaryId pointer const options(*string : *nopass);
+    boundaryId pointer value options(*string : *nopass);
 end-pr;
 
 ///

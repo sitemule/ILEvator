@@ -318,6 +318,8 @@ dcl-proc iv_execute export;
         if (%str(client.method:10) = 'HEAD' or client.status = 204);
             // No content, don't read any longer
             apiStatus = IV_STATUS_OK;
+        elseif ( client.status = 405); // Invalid method - no data
+            apiStatus = IV_STATUS_ERROR;
         elseif (client.responseIsChunked);
             apiStatus = iv_chunked_receive(pClient);
         else;
@@ -1048,7 +1050,7 @@ end-proc;
 
 dcl-proc loadConfigFromEnvVar;
     dcl-pi *n;
-        client pointer const;
+        client pointer value;
     end-pi;
 
     dcl-s certValue pointer;

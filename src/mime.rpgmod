@@ -44,17 +44,7 @@ dcl-proc iv_mime_getCcsid export;
   
   charsetSeparator = %scan(';' : mimeType);
   if (charsetSeparator = 0);
-    contentType = %trim(%xlate(uppercase : lowercase : mimeType));
-    
-    select;
-      when (contentType = 'application/json');
-        return DEFAULT_CCSID;
-      when (contentType = 'text/plain');
-        return 367;
-      other;
-        return DEFAULT_CCSID;
-    endsl;
-    
+    return DEFAULT_CCSID; // HTTP2 is, without charset, always UTF-8 
   else;
     contentType = %subst(mimeType : 1 : charsetSeparator-1);
     monitor;

@@ -272,13 +272,13 @@ API_STATUS sendRequest (PILEVATOR pIv)
     if (pIv->requestHandler)
         pIv->requestHandler->processRequest(pIv->requestHandler, request);
     
-    if (iv_request_needsStreaming(&request) == ON) {
+    if (iv_request_needsStreaming(request) == ON) {
         // TODO handle errors
         streamRequest(pIv, request);
         return API_OK;
     }
     else {
-        requestString = iv_request_toString(&request);
+        requestString = iv_request_toString(request);
         iv_request_dispose(request);
     
         rc = sockets_send (pIv->sockets, requestString.String, requestString.Length); 

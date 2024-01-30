@@ -124,6 +124,7 @@ dcl-proc iv_request_toString export;
   end-pi;
 
   dcl-ds serialized likeds(LVARPUCHAR_t);
+  dcl-ds payload    likeds(LVARPUCHAR_t) inz;
   dcl-s sizeAllocated uns(10);
   dcl-s sizeUsed uns(10);
 
@@ -131,27 +132,22 @@ dcl-proc iv_request_toString export;
   dcl-ds iterator likeds(SLISTITERATOR_t);
   dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
   dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
-  dcl-s data varchar(SERIALIZED_INIT_SIZE) ccsid(*utf8);
+  dcl-s header  varchar(SERIALIZED_INIT_SIZE) ccsid(*utf8);
   dcl-s headerName varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8);
   dcl-s headerValue varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8);
-  dcl-ds tmpSerializedContent likeds(LVARPUCHAR_t);
   dcl-s translatedLength uns(10);
   dcl-s hasContentTypeHeader ind inz(*off);
   dcl-s hasAcceptHeader ind inz(*off);
-  dcl-s fileDesc int(10) inz(-1);
-  dcl-s fileBuffer char(4096) ccsid(*hex);
-  dcl-s rc int(10);
+  dcl-s freePayloadAfter ind;
 
-  if (request.contentSize > SERIALIZED_INIT_SIZE);
-      sizeAllocated = SERIALIZED_INIT_SIZE + request.contentSize;
-  else;
-      sizeAllocated = SERIALIZED_INIT_SIZE;
-  endif;
+  freePayloadAfter = buildPayload (payload : request ) ;
 
+  sizeAllocated = SERIALIZED_INIT_SIZE + payload.Length;
+  
   serialized.length = 0;
   serialized.string = teraspace_alloc(sizeAllocated);
 
-  buildMinimalHeader(data : request);
+  buildMinimalHeader(header  : request);
   
   iterator = sList_setIterator(request.headers);
   dow (sList_foreach(iterator));
@@ -159,7 +155,7 @@ dcl-proc iv_request_toString export;
     headerValue = %str(nodePayload.value.string : nodePayload.value.length);
     // TODO encode header names and values (only ASCII allowed)
     // TODO need to check that we have enough space for the headers when adding them
-    data+= headerName + UTF8_COLON + headerValue + CRLF;
+    header += headerName + UTF8_COLON + headerValue + CRLF;
 
     if (headerName = 'content-type');
       hasContentTypeHeader = *on;
@@ -171,78 +167,102 @@ dcl-proc iv_request_toString export;
   enddo;
 
   if (not hasAcceptHeader);
-    data += 'Accept: */*' + CRLF;
+    header  += 'Accept: */*' + CRLF;
     iv_request_addHeader(p_request : 'accept' : '*/*');
   endif;
 
-  if (request.content <> *null);
-    // request.contentSize may not be the real size after char conversion
-    // TODO calculate real size
-    data+= 'content-length' + UTF8_COLON + %char(request.contentSize) + CRLF;
+  if (payload.Length > 0);
+    header += 'content-length' + UTF8_COLON + %char(payload.Length) + CRLF;
 
     if (not hasContentTypeHeader);
       if (request.binaryContent);
-        data += 'content-type: application/octet-stream' + CRLF;
+        header  += 'content-type: application/octet-stream' + CRLF;
         iv_request_addHeader(p_request : 'content-type' : 'application/octet-stream');
       else;
-        data += 'content-type: text/plain' + CRLF;
+        header  += 'content-type: text/plain' + CRLF;
         iv_request_addHeader(p_request : 'content-type' : 'text/plain');
       endif;
     endif;
   endif;
 
-  data += CRLF;
+  header  += CRLF;
 
-  serialized.length = %len(data);
-  memcpy(serialized.string : %addr(data : *data) : %len(data));
+  serialized.length = %len(header);
+  memcpy(serialized.string : %addr(header : *data) : %len(header));
+
+  // Append playload if any 
+  if payload.length > 0; 
+    memcpy(serialized.string + serialized.length: payload.string  : payload.length);
+    serialized.length += payload.length;
+  endif;
+
+  if freePayloadAfter;
+    teraspace_free (payload.string);
+  endif;
+
+  return serialized;
+
+
+end-proc;
+
+// -----------------------------------------------------------------------------
+// Payload final length have to be ready before content-length header kan be set
+// -----------------------------------------------------------------------------
+dcl-proc buildPayload;
+
+  dcl-pi *n ind;
+    payload  likeds(LVARPUCHAR_t);
+    request  likeds(IV_REQUEST_T);
+  end-pi;
+  
+  dcl-s freePayloadAfter ind;
+  dcl-s fileDesc int(10) inz(-1);
+  dcl-s fileBuffer char(4096) ccsid(*hex);
+  dcl-s rc int(10);
+  dcl-s c_errno int(10) based(pErrno);
+
+  dcl-c TERA_MAX 2000000000; // 2G
 
   if (request.content <> *null and request.contentSize > 0);
     if (request.binaryContent);
-      memcpy(serialized.string + serialized.length : request.content : request.contentSize);
-      serialized.length += request.contentSize;
+      payload.length = request.contentSize;
+      payload.string = request.content;
+      freePayloadAfter = *OFF;
     else;
       // assume the worst : size * 4
-      tmpSerializedContent.length = request.contentSize * 4;
-      tmpSerializedContent.string = teraspace_alloc(tmpSerializedContent.length);
-      translatedLength = serializeContent(tmpSerializedContent : p_request);
-
-      if (serialized.length + translatedLength > sizeAllocated);
-        sizeAllocated = serialized.length + translatedLength;
-        serialized.string = teraspace_realloc(serialized.string : sizeAllocated);
-      endif;
-
-      if (translatedLength > 0);
-        memcpy(serialized.string + serialized.length : tmpSerializedContent.string : translatedLength);
-        serialized.length += translatedLength;
-      endif;
-
-      teraspace_free(tmpSerializedContent.string);
+      payload.length = request.contentSize * 4;
+      payload.string = teraspace_alloc(payload.length);
+      payload.length = serializeContent(payload : request);
+      payload.string = teraspace_realloc(payload.string : payload.length);
+      freePayloadAfter = *On;
     endif;
   elseif (request.file <> *blank);
+    payload.string = teraspace_alloc(TERA_MAX); // 2G
     fileDesc = open(request.file : O_RDONLY);
-    rc = read(fileDesc : %addr(fileBuffer) : %size(fileBuffer));
-    dow (rc > 0);
-      memcpy(serialized.string + serialized.length : %addr(fileBuffer) : rc);
-      serialized.length += rc;
-      rc = read(fileDesc : %addr(fileBuffer) : %size(fileBuffer));
-    enddo;  
+    rc = read(fileDesc : payload.string  : TERA_MAX);
+    if rc < 0; 
+    	  pErrno = errno();
+        message_info('Not able to read file ' + request.file + ' : ' + %str(strerror(c_errno):1000));
+    else;
+        payload.string = teraspace_realloc(payload.string : payload.length);
+    endif;
+    freePayloadAfter = *On;
+     
   endif;
 
-  // Note: no ending CRLF after body !!!
-
-  return serialized;
+  return freePayloadAfter;
   
-  on-exit;
-    if (fileDesc >= 0);
-      callp close(fileDesc);
-    endif;
+on-exit;
+  if (fileDesc >= 0);
+    callp close(fileDesc);
+  endif;
 end-proc;
 
 
 dcl-proc iv_request_toStream export;
   dcl-pi *n;
-    p_request pointer const;
-    outstream pointer const;
+    p_request pointer value;
+    outstream pointer value;
   end-pi;
 
   dcl-ds serialized likeds(LVARPUCHAR_t);
@@ -324,7 +344,7 @@ dcl-proc iv_request_toStream export;
       // assume the worst : size * 4
       tmpSerializedContent.length = request.contentSize * 4;
       tmpSerializedContent.string = teraspace_alloc(tmpSerializedContent.length);
-      translatedLength = serializeContent(tmpSerializedContent : p_request);
+      translatedLength = serializeContent(tmpSerializedContent : request);
 
       if (serialized.length + translatedLength > sizeAllocated);
         sizeAllocated = serialized.length + translatedLength;
@@ -361,7 +381,7 @@ end-proc;
 
 dcl-proc iv_request_addHeader export;
   dcl-pi *n;
-    p_request pointer const;
+    p_request pointer value;
     name varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8) const;
     value varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
   end-pi;
@@ -416,7 +436,7 @@ end-proc;
 
 dcl-proc iv_request_getHeader export;
   dcl-pi *n varchar(8000) ccsid(*utf8);
-    p_request pointer const;
+    p_request pointer value;
     name varchar(IV_REQUEST_HEADER_NAME_SIZE) ccsid(*utf8) const;
   end-pi;
 
@@ -446,7 +466,7 @@ end-proc;
 
 dcl-proc iv_request_setContentType export;
   dcl-pi *n;
-    p_request pointer const;
+    p_request pointer value;
     contentType varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
   end-pi;
 
@@ -458,7 +478,7 @@ end-proc;
 
 dcl-proc iv_request_setAcceptMimeType export;
   dcl-pi *n;
-    p_request pointer const;
+    p_request pointer value;
     contentType varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) const;
   end-pi;
 
@@ -564,7 +584,7 @@ end-proc;
 
 dcl-proc iv_request_setFile export;
   dcl-pi *n;
-    p_request pointer const;
+    p_request pointer value;
     file varchar(1024) const;
   end-pi;
 
@@ -576,7 +596,7 @@ end-proc;
 
 dcl-proc iv_request_hasTextBody export;
   dcl-pi *n ind;
-    p_request pointer const;
+    p_request pointer value;
   end-pi;
 
   dcl-ds request likeds(iv_request_t) based(p_request);
@@ -587,7 +607,7 @@ end-proc;
 
 dcl-proc iv_request_hasBody export;
   dcl-pi *n ind;
-    p_request pointer const;
+    p_request pointer value;
   end-pi;
 
   dcl-ds request likeds(iv_request_t) based(p_request);
@@ -598,7 +618,7 @@ end-proc;
 
 dcl-proc iv_request_needsStreaming export;
     dcl-pi *n ind;
-        p_request pointer const;
+        p_request pointer value;
     end-pi;
     
     dcl-ds request likeds(iv_request_t) based(p_request);
@@ -636,10 +656,9 @@ end-proc;
 dcl-proc serializeContent;
   dcl-pi *n uns(10);
     serialized likeds(LVARPUCHAR_t);
-    p_request pointer const;
+    request    likeds(IV_REQUEST_T) ;
   end-pi;
 
-  dcl-ds request likeds(iv_request_t) based(p_request);
   dcl-s outLength uns(10);
   dcl-s ccsid int(10);
   dcl-s contentTypeHeader varchar(1000) ccsid(*utf8);
