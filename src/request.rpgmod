@@ -120,7 +120,7 @@ end-proc;
 
 dcl-proc iv_request_toString export;
   dcl-pi *n likeds(LVARPUCHAR_t);
-    p_request pointer const;
+    p_request pointer value;
   end-pi;
 
   dcl-ds serialized likeds(LVARPUCHAR_t);

@@ -251,9 +251,9 @@ API_STATUS sendRequest (PILEVATOR pIv)
 
     request = iv_request_new(
         method, 
-        &pIv->host[0],
+        pIv->host,
         pIv->port,
-        &pIv->resource[0],
+        pIv->resource,
         ""
     );
     iv_request_addHeaders(request, pIv->headerList);

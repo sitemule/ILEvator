@@ -1470,7 +1470,7 @@ end-pr;
 // @return Formatted HTTP request
 ///
 dcl-pr iv_request_toString likeds(iv_lvarpuchar_t) extproc(*dclcase);
-  request pointer const;
+  request pointer value;
 end-pr;
 
 ///

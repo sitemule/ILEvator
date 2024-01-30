@@ -135,7 +135,7 @@ dcl-proc http_request;
 
     dcl-s httpClient     pointer;
     dcl-s rspBuffer varchar(1000000:4) ;
-    dcl-s reqBuffer  varchar(1000000:4) ;
+    dcl-s reqBuffer  varchar(1000000:4) ccsid(*UTF8);
 	dcl-s inUrl      	varchar(256);
 	dcl-s Url        	varchar(256);
 	dcl-s proxyUrl   	varchar(256);
@@ -294,6 +294,7 @@ dcl-proc buildMessages;
 	dcl-s pMessage 		pointer;
 	dcl-s pMessages 	pointer;
 	dcl-s pfx  			char(3);
+	dcl-s reqData		varchar(32767);
 
 	pReq = json_newObject();
 	json_setStr(pReq:'platformId' : 'COMMON_API'); 
@@ -322,6 +323,7 @@ dcl-proc buildMessages;
 		json_setStr(pMessage : 'destination' : 
 			'+' + %trim(pfx) + json_getStr(list.this : 'MSTMPN'));
 		// reqData = json_getStr(list.this : 'MSTEXT');
+		// reqData = iv_xlateVc(reqData:0:1208);
 		// reqData = xlateStr(reqData:0:1252);
 		// json_setStr(pMessage : 'userData' : reqData);
 		json_setStr(pMessage : 'userData' : 
@@ -445,7 +447,7 @@ dcl-proc CheckError	;
 	//json_WriteJsonStmf (phttp : ErrFile : 1208 : *OFF );
 	ErrFile = '/tmp/smsresp'+%char(ts)+'.json';
 	json_WriteJsonStmf (pResponse : ErrFile : 1208 : *OFF );
-	list = json_setIterator(pRows); // Oprindelig liste fra udtrækket?
+	list = json_setIterator(pRows); // Oprindelig liste fra udtrï¿½kket?
 	DoW json_ForEach(list);
 		Xmsmstk = json_getNum(list.this : 'msmstk');
 		exec sql
@@ -480,7 +482,7 @@ dcl-proc unpackUrl;
 	proxyUrl  = '';
 	proxyPort = '';
 
-	// Tjek om der er proxy - hvis der står < i første karakter
+	// Tjek om der er proxy - hvis der stï¿½r < i fï¿½rste karakter
 	if %subst(inUrl:1:1) = '<';
 		pos2 = %scan('>':inUrl);
 		if pos2 = 0; // Fejl i definition!
