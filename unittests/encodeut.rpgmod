@@ -178,6 +178,6 @@ dcl-proc test_aceDanischChars export;
   dcl-s encodedValue varchar(32766);
 
   encodedValue = iv_encode_ace('K' + u'00F8' + 'kken-V' + u'00E6' + 'rkt' + u'00F8' + 'jer.dk');
-  aEqual('xn--kkken-vrktjer-9fb7xka.dk' : encodedValue);
+  aEqual('xn--Kkken-Vrktjer-9fb7xka.dk' : encodedValue);
 end-proc;
 

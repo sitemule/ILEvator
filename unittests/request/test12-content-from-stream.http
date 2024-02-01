@@ -3,7 +3,6 @@ Host: localhost:80
 Connection: keep-alive
 content-type:application/json
 Accept: */*
-content-length:719
 
 {
   "customer_id": "123456",

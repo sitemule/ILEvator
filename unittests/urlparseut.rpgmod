@@ -374,7 +374,7 @@ dcl-proc test_hostWithNeedFoEncoding export;
   dcl-s s varchar(1000);
 
   url = iv_url_parse('http://K' + u'00F8' + 'kken-V' + u'00E6' + 'rkt' + u'00F8' + 'jer.dk:80');
-  aEqual('xn--kkken-vrktjer-9fb7xka.dk' : url.host);
+  aEqual('xn--Kkken-Vrktjer-9fb7xka.dk' : url.host);
 end-proc;
 
 

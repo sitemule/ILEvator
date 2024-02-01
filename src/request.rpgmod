@@ -140,6 +140,7 @@ dcl-proc iv_request_toString export;
   dcl-s hasAcceptHeader ind inz(*off);
   dcl-s freePayloadAfter ind;
 
+  // need to build payload before setting the content-length header
   freePayloadAfter = buildPayload (payload : request ) ;
 
   sizeAllocated = SERIALIZED_INIT_SIZE + payload.Length;
@@ -190,24 +191,21 @@ dcl-proc iv_request_toString export;
   serialized.length = %len(header);
   memcpy(serialized.string : %addr(header : *data) : %len(header));
 
-  // Append playload if any 
+  // Append payload if any 
   if payload.length > 0; 
     memcpy(serialized.string + serialized.length: payload.string  : payload.length);
     serialized.length += payload.length;
   endif;
 
-  if freePayloadAfter;
-    teraspace_free (payload.string);
-  endif;
-
   return serialized;
-
-
+  
+  on-exit;
+    if freePayloadAfter;
+      teraspace_free(payload.string);
+    endif;  
 end-proc;
 
-// -----------------------------------------------------------------------------
-// Payload final length have to be ready before content-length header kan be set
-// -----------------------------------------------------------------------------
+
 dcl-proc buildPayload;
 
   dcl-pi *n ind;
@@ -240,10 +238,11 @@ dcl-proc buildPayload;
     payload.string = teraspace_alloc(TERA_MAX); // 2G
     fileDesc = open(request.file : O_RDONLY);
     rc = read(fileDesc : payload.string  : TERA_MAX);
-    if rc < 0; 
-    	  pErrno = errno();
+    if (rc < 0); 
+        pErrno = errno();
         message_info('Not able to read file ' + request.file + ' : ' + %str(strerror(c_errno):1000));
     else;
+        payload.length = rc;
         payload.string = teraspace_realloc(payload.string : payload.length);
     endif;
     freePayloadAfter = *On;

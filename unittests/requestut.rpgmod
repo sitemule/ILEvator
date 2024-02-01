@@ -296,6 +296,7 @@ dcl-proc test_contentFromFileToString export;
   iv_request_setFile(request : 'unittests/request/request-content-from-file.txt');
   
   buffer = iv_request_toString(request);
+
   iEqual(%len(assumedResult) : buffer.length);
   assert(memcmp(%addr(assumedResult : *data) : buffer.string : buffer.length) = 0: 
       'Request does not correspond to assumed result.');
@@ -312,7 +313,7 @@ dcl-proc test_contentFromFileToStream export;
   dcl-ds outstream likeds(stream_t) based(p_outstream);
   dcl-s buffer like(stream_buffer_t);
   
-  assumedResult = loadFile('unittests/request/test11-content-from-file.http');
+  assumedResult = loadFile('unittests/request/test12-content-from-stream.http');
   
   p_outstream = stream_new(%size(stream_buffer_t));
   outstream.writer = %paddr(stream_memory_writer);
@@ -323,7 +324,7 @@ dcl-proc test_contentFromFileToStream export;
   iv_request_setFile(request : 'unittests/request/request-content-from-file.txt');
   
   iv_request_toStream(request : p_outstream);
-  
+  writeFile('/home/mihael/request.txt' : %addr(buffer : *data) : %len(buffer));
   iEqual(%len(assumedResult) : %len(buffer));
   assert(memcmp(%addr(assumedResult : *data) : %addr(buffer : *data) : %len(buffer)) = 0: 
       'Request does not correspond to assumed result.');
@@ -402,6 +403,29 @@ dcl-proc loadFile;
 
   return returnValue;
   
+  on-exit;
+    if (fd >= 0);
+      callp close(fd);
+    endif;
+end-proc;
+
+
+dcl-proc writeFile;
+  dcl-pi *n;
+    p_path varchar(1000) const;
+    buffer pointer value;
+    length int(10) value;
+  end-pi;
+
+  dcl-s path varchar(1000);
+  dcl-s len int(10);
+  dcl-s fd int(10);
+
+  fd = open(p_path : O_WRONLY);
+  if (fd >= 0);
+    len = write(fd : buffer : length);
+  endif;
+
   on-exit;
     if (fd >= 0);
       callp close(fd);

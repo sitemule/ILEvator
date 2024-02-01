@@ -14,7 +14,6 @@ ctl-opt nomain;
 
 /include 'api.rpginc'
 /include 'assert.rpginc'
-/include 'multipart.rpginc'
 /include 'stream.rpginc'
 /include 'clib.rpginc'
 
