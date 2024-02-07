@@ -13,7 +13,9 @@ ctl-opt nomain;
 
 /include 'assert.rpginc'
 /include 'encode.rpginc'
+/include 'teraspace.rpginc'
 
+dcl-pr tearDown extproc(*dclcase) end-pr;
 dcl-pr test_urlEncodeAsciiOnly end-pr;
 dcl-pr test_urlEncodeInvariantChars end-pr;
 dcl-pr test_urlEncodeUmlaute end-pr;
@@ -32,6 +34,13 @@ dcl-pr test_aceSubDomains end-pr;
 dcl-pr test_aceStartsWithPoint end-pr;
 dcl-pr test_aceEndsWithPoint end-pr;
 dcl-pr test_aceDanischChars end-pr;
+
+
+dcl-proc tearDown export;
+    if (teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(teraspace_use()));
+    endif;
+end-proc;
 
 
 dcl-proc test_urlEncodeAsciiOnly export;

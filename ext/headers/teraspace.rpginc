@@ -34,7 +34,7 @@ end-pr;
 
 dcl-pr teraspace_stat extproc(*dclcase) end-pr;
 
-dcl-pr teraspace_leak ind extproc(*dclcase) end-pr;
+dcl-pr teraspace_leak int(3) extproc(*dclcase) end-pr;
 
 dcl-pr teraspace_use uns(20) extproc(*dclcase) end-pr;
 

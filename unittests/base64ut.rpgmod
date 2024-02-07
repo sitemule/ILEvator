@@ -12,24 +12,24 @@
 ctl-opt nomain;
 
 
-//
-// Includes
-//
 /include 'assert.rpginc'
 /include 'base64.rpginc'
 /include 'clib.rpginc'
+/include 'teraspace.rpginc'
 
 
-//
-// Prototypes
-//
+dcl-pr tearDown extproc(*dclcase) end-pr;
 dcl-pr test_il_encode end-pr;
 dcl-pr test_il_decode end-pr;
 
 
-//
-// Procedures
-//
+dcl-proc tearDown export;
+    if (teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(teraspace_use()));
+    endif;
+end-proc;
+
+
 dcl-proc test_il_encode export;
   aEqual(utf8('bXlfdXNlcm5hbWU6bXlfcGFzc3dv') : base64_encode('my_username:my_passwo'));
 end-proc;

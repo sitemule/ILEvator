@@ -1763,3 +1763,12 @@ dcl-pr iv_configureTlsVersion extproc(*dclcase);
     tlsVersion int(10) value;
     status ind value;
 end-pr;
+
+
+
+dcl-pr iv_teraspace_leak int(3) extproc(*dclcase) end-pr;
+
+dcl-pr iv_teraspace_use uns(20) extproc(*dclcase) end-pr;
+
+
+

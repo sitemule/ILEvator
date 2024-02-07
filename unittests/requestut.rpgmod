@@ -13,18 +13,18 @@ ctl-opt nomain;
 
 
 /include 'assert.rpginc'
+/include 'clib.rpginc'
 /include 'form.rpginc'
 /include 'request.rpginc'
 /include 'stream.rpginc'
 /include 'teraspace.rpginc'
 /include 'varchar.rpginc'
-/include 'clib.rpginc'
-
 
 
 dcl-s stream_buffer_t varchar(10000) ccsid(*utf8) template;
 
 dcl-pr setUpSuite extproc(*dclcase) end-pr;
+dcl-pr tearDown extproc(*dclcase) end-pr;
 dcl-pr test_getHeader extproc(*dclcase) end-pr;
 dcl-pr test_getHeaderNonExist extproc(*dclcase) end-pr;
 dcl-pr test_minimum extproc(*dclcase) end-pr;
@@ -51,6 +51,13 @@ dcl-proc setUpSuite export;
     value = getenv('ILEVATOR_SOURCE_DIR');
     if (value <> *null);
         projectSourceDir = %str(value : %size(projectSourceDir));
+    endif;
+end-proc;
+
+
+dcl-proc tearDown export;
+    if (teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(teraspace_use()));
     endif;
 end-proc;
 
@@ -331,6 +338,7 @@ dcl-proc test_contentFromFileToStream export;
   
   on-exit;
     iv_request_dispose(request);
+    stream_delete(p_outstream);
 end-proc;
 
 

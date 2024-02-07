@@ -16,12 +16,21 @@ ctl-opt nomain;
 /include 'ceeapi.rpginc'
 /include 'clib.rpginc'
 /include 'simpleList.rpginc'
+/include 'teraspace.rpginc'
 
+dcl-pr tearDown extproc(*dclcase) end-pr;
 dcl-pr test_formMapSingleField end-pr;
 dcl-pr test_formSingleField end-pr;
 dcl-pr test_formMultipleFields end-pr;
 dcl-pr test_formMultipleFieldsFromList end-pr;
 dcl-pr test_formEmptyParts end-pr;
+
+
+dcl-proc tearDown export;
+    if (teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(teraspace_use()));
+    endif;
+end-proc;
 
 
 dcl-proc test_formMapSingleField export;
@@ -56,6 +65,7 @@ dcl-proc test_formMapSingleField export;
   
   on-exit;
       iv_form_free(formData);
+      sList_free(formDataMap);
       cee_discardHeap(userHeapId : *omit);
 end-proc;
 

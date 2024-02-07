@@ -2,8 +2,11 @@
 
 ctl-opt nomain;
 
+
 /include 'assert.rpginc'
 /include 'simpleList.rpginc'
+/include 'teraspace.rpginc'
+
 
 dcl-c ENUM_ON *on;
 dcl-c ENUM_OFF *off;
@@ -17,6 +20,8 @@ dcl-s VALUE_1 varchar(100) inz('text/xml');
 dcl-s KEY_2 varchar(100) inz('transaction-id');
 dcl-s VALUE_2 varchar(100) inz('my-transaction-id');
 
+dcl-pr tearDown extproc(*dclcase) end-pr;
+
 dcl-proc lvpc;
    dcl-pi *n likeds(LVARPUCHAR_t);
       string varchar(1024) options(*varsize);
@@ -28,12 +33,16 @@ dcl-proc lvpc;
    lVarChar.string = %addr(string: *data);
 
    return lVarChar;
-
 end-proc;
 
-//
-// Test Procedures
-//
+
+dcl-proc tearDown export;
+    if (teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(teraspace_use()));
+    endif;
+end-proc;
+
+
 dcl-proc test_simpleList export;
 
    dcl-ds hSimpleList likeds(SLIST_t) based(pSimpleList);

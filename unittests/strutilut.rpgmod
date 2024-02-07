@@ -14,8 +14,10 @@ ctl-opt nomain;
 
 /include 'assert.rpginc'
 /include 'strutil.rpginc'
+/include 'teraspace.rpginc'
 
 
+dcl-pr tearDown extproc(*dclcase) end-pr;
 dcl-pr test_itoa_null end-pr;
 dcl-pr test_itoa_positiveBase10 end-pr;
 dcl-pr test_itoa_positiveBase16 end-pr;
@@ -23,6 +25,13 @@ dcl-pr test_itoa_positiveBase32 end-pr;
 dcl-pr test_itoa_negativeBase10 end-pr;
 dcl-pr test_itoa_negativeBase16 end-pr;
 dcl-pr test_itoa_negativeBase32 end-pr;
+
+
+dcl-proc tearDown export;
+    if (teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(teraspace_use()));
+    endif;
+end-proc;
 
 
 dcl-proc test_itoa_null export;

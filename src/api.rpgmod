@@ -302,8 +302,9 @@ dcl-proc iv_execute export;
         if (apiStatus = IV_STATUS_ERROR);
             leave; 
         endif;
-        
+
         apiStatus = receiveHeader(pClient);
+
         if (apiStatus = IV_STATUS_ERROR);
             leave; 
         endif;
@@ -1122,6 +1123,20 @@ dcl-proc iv_configureTlsVersion export;
     endif;
     
     sockets_setTls(client.sockets : tlsVersion : tlsStatus);
+end-proc;
+
+
+dcl-proc iv_teraspace_use export;
+    dcl-pi *n uns(20) end-pi;
+
+    return teraspace_use();
+end-proc;
+
+
+dcl-proc iv_teraspace_leak export;
+    dcl-pi *n int(3) end-pi;
+
+    return teraspace_leak();
 end-proc;
 
 

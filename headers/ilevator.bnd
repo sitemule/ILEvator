@@ -1,5 +1,5 @@
-/* Signature will not change - so any new exporst are added to the tail -
-   We prommis to always be backwards compatible within major versions */ 
+/* Signature will not change - so any new exports are added to the tail -
+   We promise to always be backwards compatible within major versions */ 
 STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_newHttpClient")
     EXPORT SYMBOL("iv_free")
@@ -68,5 +68,6 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_multipart_addPartFromBytes")
     EXPORT SYMBOL("iv_multipart_toStream")
     EXPORT SYMBOL("iv_getResponseDataLength")
-
+    EXPORT SYMBOL("iv_teraspace_leak")
+    EXPORT SYMBOL("iv_teraspace_use")
 ENDPGMEXP

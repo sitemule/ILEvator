@@ -14,8 +14,9 @@ ctl-opt nomain;
 
 /include 'api.rpginc'
 /include 'assert.rpginc'
-/include 'stream.rpginc'
 /include 'clib.rpginc'
+/include 'stream.rpginc'
+/include 'teraspace.rpginc'
 
 
 dcl-pr splitLines int(20) extproc('SPLITLINES');
@@ -28,6 +29,7 @@ end-pr;
 dcl-s stream_buffer_t varchar(10000) ccsid(*utf8) template;
 
 
+dcl-pr tearDown extproc(*dclcase) end-pr;
 dcl-pr test_singleTextPart end-pr;
 dcl-pr test_singleTextPartWithHeaders end-pr;
 dcl-pr test_multipleTextParts end-pr;
@@ -50,6 +52,13 @@ dcl-proc setUpSuite export;
     value = getenv('ILEVATOR_SOURCE_DIR');
     if (value <> *null);
         projectSourceDir = %str(value : %size(projectSourceDir));
+    endif;
+end-proc;
+
+
+dcl-proc tearDown export;
+    if (teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(teraspace_use()));
     endif;
 end-proc;
 

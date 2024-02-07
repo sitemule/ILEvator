@@ -14,6 +14,8 @@ ctl-opt nomain;
 
 /include 'assert.rpginc'
 /include 'url.rpginc'
+/include 'teraspace.rpginc'
+
 
 dcl-c BRACKET_OPEN u'005B';
 dcl-c BRACKET_CLOSE u'005D';
@@ -21,6 +23,7 @@ dcl-c UNICODE_AT u'0040';
 dcl-c UNICODE_LESS_THAN u'003C';    // <
 dcl-c UNICODE_GREATER_THAN u'003E'; // >
 
+dcl-pr tearDown extproc(*dclcase) end-pr;
 dcl-pr test_emptyUrl end-pr;
 dcl-pr test_localhost end-pr;
 dcl-pr test_domainOnly end-pr;
@@ -58,6 +61,13 @@ dcl-pr test_incompleteProxyUrl end-pr;
 dcl-pr test_hostWithoutNeedForEncoding end-pr;
 dcl-pr test_hostWithNeedFoEncoding end-pr;
 dcl-pr test_hostAndPort end-pr;
+
+
+dcl-proc tearDown export;
+    if (teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(teraspace_use()));
+    endif;
+end-proc;
 
 
 dcl-proc test_emptyUrl export;
