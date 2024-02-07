@@ -282,7 +282,7 @@ API_STATUS sendRequest (PILEVATOR pIv)
         iv_request_dispose(request);
     
         rc = sockets_send (pIv->sockets, requestString.String, requestString.Length); 
-        teraspace_free((PVOID) requestString.String);
+        teraspace_free(&(requestString.String));
         
         return (rc == requestString.Length ? API_OK : API_ERROR); 
     }
