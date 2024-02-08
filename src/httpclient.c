@@ -246,7 +246,7 @@ API_STATUS sendRequest (PILEVATOR pIv)
     VARCHAR12 method;
     LVARPUCHAR requestString;
     LONG rc;
-
+    
     str2vc(&method, pIv->method);
 
     request = iv_request_new(
@@ -256,9 +256,10 @@ API_STATUS sendRequest (PILEVATOR pIv)
         pIv->resource,
         ""
     );
+
     iv_request_addHeaders(request, pIv->headerList);
     iv_request_addHeaders(request, pIv->requestHeaderList);
-    
+
     if (pIv->requestDataBuffer.length > 0) {
         if (pIv->requestDataBuffer.type == IV_ANYCHAR_BYTES)
             iv_request_setBinaryBody(request, pIv->requestDataBuffer.data, pIv->requestDataBuffer.length);
@@ -275,15 +276,17 @@ API_STATUS sendRequest (PILEVATOR pIv)
     if (iv_request_needsStreaming(request) == ON) {
         // TODO handle errors
         streamRequest(pIv, request);
+        iv_request_dispose(&request);
+        
         return API_OK;
     }
     else {
         requestString = iv_request_toString(request);
-        iv_request_dispose(request);
-    
+        iv_request_dispose(&request);
+
         rc = sockets_send (pIv->sockets, requestString.String, requestString.Length); 
         teraspace_free(&(requestString.String));
-        
+
         return (rc == requestString.Length ? API_OK : API_ERROR); 
     }
 }
