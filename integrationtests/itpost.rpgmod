@@ -15,6 +15,14 @@ ctl-opt nomain;
 
 
 dcl-pr test_post_echo_success end-pr;
+dcl-pr tearDown extproc(*dclcase) end-pr;
+
+
+dcl-proc tearDown export;
+    if (iv_teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(iv_teraspace_use()));
+    endif;
+end-proc;
 
 
 dcl-proc test_post_echo_success export;

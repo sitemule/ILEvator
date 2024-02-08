@@ -20,6 +20,14 @@ dcl-pr test_multipartHandlerTextPartsWithMixedEncoding extproc(*dclcase) end-pr;
 dcl-pr test_multipartFileUploadKb extproc(*dclcase) end-pr;
 dcl-pr test_multipartFileUploadMb extproc(*dclcase) end-pr;
 dcl-pr test_multipartFileUploadUmlauteInFilename extproc(*dclcase) end-pr;
+dcl-pr tearDown extproc(*dclcase) end-pr;
+
+
+dcl-proc tearDown export;
+    if (iv_teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(iv_teraspace_use()));
+    endif;
+end-proc;
 
 
 dcl-proc test_multipartHandlerText export;

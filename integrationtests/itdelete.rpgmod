@@ -15,9 +15,9 @@ ctl-opt nomain;
 /include 'psds.rpginc'
 
 
-dcl-pr tearDown extproc(*dclcase) end-pr;
 dcl-pr test_delete_success end-pr;
 dcl-pr test_delete_failed end-pr;
+dcl-pr tearDown extproc(*dclcase) end-pr;
 
 
 dcl-proc tearDown export;
