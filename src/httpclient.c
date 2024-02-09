@@ -300,7 +300,7 @@ static void streamRequest(PILEVATOR pIv, PVOID request)
     // set ILEvator instance
     socketOutputStream->handle = pIv;
   
-    iv_request_toStream(&request, &socketOutputStream);
+    iv_request_toStream(request, socketOutputStream);
     
     stream_delete (socketOutputStream);
 }
