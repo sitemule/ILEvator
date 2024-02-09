@@ -30,8 +30,8 @@ PSTREAM stream_new(ULONG size)
 void stream_delete(PSTREAM pStream)
 {
     stream_flush(pStream);
-    teraspace_free((PVOID) pStream->buffer);
-    teraspace_free((PVOID) pStream);
+    teraspace_free(&pStream->buffer);
+    teraspace_free(&pStream);
 }
 // ----------------------------------------------------------------------------
 LONG stream_write(PSTREAM pStream, PUCHAR buf , ULONG len)

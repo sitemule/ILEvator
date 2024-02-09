@@ -275,6 +275,7 @@ dcl-proc test_singleTextPartWithHeaders export;
     on-exit;
         iv_multipart_free(multipart);
         stream_delete(p_outstream);
+        iv_freeList(headers);
 end-proc;
 
 

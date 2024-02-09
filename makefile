@@ -48,7 +48,7 @@ MODULES=$(BIN_LIB)/ANYCHAR $(BIN_LIB)/API $(BIN_LIB)/BASE64 $(BIN_LIB)/BASICAUTH
 
 # Dependency list
 
-all:  $(BIN_LIB).lib ext compile hdr messagefile ilevator.bnd modules.bnd
+all:  $(BIN_LIB).lib ext compile hdr messagefile ilevator.bnddir modules.bnddir
 
 ext: .PHONY
 	$(MAKE) -C ext/ $*
@@ -95,14 +95,14 @@ compile: setHeaderCcsid modules ilevator.srvpgm
 	system "CPYFRMSTMF FROMSTMF('headers/$*.bnd') TOMBR('/QSYS.lib/$(BIN_LIB).lib/QSRVSRC.file/$*.mbr') MBROPT(*replace)"
 	system -q -kpieb "CRTSRVPGM SRVPGM($(BIN_LIB)/$*) MODULE($(MODULES)) SRCFILE($(BIN_LIB)/QSRVSRC) ACTGRP($(ACTGRP)) ALWLIBUPD(*YES) BNDSRVPGM(QICU/QXICUUC40) DETAIL(*BASIC) TGTRLS($(TARGET_RLS))"
 
-ilevator.bnd:
+ilevator.bnddir:
 	-system -q "DLTBNDDIR BNDDIR($(BIN_LIB)/ILEVATOR)"
 	system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/ILEVATOR)"
 	system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/ILEVATOR) OBJ((*LIBL/ILEVATOR *SRVPGM *IMMED))"
 
 ## The MODULES binddir is only used for unittest so unexposed features can be tested individually.
 ## However, made available in this general makefile.
-modules.bnd:
+modules.bnddir:
 	-system -q "DLTBNDDIR BNDDIR($(BIN_LIB)/MODULES)"
 	system -q "CRTBNDDIR BNDDIR($(BIN_LIB)/MODULES)"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/ANYCHAR *MODULE))"
