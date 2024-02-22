@@ -513,17 +513,17 @@ dcl-pr iv_setResponseDataBuffer extproc(*dclcase);
 end-pr;
 
 ///
-// returns the length of the result in the response data buffer
-// this is usefull  if the buffer is BYTE buffer
+// Get response buffer length
+//
+// Returns the length of the result in the response data buffer.
+// This is useful if the buffer is BYTE buffer.
 //
 // @param Pointer to the HTTP client 
-// @return nuber of bytes returned in the response buffer
+// @return Number of bytes returned in the response buffer
 ///
-
 dcl-pr iv_getResponseDataLength uns(10) extproc(*dclcase);
     pClient pointer value;
 end-pr;
-
 
 ///
 // Set response output file
@@ -540,7 +540,6 @@ dcl-pr iv_setResponseFile extproc(*dclcase);
     fileCcsid     int(10)  options(*nopass) value;
 end-pr;
 
-
 ///
 // Set the HTTP tunneling proxy
 //
@@ -553,7 +552,6 @@ dcl-pr iv_setProxyTunnel extproc(*dclcase);
     client        pointer value;
     url           pointer options(*string) value;
 end-pr;
-
 
 ///
 // Execute HTTP request
