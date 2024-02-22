@@ -1036,6 +1036,16 @@ end-pr;
 //
 
 ///
+// MIME encoding base64
+///
+dcl-c IV_ENCODE_MIME_BASE64 'B';
+
+///
+// MIME encoding character set UTF-8
+///
+dcl-c IV_ENCODE_MIME_UTF8 'UTF-8';
+
+///
 // URL encode value
 //
 // URL encodes the passed value. The input string can contain single and 
@@ -1087,6 +1097,23 @@ end-pr;
 dcl-pr iv_encode_query varchar(32766) ccsid(*utf8) extproc(*dclcase);
     key varchar(1000) ccsid(*utf8) value;
     value varchar(32766) ccsid(*utf8) value;
+end-pr;
+
+///
+// MIME encode string
+//
+// The passed value will be mime encoded. This procedure only supports
+// base64 at the moment.
+//
+// @param Value to be encoded
+// @param Character set of the passed value (default: IV_ENCODE_MIME_UTF8)
+// @param Encoding scheme (default: IV_ENCODE_MIME_BASE64)
+// @return MIME encoded value
+///
+dcl-pr iv_encode_mime varchar(524284) ccsid(*hex) extproc(*dclcase);
+    data varchar(524284) ccsid(*hex) value;
+    charset varchar(20) const options(*nopass : *omit);
+    encoding char(1) value options(*nopass);
 end-pr;
 
 
