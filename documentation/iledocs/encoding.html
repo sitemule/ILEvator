@@ -24,6 +24,14 @@
 <table class="iledocs-table">
 
 <tr>
+<td><a href="#proc_iv_encode_base64">iv_encode_base64</a></td><td>Base64 encode string</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_encode_base64_buffer">iv_encode_base64_buffer</a></td><td>Base64 encode buffer</td>
+</tr>
+
+<tr>
 <td><a href="#proc_iv_encode_formUrl">iv_encode_formUrl</a></td><td>Form URL encode value</td>
 </tr>
 
@@ -46,6 +54,76 @@
 </table>
 <hr/>
 
+<h3 class="iledocs-procedure-header"><a name="proc_iv_encode_base64">iv_encode_base64</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Varchar</span>
+<span class="iledocs-code-name">iv_encode_base64</span>
+(
+Varchar string)
+</code>
+<p>Returns the input string base64 encoded.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Varchar (524284)</span>
+ [varsize, const]</code>
+ &mdash; Input string</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Varchar
+
+</span>
+</code>
+ &mdash; Base64 encoded string
+<h3 class="iledocs-procedure-header"><a name="proc_iv_encode_base64_buffer">iv_encode_base64_buffer</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+Integer</span>
+<span class="iledocs-code-name">iv_encode_base64_buffer</span>
+(
+Pointer output, Pointer input, Integer inputLength)
+</code>
+<p>Base64 encodes the memory from the input pointer and outputs it to the output pointer.
+The caller needs to make sure that enough memory is available. The output size is around
+33% bigger than the input size.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Output</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Input</li>
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Integer (20)</span>
+ [value]</code>
+ &mdash; Input length</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+Integer
+
+</span>
+</code>
+ &mdash; Base64 encoded string
 <h3 class="iledocs-procedure-header"><a name="proc_iv_encode_formUrl">iv_encode_formUrl</a></h3>
 <code class="iledocs-code">
 <span class="iledocs-code-returnType">

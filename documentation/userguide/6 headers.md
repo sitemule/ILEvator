@@ -176,3 +176,14 @@ iv_setRequestHandler(httpClient : %addr(requestHandler));
 
 Now on each request `addCustomHeader` will be called and each request will have the HTTP header
 `X-Custom-Header`.
+
+
+## Non-ASCII Characters
+
+Historically characters from the ISO-8859-1 character set were also allowed in HTTP header values
+but that is a thing of the past. Servers, frameworks and software libraries will expect only ASCII
+characters in HTTP header keys and values. So as a general rule only ASCII characters should be used.
+
+In case non-ASCII characters need to be passed as a header value the sender and the receiver will
+have to encode/decode them manually. Base64 and MIME encoding can be used for these cases. ILEvator
+provides procedures for both, `iv_encode_mime` and `iv_encode_base64` / `iv_encode_base64_buffer`.
