@@ -272,3 +272,23 @@ dcl-proc iv_encode_mime export;
     
     return '=?' + charset + '?' + encoding + '?' + encoded + '?=';
 end-proc;
+
+
+dcl-proc iv_encode_base64 export;
+    dcl-pi *n varchar(524284:4) ccsid(*utf8) rtnparm;
+        string varchar(524284:4) ccsid(*utf8) options(*varsize) const;
+    end-pi;
+    
+    return base64_encode(string);
+end-proc;
+
+
+dcl-proc iv_encode_base64_buffer export;
+    dcl-pi *n int(20);
+        output pointer value;
+        input pointer value;
+        inputLength int(20) value;
+    end-pi;
+     
+    return  base64_encodeBuffer(output : input : inputLength);
+end-proc;

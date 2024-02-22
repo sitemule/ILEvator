@@ -1114,6 +1114,36 @@ dcl-pr iv_encode_mime varchar(524284) ccsid(*hex) extproc(*dclcase);
     encoding char(1) value options(*nopass);
 end-pr;
 
+///
+// Base64 encode string
+//
+// Returns the input string base64 encoded.
+//
+// @param Input string
+// @return Base64 encoded string
+///
+dcl-pr iv_encode_base64 varchar(524284:4) ccsid(*utf8) extproc(*dclcase) rtnparm;
+  string varchar(524284:4) ccsid(*utf8) options(*varsize) const;
+end-pr;
+
+///
+// Base64 encode buffer
+//
+// Base64 encodes the memory from the input pointer and outputs it to the output pointer.
+// The caller needs to make sure that enough memory is available. The output size is around
+// 33% bigger than the input size.
+//
+// @param Output
+// @param Input
+// @param Input length
+// @return Base64 encoded string
+///
+dcl-pr iv_encode_base64_buffer int(20) extproc(*dclcase);
+   output pointer value;
+   input pointer value;
+   inputLength int(20) value; 
+end-pr;
+
 
 
 //

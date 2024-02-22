@@ -71,4 +71,6 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_teraspace_leak")
     EXPORT SYMBOL("iv_teraspace_use")
     EXPORT SYMBOL("iv_encode_mime")
+    EXPORT SYMBOL("iv_encode_base64")
+    EXPORT SYMBOL("iv_encode_base64_buffer")
 ENDPGMEXP

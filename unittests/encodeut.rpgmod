@@ -35,6 +35,8 @@ dcl-pr test_aceStartsWithPoint end-pr;
 dcl-pr test_aceEndsWithPoint end-pr;
 dcl-pr test_aceDanischChars end-pr;
 dcl-pr test_encodeMimeBase64 end-pr;
+dcl-pr test_encodeBase64 end-pr;
+dcl-pr test_encodeBase64Buffer end-pr;
 
 
 dcl-proc tearDown export;
@@ -200,3 +202,20 @@ dcl-proc test_encodeMimeBase64 export;
   assert('=?UTF-8?B?SsO2cmcgTcO8bGxlcg==?=' = encodedValue : 'MIME encoded value does not match');
 end-proc;
 
+dcl-proc test_encodeBase64 export;
+  dcl-s encodedValue varchar(524284) ccsid(*utf8);
+  
+  encodedValue = iv_encode_base64('J' + u'00F6' + 'rg M' + u'00FC' + 'ller');
+  assert('SsO2cmcgTcO8bGxlcg==' = encodedValue : 'Base64 encoded value does not match');
+end-proc;
+
+dcl-proc test_encodeBase64Buffer export;
+  dcl-s encodedValue varchar(524284) ccsid(*utf8);
+  dcl-s input varchar(100) ccsid(*utf8);
+  
+  input = 'J' + u'00F6' + 'rg M' + u'00FC' + 'ller';
+  
+  %len(encodedValue) = 524284;
+  %len(encodedValue) = iv_encode_base64_buffer(%addr(encodedValue : *data) : %addr(input : *data) : %len(input));
+  assert('SsO2cmcgTcO8bGxlcg==' = encodedValue : 'Base64 encoded value does not match');
+end-proc;
