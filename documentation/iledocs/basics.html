@@ -53,7 +53,7 @@ generic <code>iv_execute</code> procedure.
 </tr>
 
 <tr>
-<td><a href="#proc_iv_addHeaderToList">iv_addHeaderToList</a></td><td>Added HTTP header to list</td>
+<td><a href="#proc_iv_addHeaderToList">iv_addHeaderToList</a></td><td>Add HTTP header to list</td>
 </tr>
 
 <tr>
@@ -98,6 +98,10 @@ generic <code>iv_execute</code> procedure.
 
 <tr>
 <td><a href="#proc_iv_getErrorMessage">iv_getErrorMessage</a></td><td>Get error message</td>
+</tr>
+
+<tr>
+<td><a href="#proc_iv_getResponseDataLength">iv_getResponseDataLength</a></td><td>Get response buffer length</td>
 </tr>
 
 <tr>
@@ -610,13 +614,13 @@ Pointer</span>
 <code>
 <span class="iledocs-code-returnType">
 Pointer</span>
- [string, value]</code>
+ [string, trim, value]</code>
  &mdash; HTTP method</li>
 <li>
 <code>
 <span class="iledocs-code-returnType">
 Pointer</span>
- [string, value]</code>
+ [string, trim, value]</code>
  &mdash; URL</li>
 <li>
 <code>
@@ -747,6 +751,35 @@ Varchar
 </span>
 </code>
  &mdash; Error message from the HTTP request
+<h3 class="iledocs-procedure-header"><a name="proc_iv_getResponseDataLength">iv_getResponseDataLength</a></h3>
+<code class="iledocs-code">
+<span class="iledocs-code-returnType">
+UnsignedInteger</span>
+<span class="iledocs-code-name">iv_getResponseDataLength</span>
+(
+Pointer pClient)
+</code>
+<p>Returns the length of the result in the response data buffer.
+This is useful if the buffer is BYTE buffer.</p>
+
+<h4 class="iledocs-procedure-subheader">Parameters</h4>
+<ol class="iledocs-list">
+<li>
+<code>
+<span class="iledocs-code-returnType">
+Pointer</span>
+ [value]</code>
+ &mdash; Pointer to the HTTP client</li>
+</ol>
+
+<h4 class="iledocs-procedure-subheader">Return Value</h4>
+<code>
+<span class="iledocs-code-returnType">
+UnsignedInteger
+
+</span>
+</code>
+ &mdash; Number of bytes returned in the response buffer
 <h3 class="iledocs-procedure-header"><a name="proc_iv_getStatus">iv_getStatus</a></h3>
 <code class="iledocs-code">
 <span class="iledocs-code-returnType">
@@ -1214,7 +1247,7 @@ void
 </span>
 <span class="iledocs-code-name">iv_setRequestDataBuffer</span>
 (
-Pointer client, Pointer buffer, Integer bufferSize, Integer bufferType, Integer bufferCcsid)
+Pointer client, Pointer buffer, UnsignedInteger bufferSize, Integer bufferType, Integer bufferCcsid)
 </code>
 <p>Sets the buffer of the data which will be sent as the message body of the
 HTTP request.</p>
@@ -1236,7 +1269,7 @@ Pointer</span>
 <li>
 <code>
 <span class="iledocs-code-returnType">
-Integer (10)</span>
+UnsignedInteger (10)</span>
  [value]</code>
  &mdash; Size of buffer (bytes in total)</li>
 <li>
@@ -1287,7 +1320,7 @@ void
 </span>
 <span class="iledocs-code-name">iv_setResponseDataBuffer</span>
 (
-Pointer pClient, Pointer pBuffer, Integer bufferSize, Integer bufferType, Integer bufferCcsid)
+Pointer pClient, Pointer pBuffer, UnsignedInteger bufferSize, Integer bufferType, Integer bufferCcsid)
 </code>
 <p>Sets the buffer where the response data (message body) is received.</p>
 
@@ -1308,7 +1341,7 @@ Pointer</span>
 <li>
 <code>
 <span class="iledocs-code-returnType">
-Integer (10)</span>
+UnsignedInteger (10)</span>
  [value]</code>
  &mdash; Size of buffer ( bytes in total)</li>
 <li>
@@ -1365,7 +1398,7 @@ void
 </span>
 <span class="iledocs-code-name">iv_setResponseHeaderBuffer</span>
 (
-Pointer client, Pointer buffer, Integer bufferSize, Integer bufferType, Integer bufferCcsid)
+Pointer client, Pointer buffer, UnsignedInteger bufferSize, Integer bufferType, Integer bufferCcsid)
 </code>
 <p>Sets the buffer where the response header is received.</p>
 
@@ -1386,7 +1419,7 @@ Pointer</span>
 <li>
 <code>
 <span class="iledocs-code-returnType">
-Integer (10)</span>
+UnsignedInteger (10)</span>
  [value]</code>
  &mdash; Size of buffer ( bytes in total)</li>
 <li>
