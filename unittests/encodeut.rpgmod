@@ -34,6 +34,7 @@ dcl-pr test_aceSubDomains end-pr;
 dcl-pr test_aceStartsWithPoint end-pr;
 dcl-pr test_aceEndsWithPoint end-pr;
 dcl-pr test_aceDanischChars end-pr;
+dcl-pr test_encodeMimeBase64 end-pr;
 
 
 dcl-proc tearDown export;
@@ -188,5 +189,14 @@ dcl-proc test_aceDanischChars export;
 
   encodedValue = iv_encode_ace('K' + u'00F8' + 'kken-V' + u'00E6' + 'rkt' + u'00F8' + 'jer.dk');
   aEqual('xn--Kkken-Vrktjer-9fb7xka.dk' : encodedValue);
+end-proc;
+
+
+dcl-proc test_encodeMimeBase64 export;
+  dcl-s encodedValue varchar(524284) ccsid(*utf8);
+  
+  encodedValue = iv_encode_mime('J' + u'00F6' + 'rg M' + u'00FC' + 'ller');
+  
+  assert('=?UTF-8?B?SsO2cmcgTcO8bGxlcg==?=' = encodedValue : 'MIME encoded value does not match');
 end-proc;
 

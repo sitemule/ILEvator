@@ -3,10 +3,10 @@
 ctl-opt nomain thread(*concurrent);
 
 
-
+/include 'base64.rpginc'
+/include 'clib.rpginc'
 /include 'debug.rpginc'
 /include 'encode.rpginc'
-/include 'clib.rpginc'
 
 
 dcl-s NOT_RESERVED_CHARS char(65) ccsid(*utf8) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.');
@@ -247,3 +247,28 @@ dcl-proc iv_encode_ace export;
     return aceString;
 end-proc;
 
+
+dcl-proc iv_encode_mime export;
+    dcl-pi *n varchar(524284) ccsid(*hex);
+        data varchar(524284) ccsid(*hex) value;
+        p_charset varchar(20) const options(*nopass : *omit);
+        p_encoding char(1) value options(*nopass);
+    end-pi;
+    
+    dcl-s charset varchar(20) ccsid(*utf8) inz(IV_ENCODE_MIME_UTF8);
+    dcl-s encoding char(1) ccsid(*utf8) inz(IV_ENCODE_MIME_BASE64);
+    dcl-s encoded varchar(524284) ccsid(*hex);
+    
+    if (%parms() >= 2 and %addr(p_charset) <> *null);
+        charset = p_charset;
+    endif;
+    
+    if (%parms() >= 3);
+        encoding = p_encoding;
+    endif;
+    
+    %len(encoded) = 524284;
+    %len(encoded) = base64_encodeBuffer(%addr(encoded : *data) : %addr(data : *data) : %len(data));
+    
+    return '=?' + charset + '?' + encoding + '?' + encoded + '?=';
+end-proc;
