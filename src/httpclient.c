@@ -403,7 +403,7 @@ API_STATUS receiveHeader(PILEVATOR pIv)
 API_STATUS receiveData ( PILEVATOR pIv)
 {
     UCHAR buffer [65535];
-    LONG  len;
+    LONG  len, totlen = 0;
 
     // TODO !! Move this together with the file write; 
     iv_anychar_append ( &pIv->responseDataBuffer ,pIv->contentData , pIv->contentLengthCalculated);
@@ -419,6 +419,8 @@ API_STATUS receiveData ( PILEVATOR pIv)
         return API_OK;
     }
 
+    totlen = pIv->contentLengthCalculated;
+
     for (;;) { // repeat until all data is complete
         len = sockets_receive (pIv->sockets, buffer , sizeof(buffer) , pIv->timeOut * 1000);
         
@@ -433,15 +435,23 @@ API_STATUS receiveData ( PILEVATOR pIv)
         }
 
         // "Connection close" - end of transmission and no "Content-Length" provided, the we are done
-        if (len == 0 && pIv->responseHeaderHasContentLength == false) {
+        if (len == 0 && pIv->responseHeaderHasContentLength == OFF) {
             return API_OK;
         }
 
+        totlen += len;
         iv_anychar_append ( &pIv->responseDataBuffer, buffer, len);
 
         if (pIv->responseDataFile) {
             fwrite (buffer  , 1, len , pIv->responseDataFile);
         }
+
+        // Got everything? 
+        if (pIv->responseHeaderHasContentLength == ON 
+        &&  pIv->contentLength == totlen) {
+            return API_OK;
+        }
+
     }
 }
 

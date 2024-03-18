@@ -81,6 +81,29 @@
                     "message": 4
                 }
             }       
+        },
+        // NOTE: OBJECT are overridden by the command line, so OBJECT will be "this" files 
+        {
+            "label": "Compile current issue  file",
+            "command": "ssh -t my_ibm_i 'PATH=/QOpenSys/pkgs/bin:$PATH;cd /prj/ILEvator/issues/;gmake compile SRC=\"${fileBasename}\"' ",
+            "type": "shell",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": {
+                "owner": "c",
+                "fileLocation": ["relative", "${workspaceRoot}/issues"],
+                "pattern": {
+                    // FileName: *RNF7030 30    399 000022  The name or indicator A is not defined.
+                    "regexp": "^\\./(.*):(\\d+),(\\d+),(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    // "severity": 4,
+                    "message": 4
+                }
+            }       
         }
     ]
 }

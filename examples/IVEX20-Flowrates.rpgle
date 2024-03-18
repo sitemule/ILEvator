@@ -35,6 +35,7 @@ dcl-proc example1;
     dcl-s outbuf varchar(65000:4);
     dcl-s json   varchar(3000);
 
+
     pHttp = iv_newHttpClient(); 
     
     iv_setResponseDataBuffer (pHttp : %addr(outbuf) : %size(outbuf) : IV_VARCHAR4 : IV_CCSID_JOB);
