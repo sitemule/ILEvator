@@ -698,6 +698,7 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG timeOut)
     struct fd_set read_fd;
     struct timeval timeout;
     int amtRead = 0;
+    int pollRetry ; 
     struct pollfd pdf;
 
     Buf[0] = '\0';
@@ -707,7 +708,13 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG timeOut)
     pdf.fd = ps->socket;
     pdf.events = POLLIN;
 
-    rc = poll( &pdf, 1, timeOut);
+    // Quick fix for error 502
+    for (pollRetry = 0; pollRetry < 10 ;  pollRetry++ ) {
+        rc = poll( &pdf, 1, timeOut);
+        if (rc != 0) break; // 0=timeout
+        usleep(100000);
+    }
+
     if (rc == -1 ) {
         int so_error;
         socklen_t len = sizeof(so_error);
@@ -715,7 +722,7 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG timeOut)
         message_info(  "Receive - poll failed: %s " , strerror(errno));
         sockets_close(ps);
         return SOCK_ERROR;
-    } else if (rc == 0) { // 0=timeout
+    } else if (rc == 0 ) { // 0=timeout
         message_info(  "Timeout poll receive");
         sockets_close(ps);
         return SOCK_TIMEOUT;

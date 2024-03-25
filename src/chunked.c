@@ -25,7 +25,7 @@ API_STATUS iv_chunked_receive(PILEVATOR pIv)
     } Mode = GET_LEN;
 
     int    chunkedlen, Len;
-    UCHAR  rcvbuf [4096];
+    UCHAR  rcvbuf [4097];
     BOOL   DigitFound = FALSE;
     PUCHAR pInBuf   = pIv->contentData;
     PUCHAR newEnd   = pIv->bufferEnd;
@@ -37,7 +37,7 @@ API_STATUS iv_chunked_receive(PILEVATOR pIv)
 
         // Get the next block - this is asynchronious from the chrunks
         if (pInBuf == newEnd) {
-            Len = sockets_receive (pIv->sockets, rcvbuf, sizeof(rcvbuf), pIv->timeOut * 1000); 
+            Len = sockets_receive (pIv->sockets, rcvbuf, sizeof(rcvbuf)-1, pIv->timeOut * 1000); 
  
             if  (Len <= 0) {  // Data is complete in outbuffer, so "disconnect" is ok (len ==0)
                 return API_OK;

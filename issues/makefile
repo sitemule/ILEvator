@@ -14,7 +14,7 @@
 # NOTE: LIBLIST can be overwritten from the commandline, but defaults to the BIN_LIB
 BIN_LIB=ILEVATOR
 LIBLIST="$(BIN_LIB) NOXDB SMSDB"
-OUTPUT=*NONE
+OUTPUT=*print
 
 # The shell we use
 SHELL=/QOpenSys/usr/bin/qsh
