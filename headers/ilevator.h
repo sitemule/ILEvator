@@ -54,6 +54,7 @@ typedef struct _ILEVATOR {
     LGL          useProxy;
     LGL          responseHeaderHasContentLength;
     LGL          responseIsChunked;
+    LGL          blockingSockets;
     PSLIST       headerList;
     PSLIST       requestHeaderList;
                 

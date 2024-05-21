@@ -16,6 +16,8 @@ dcl-ds ilevator_t qualified template align(*full);
     useProxy ind ;
     responseHeaderHasContentLength ind ;
     responseIsChunked ind ;
+    blockingSockets ind;
+    
     headerList pointer;
     requestHeaderList pointer;
     

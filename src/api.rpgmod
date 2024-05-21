@@ -37,6 +37,7 @@ dcl-proc iv_newHttpClient export;
     client.headerList = sList_new();
     client.timeout = DEFAULT_TIMEOUT;
     client.retries = DEFAULT_RETRIES;
+    client.blockingSockets = *ON;
     
     client.server = NULL;
     client.port = 0;
@@ -244,6 +245,18 @@ dcl-proc iv_setCommTrace export;
 
 end-proc;
 
+dcl-proc iv_setBlockingSockets export;
+    dcl-pi *n;
+        pClient           pointer value;
+        blockingSockets   ind value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+
+    client.blockingSockets = blockingSockets;
+
+end-proc;
+
 dcl-proc iv_execute export;
     dcl-pi *n ind;
         pClient pointer value;
@@ -288,7 +301,8 @@ dcl-proc iv_execute export;
                 client.sockets : 
                 client.server : 
                 client.port : 
-                client.timeout * 1000 // from seconds to milliseconds
+                client.timeout * 1000:  // from seconds to milliseconds
+                client.blockingSockets
             );
             if (ok = TRUE);
                 apiStatus = IV_STATUS_OK;
@@ -379,7 +393,8 @@ dcl-proc connect_using_proxy_tunnel ;
             proxy.sockets : 
             proxy.host : 
             proxy.port : 
-            proxy.timeout * 1000 // from seconds to milliseconds
+            proxy.timeout * 1000: // from seconds to milliseconds
+            proxy.blockingSockets
         );
         if (ok <> TRUE);
             apiStatus = IV_STATUS_ERROR;

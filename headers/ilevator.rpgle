@@ -625,6 +625,21 @@ dcl-pr iv_setAuthProvider extproc(*dclcase);
   authProvider pointer value;
 end-pr;
 
+
+///
+// Set the connection method 
+//
+// Set the socket connection method to blocked or non-blocked
+//
+// @param Pointer to the HTTP Client
+// @param blocking Sockets option: *ON or *OFF
+///
+
+dcl-pr iv_setBlockingSockets extproc(*dclcase);
+    pClient           pointer value;
+    blockingSockets   ind value;
+end-pr;
+
 ///
 // Base64 decode value
 //

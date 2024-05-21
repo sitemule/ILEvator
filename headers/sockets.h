@@ -51,6 +51,7 @@ typedef struct _SOCKETS {
     validationCallBack valCallBack;
     int rcvTotalLen;
     BOOL   isSecure;
+    BOOL   blockingSockets;
     struct _SOCKETS_SSL_CONFIG ssl[1];
     struct _SOCKETS_TLS_CONFIG tls[5];
     UCHAR  hostName [256]; 
@@ -64,7 +65,7 @@ void  sockets_setKeystore(PSOCKETS ps,USESSL asSSL, PUCHAR certificateFile , PUC
 void  sockets_setTrace(PSOCKETS ps, PUCHAR traceFileName);
 void  sockets_putTrace(PSOCKETS ps, PUCHAR Ctlstr, ...);
 
-BOOL  sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, LONG TimeOut);
+BOOL  sockets_connect(PSOCKETS ps, PUCHAR ServerIP, LONG ServerPort, LONG TimeOut, LGL blockingSockets);
 BOOL  sockets_set_secure (PSOCKETS ps);
 BOOL  sockets_handshakeSSL (PSOCKETS ps);
 LONG  sockets_send (PSOCKETS ps, PUCHAR Buf, LONG Len);

@@ -164,14 +164,19 @@ void sockets_close(PSOCKETS ps)
 }
 
 /* --------------------------------------------------------------------------- */
+static PUCHAR errno_to_string ( int error) 
+{
+    return (error == 0) ? "": strerror  (error);
+}
+/* --------------------------------------------------------------------------- */
 static void sockets_setSSLmsg(PSOCKETS ps,int rc, PUCHAR txt)
 {
-    message_info( "%s: %d: %s, %s", txt, rc, gsk_strerror(rc), strerror(errno));
+    message_info( "%s: %d: %s, %s", txt, rc, gsk_strerror (rc), errno_to_string (errno));
 }
 /* --------------------------------------------------------------------------- */
 static int sockets_sslCallBack(PUCHAR certChain, int valStatus)
 {
-    // sockets_putTrace( "\nCallBack: %s\n", gsk_strerror(valStatus));
+    // sockets_putTrace( "\nCallBack: %s\n", gsk_strerror (valStatus));
     return GSK_OK;
 }
 // ----------------------------------------------------------------------------------------
@@ -534,7 +539,7 @@ BOOL sockets_set_secure (PSOCKETS ps)
 
 }
 // ----------------------------------------------------------------------------------------
-BOOL sockets_connect(PSOCKETS ps, PUCHAR serverIP, LONG serverPort, LONG timeOut)
+BOOL sockets_connect(PSOCKETS ps, PUCHAR serverIP, LONG serverPort, LONG timeOut, LGL blockingSockets)
 {
     LONG   rc;
     struct sockaddr_in serveraddr;
@@ -544,12 +549,13 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR serverIP, LONG serverPort, LONG timeOut
     BOOL   ok; 
 
     ps->timeOut = timeOut;
+    ps->blockingSockets = (blockingSockets == ON);
 
     // Get a socket descriptor
     ps->socket = socket(AF_INET, SOCK_STREAM, 0);
 
     if (ps->socket == SOCK_INVALID)  {
-        message_info(  "Invalid socket %s" , strerror(errno));
+        message_info(  "Invalid socket %s" , errno_to_string (errno));
         return FALSE;
     }
 
@@ -571,43 +577,47 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR serverIP, LONG serverPort, LONG timeOut
         hostp = gethostbyname(serverIP);
         if (hostp == (struct hostent *)NULL) {
             sockets_close(ps);
-            message_info(  "Invalid host <%s> Error: %s", serverIP , strerror(errno));
+            message_info(  "Invalid host <%s> Error: %s", serverIP , errno_to_string (errno));
             return FALSE;
         }
         memcpy(&serveraddr.sin_addr,  hostp->h_addr, sizeof(serveraddr.sin_addr));
     }
 
     // Non blocking socket
-    rc = fcntl(ps->socket, F_SETFL, O_NONBLOCK);
+    if (! ps->blockingSockets) {
+        rc = fcntl(ps->socket, F_SETFL, O_NONBLOCK);
+    }
 
     rc = connect(ps->socket , (struct sockaddr *)&serveraddr , sizeof(serveraddr));
     // rc will be -1 for NON_bloking sockets
     if( (rc != 0) && (errno != EINPROGRESS) ) {
-        message_info(  "Connection failed: %s %s" , serverIP, strerror(errno));
+        message_info(  "Connection failed: %s %s" , serverIP, errno_to_string (errno));
         sockets_close(ps);
         return FALSE;
     }
 
     // Wait until connected or timout
-    pfd.fd = ps->socket;
-    pfd.events = POLLOUT;
-    rc = poll( &pfd, 1, timeOut);
+    if (! ps->blockingSockets) {
+        pfd.fd = ps->socket;
+        pfd.events = POLLOUT;
+        rc = poll( &pfd, 1, timeOut);
 
-    // Wait for up to xx seconds on
-    if (rc == -1 ) {
-        int so_error;
-        socklen_t len = sizeof(so_error);
-        getsockopt(ps->socket, SOL_SOCKET, SO_ERROR, (PUCHAR) &so_error, &len);
-        message_info(  "Connect - poll failed: %s %s" , serverIP, strerror(errno));
-        sockets_close(ps);
-        return FALSE;
-    } else if (rc == 0) { // 0=timeout
-        int so_error;
-        socklen_t len = sizeof(so_error);
-        getsockopt(ps->socket, SOL_SOCKET, SO_ERROR, (PUCHAR) &so_error, &len);
-        message_info(  "Connection - timeout: %s %s" , serverIP, strerror(errno));
-        sockets_close(ps);
-        return FALSE;
+        // Wait for up to xx seconds on
+        if (rc == -1 ) {
+            int so_error;
+            socklen_t len = sizeof(so_error);
+            getsockopt(ps->socket, SOL_SOCKET, SO_ERROR, (PUCHAR) &so_error, &len);
+            message_info(  "Connect - poll failed: %s %s" , serverIP, errno_to_string (errno));
+            sockets_close(ps);
+            return FALSE;
+        } else if (rc == 0) { // 0=timeout
+            int so_error;
+            socklen_t len = sizeof(so_error);
+            getsockopt(ps->socket, SOL_SOCKET, SO_ERROR, (PUCHAR) &so_error, &len);
+            message_info(  "Connection - timeout: %s %s" , serverIP, errno_to_string (errno));
+            sockets_close(ps);
+            return FALSE;
+        }
     }
 
 
@@ -620,7 +630,7 @@ BOOL sockets_connect(PSOCKETS ps, PUCHAR serverIP, LONG serverPort, LONG timeOut
     /*
     rc = getpeername (ps->socket , &peeraddr , &peeraddrlen) ;
     if (rc < 0) {
-      sndpgmmsg ("CPF9898" ,INFO , "get peer name failed: %s" , strerror(errno));
+      sndpgmmsg ("CPF9898" ,INFO , "get peer name failed: %s" , errno_to_string (errno));
     }
     */
     return TRUE;
@@ -650,7 +660,7 @@ LONG sockets_send (PSOCKETS ps,PUCHAR Buf, LONG Len)
 
     rc = poll( &pdf, 1, 1000);
     if (rc < 0 ) {  // Timeout
-        message_info( "Send poll wait error: %s" , strerror(errno));
+        message_info( "Send poll wait error: %s" , errno_to_string (errno));
         sockets_close(ps);
         return SOCK_ERROR;
     } else if (rc == 0) {  // Timeout
@@ -680,7 +690,7 @@ LONG sockets_send (PSOCKETS ps,PUCHAR Buf, LONG Len)
             if (rc == 0) {
                 errno = error;
             }
-            message_info( "Send failed: %s" , strerror(errno));
+            message_info( "Send failed: %s" , errno_to_string (errno));
             sockets_close(ps);
             return SOCK_ERROR ;
         }
@@ -719,7 +729,7 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG timeOut)
         int so_error;
         socklen_t len = sizeof(so_error);
         getsockopt(ps->socket, SOL_SOCKET, SO_ERROR, (PUCHAR) &so_error, &len);
-        message_info(  "Receive - poll failed: %s " , strerror(errno));
+        message_info(  "Receive - poll failed: %s " , errno_to_string (errno));
         sockets_close(ps);
         return SOCK_ERROR;
     } else if (rc == 0 ) { // 0=timeout
@@ -764,7 +774,7 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG timeOut)
 
         rc = read(ps->socket, Buf, Len );
         if (rc < 0) {  // error
-            message_info(  "Socket read error: %s" , strerror(errno));
+            message_info(  "Socket read error: %s" , errno_to_string (errno));
             sockets_close(ps);
             return SOCK_ERROR;
 
