@@ -27,7 +27,7 @@ SHELL=/QOpenSys/usr/bin/qsh
 # User-defined part end
 #-------------------------------------------------------------------------------
 RPG_OPT=OPTION(*EVENTF *NOXREF *NOUNREF *NOSHOWCPY *NOEXPDDS)  OUTPUT($(OUTPUT)) DBGVIEW(*ALL) INCDIR('./..' '/prj/ILEvator/headers')
-SQL_OPT=RPGPPOPT(*NONE) TGTRLS(V7R3M0)
+SQL_OPT=RPGPPOPT(*NONE) TGTRLS(*CURRENT)
 CCSID=277
 
 
