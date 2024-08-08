@@ -11,20 +11,24 @@
 //
 // ILEvator is a HTTP client API for the ILE environment on
 // IBM i for implementing web/microservices alike applications.
-// <p>
+// <br/><br/>
 // ILEvator is a service program that provides a simple, blazing fast
 // programmable HTTP client for your application so you can easily plug your RPG
 // code into a service infrastructure or make simple web applications without
 // the need of any third party web client products.
-// <p>
+// <br/><br/>
 // The convenient procedures like <em>iv_get</em> will throw an escape message
 // when the server responds with anything above and including HTTP status 400.
 // The escape message id will contain the HTTP status code like ILV0404 for the
 // HTTP status code 404. The message id can easily be retrieved from the program
 // status data structure.
-// <p>
+// <br/><br/>
 // If the convenience procedures doesn't fit with the use case just use the more
 // generic <code>iv_execute</code> procedure.
+// <br/><br/>
+// <code>iv_execute</code> will open and close the socket connection on every call.
+// If the socket connection should stay open the flow <code>iv_connect</code> -&gt;
+// <code>iv_http_request</code> -&gt; <code>iv_disconnect</code> can be used.
 //
 // @author Niels Liisberg
 // @date 15.12.2022
@@ -562,7 +566,7 @@ end-pr;
 // @param HTTP method
 // @param URL
 // @param Pointer to a simple list with additional HTTP headers
-// @return <code>*ON</code> if ok
+// @return <code>*ON</code> if ok else <code>*off</code>
 ///
 dcl-pr iv_execute ind extproc(*dclcase);
     client  pointer value;
@@ -629,15 +633,14 @@ end-pr;
 ///
 // Set the connection method 
 //
-// Set the socket connection method to blocked or non-blocked
+// Sets the socket connection method to blocked or non-blocked.
 //
 // @param Pointer to the HTTP Client
-// @param blocking Sockets option: *ON or *OFF
+// @param blocking Sockets option: <code>*on</code> or <code>*off</code>
 ///
-
 dcl-pr iv_setBlockingSockets extproc(*dclcase);
-    pClient           pointer value;
-    blockingSockets   ind value;
+    client pointer value;
+    blockingSockets ind value;
 end-pr;
 
 ///
@@ -1040,6 +1043,75 @@ end-pr;
 dcl-pr iv_setRequestHandler extproc(*dclcase);
     client pointer value;
     handler pointer value;
+end-pr;
+
+///
+// Connect to server
+//
+// Creates the socket connection to the passed server.
+//
+// This procedure is part of the flow: connect -> request -> disconnect
+//
+// @param Pointer to the HTTP client
+// @param URL
+// @return <code>*on</code> on successful connect else <code>*off</code>
+//
+// @info Any superfluous parts in the URL will be ignored.
+///
+dcl-pr iv_connect ind extproc(*dclcase);
+    client pointer value;
+    url pointer options(*string:*trim) value;
+end-pr;
+
+///
+// Disconnect from server
+//
+// Disconnects the socket connection to the server.
+//
+// This procedure is part of the flow: connect -> request -> disconnect
+//
+// @param Pointer to the HTTP client
+//
+// @info This procedure does nothing if the client is not connected to a server.
+///
+dcl-pr iv_disconnect extproc(*dclcase);
+    client pointer value;
+end-pr;
+
+///
+// Execute HTTP request to connected server
+//
+// Executes a HTTP request to the connected server. The HTTP client instance needs
+// to be connected to the server by calling the <code>iv_connect</code> proccedure.
+//
+// @param Pointer to the HTTP client
+// @param HTTP method
+// @param URL
+// @param Pointer to a simple list with additional HTTP headers
+// @return <code>*ON</code> if ok else <code>*off</code>
+///
+dcl-pr iv_http_request ind extproc(*dclcase);
+    client pointer value;
+    method pointer options(*string:*trim) value;
+    url pointer options(*string:*trim) value;
+    headers pointer options(*nopass) value;
+end-pr;
+
+///
+// Get response header
+//
+// Returns the value for the passed response header key.
+//
+// The query is not case-sensitive. An empty string is returned if the header is
+// not in the response.
+//
+// @param Pointer to the HTTP client
+// @param Response header key
+// @return Response header value
+///
+dcl-pr iv_getHeader varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8) extproc(*dclcase);
+    client pointer value;
+    headerName varchar(IV_HEADER_NAME_SIZE:2) value;
 end-pr;
 
 

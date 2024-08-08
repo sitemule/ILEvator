@@ -28,6 +28,9 @@ To execute a unit test just call the RUCALLTST command.
 
     RUCALLTST BASICAUTUT
 
+Note: Some unit tests expect the current directory to be the project directory.
+      `CHGCURDIR '/path/to/ilevator'`.
+
 
 ## ILEastic Backend
 

@@ -135,11 +135,12 @@ VOID parseHttpParm(PILEVATOR pIv, PUCHAR Parm , PUCHAR Value)
 #pragma convert(0)
 
 /* -------------------------------------------------------------------------- */
-// All constans is in ascii windows-1252
+// All constants are in windows-1252 (ASCII compatible)
 #pragma convert(1252)
 SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
 {
     PUCHAR start, end, p, s1, s2;
+    LVARPUCHAR headerKey, headerValue;
 
     // Only let the out file survive
     // TODO - reset input!!  
@@ -165,6 +166,9 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
         }
     }
 
+    sList_free(pIv->responseHeaderList);
+    pIv->responseHeaderList = sList_new();
+    
     pIv->rawResponse = start;
     end = findEOL(start);
 
@@ -184,6 +188,17 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
             strutil_substr(parmName , start , p - start);
             strutil_substr(parmValue, p +1  , end - p - 1 );
             parseHttpParm(pIv , parmName, parmValue);
+            
+            headerKey.Length = p - start;
+            headerKey.String = start;
+
+            headerValue.Length = end - p - 1;
+            headerValue.String = p + 1;
+            while (*headerValue.String == 0x20 && headerValue.Length > 0) {
+                headerValue.String++; // Skip blank(s)
+                headerValue.Length--;
+            }
+            sList_pushLVPC(pIv->responseHeaderList , &headerKey , &headerValue);
         }
     }
     return SOCK_OK ; // OK
@@ -221,7 +236,6 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
 
     strutil_substr(pIv->server , l_url.host.String, l_url.host.Length);
     pIv->port = l_url.port;
-    // sprintf(pIv->host,  "%s:%d" , pIv->server,  pIv->port);
     sprintf(pIv->host,  "%s" , pIv->server);
     
     if(l_url.path.Length == 0) {

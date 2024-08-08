@@ -44,7 +44,6 @@ end-proc;
 
 
 dcl-proc test_simpleList export;
-
    dcl-ds hSimpleList likeds(SLIST_t) based(pSimpleList);
 
    dcl-ds listNode1 likeds(SLISTNODE_t) based(pListNode1);
@@ -96,13 +95,11 @@ dcl-proc test_simpleList export;
    assert(count = hSimpleList.length: '''count'' must match ''hSimpleList.length''');
 
 on-exit;
-
    sList_free(pSimpleList);
-
 end-proc;
 
-dcl-proc test_keyedList export;
 
+dcl-proc test_keyedList export;
    dcl-ds hKeyedList likeds(SLIST_t) based(pSimpleList);
    dcl-s value1 varchar(1024);
    dcl-s value2 varchar(1024);
@@ -118,13 +115,85 @@ dcl-proc test_keyedList export;
    assert(hKeyedList.length = 2: 'hSimpleList.length must equal 2');
 
    value1 = sList_lookupLVPC(pSimpleList: KEY_1);
-   assert(value1 = VALUE_1: '''value1'' does not match extected value');
+   assert(value1 = VALUE_1: '''value1'' does not match expected value');
 
    value2 = sList_lookupLVPC(pSimpleList: KEY_2);
-   assert(value2 = VALUE_2: '''value2'' does not match extected value');
+   assert(value2 = VALUE_2: '''value2'' does not match expected value');
 
 on-exit;
-
    sList_free(pSimpleList);
-
 end-proc;
+
+
+dcl-proc test_replace export;
+    dcl-ds list likeds(SLIST_t) based(pSimpleList);
+    dcl-s value varchar(1024);
+    dcl-s newValue varchar(1024) inz('application/json');
+    
+    pSimpleList = sList_new();
+
+    sList_pushLVPC(pSimpleList : lvpc(KEY_1) : lvpc(VALUE_1));
+    sList_pushLVPC(pSimpleList : lvpc(KEY_2) : lvpc(VALUE_2));
+    
+    value = sList_lookupLVPC(pSimpleList : KEY_1);
+    assert(value = VALUE_1 : '''value1'' does not match expected value');
+
+    sList_replace(pSimpleList : lvpc(KEY_1) : lvpc(newValue));
+    value = sLIst_lookupLVPC(pSimpleList : KEY_1);
+    assert(value = 'application/json' : 'replaced value does not match expected value');
+    
+    value = sList_lookupLVPC(pSimpleList: KEY_2);
+    assert(value = VALUE_2: '''value2'' does not match expected value');
+on-exit;
+    sList_free(pSimpleList);
+end-proc;
+
+
+dcl-proc test_replaceNonExistentEntry export;
+    dcl-ds list likeds(SLIST_t) based(pSimpleList);
+    dcl-s value varchar(1024);
+    dcl-s newValue varchar(1024) inz('application/json');
+    
+    pSimpleList = sList_new();
+
+    sList_replace(pSimpleList : lvpc(KEY_1) : lvpc(VALUE_1));
+    sList_replace(pSimpleList : lvpc(KEY_2) : lvpc(VALUE_2));
+    
+    value = sList_lookupLVPC(pSimpleList : KEY_1);
+    assert(value = VALUE_1 : '''value1'' does not match expected value');
+
+    sList_replace(pSimpleList : lvpc(KEY_1) : lvpc(newValue));
+    value = sList_lookupLVPC(pSimpleList : KEY_1);
+    assert(value = 'application/json' : 'replaced value does not match expected value');
+    
+    value = sList_lookupLVPC(pSimpleList: KEY_2);
+    assert(value = VALUE_2: '''value2'' does not match expected value');
+on-exit;
+    sList_free(pSimpleList);
+end-proc;
+
+
+dcl-proc test_freeLVPCs export;
+    dcl-ds list likeds(SLIST_t) based(pSimpleList);
+    dcl-ds key likeds(LVARPUCHAR_t);
+    dcl-ds value likeds(LVARPUCHAR_t);
+    dcl-s v varchar(1024);
+    
+    key.string = teraspace_alloc(100);
+    value.string = teraspace_alloc(100);
+    
+    pSimpleList = sList_new();
+
+    key.length = 12;
+    %str(key.string : 100) = 'content-type';
+    value.length = 16;
+    %str(value.string : 100) = 'application/json';
+    sList_pushLVPC(pSimpleList : key : value);
+
+    v = sList_lookupLVPC(pSimpleList : KEY_1);
+    assert(v = 'application/json' : 'replaced value does not match expected value');
+on-exit;
+    sList_freeLVPCs(pSimpleList);
+end-proc;
+
+

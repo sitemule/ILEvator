@@ -47,5 +47,7 @@ PSLISTNODE sList_push (PSLIST pSlist , LONG len , PVOID data, LGL head);
 PSLIST sList_new (void);
 LGL sList_foreach ( PSLISTITERATOR pIterator);
 SLISTITERATOR sList_setIterator( PSLIST pSlist);
+void sList_replace (PSLIST pSlist, PLVARPUCHAR key , PLVARPUCHAR value);
+void sList_freeLVPCs(PSLIST pSlist);
 
 #endif

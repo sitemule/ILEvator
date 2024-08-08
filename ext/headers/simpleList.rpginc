@@ -61,4 +61,14 @@ dcl-pr sList_foreach ind extproc('sList_foreach');
    iterator likeds(SLISTITERATOR_t) const;
 end-pr;
 
+dcl-pr sList_replace extproc(*CWIDEN : *dclcase);
+    slist pointer value;
+    key likeds(LVARPUCHAR_t) const;
+    value likeds(LVARPUCHAR_t) const;
+end-pr;
+
+dcl-pr sList_freeLVPCs extproc(*CWIDEN : *dclcase);
+    slist pointer value;
+end-pr;
+
 /endif

@@ -57,6 +57,7 @@ typedef struct _ILEVATOR {
     LGL          blockingSockets;
     PSLIST       headerList;
     PSLIST       requestHeaderList;
+    PSLIST       responseHeaderList;
                 
     ANYCHAR      requestDataBuffer; 
     ANYCHAR      responseHeaderBuffer; 
@@ -90,11 +91,11 @@ typedef struct _ILEVATOR {
     LONG         bufferTotalLength;   
     PUCHAR       bufferEnd;
     struct _ILEVATOR * proxyTunnel;
+    LGL          connected;
 } ILEVATOR, *PILEVATOR;
 
 
 // Prototypes
-//void iv_newHttpClient(PILEVATOR * ppIv);
 PILEVATOR iv_newHttpClient(void);
 void iv_delete(PILEVATOR ps);
 void iv_setResponseBuffer (

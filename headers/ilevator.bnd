@@ -74,4 +74,8 @@ STRPGMEXP PGMLVL(*CURRENT) SIGNATURE('ILEvator 1.0.0')
     EXPORT SYMBOL("iv_encode_base64")
     EXPORT SYMBOL("iv_encode_base64_buffer")
     EXPORT SYMBOL("iv_setBlockingSockets")
+    EXPORT SYMBOL("iv_getHeader")
+    EXPORT SYMBOL("iv_connect")
+    EXPORT SYMBOL("iv_disconnect")
+    EXPORT SYMBOL("iv_http_request")
 ENDPGMEXP

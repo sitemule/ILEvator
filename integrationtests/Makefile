@@ -25,7 +25,7 @@ DEFINE=RPG_HAS_OVERLOAD
 #-------------------------------------------------------------------------------
 
 
-OBJECTS = ITGET ITPOST ITDELETE ITEXEC ITHEAD ITMULTI ITOPTIONS ITPUT ITPATCH ITREQHDLR
+OBJECTS = ITGET ITPOST ITDELETE ITEXEC ITHEAD ITMULTI ITOPTIONS ITPUT ITPATCH ITREQHDLR ITCONNECT
 SRVPGMS = $(RU_LIB)/RUTESTCASE $(ILEVATOR_LIB)/ILEVATOR
 
 # system and application include folder
@@ -103,6 +103,11 @@ ITTUNNEL:
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITTUNNEL) SRCSTMF('ittunnel.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/ITTUNNEL MODULE(($(BIN_LIB)/ITTUNNEL)) $(BINDFLAGS)"
 
+ITCONNECT:
+	system -i "CHGATR OBJ('itconnect.rpgmod') ATR(*CCSID) VALUE(1252)"
+	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITCONNECT) SRCSTMF('itconnect.rpgmod') $(RCFLAGS)"
+	system -i "CRTSRVPGM $(BIN_LIB)/ITCONNECT MODULE(($(BIN_LIB)/ITCONNECT)) $(BINDFLAGS)"
+
 clean:
 	-system -i "DLTMOD $(BIN_LIB)/ITGET"
 	-system -i "DLTMOD $(BIN_LIB)/ITPOST"
@@ -115,6 +120,7 @@ clean:
 	-system -i "DLTMOD $(BIN_LIB)/ITPATCH"
 	-system -i "DLTMOD $(BIN_LIB)/ITREQHDLR"
 	-system -i "DLTMOD $(BIN_LIB)/ITTUNNEL"
+	-system -i "DLTMOD $(BIN_LIB)/ITCONNECT"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITGET"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITPOST"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITDELETE"
@@ -126,6 +132,7 @@ clean:
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITPATCH"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITREQHDLR"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITTUNNEL"
+	-system -i "DLTSRVPGM $(BIN_LIB)/ITCONNECT"
 	$(MAKE) -C ileastic/ clean
 
 .PHONY:

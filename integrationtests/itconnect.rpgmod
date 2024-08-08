@@ -1,0 +1,98 @@
+**FREE
+
+///
+// Integration Test Connect
+//
+// This module tests connecting to a server and executing multiple requests.
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'ilevator.rpgle'
+/include 'psds.rpginc'
+
+
+dcl-pr test_connect_success end-pr;
+dcl-pr test_connectSuperfluousUrl_success end-pr;
+dcl-pr test_connect_failed end-pr;
+dcl-pr test_multipleRequests_success end-pr;
+dcl-pr tearDown extproc(*dclcase) end-pr;
+
+
+dcl-proc tearDown export;
+    if (iv_teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(iv_teraspace_use()));
+    endif;
+end-proc;
+
+dcl-proc test_connect_success export;
+    dcl-s client pointer;
+    
+    client = iv_newHttpClient();
+    
+    assert(iv_connect(client : 'http://localhost:35801') : 'Could not connect to integration server.');
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_connectSuperfluousUrl_success export;
+    dcl-s client pointer;
+    
+    client = iv_newHttpClient();
+    
+    assert(iv_connect(client : 'http://localhost:35801/api/hello') : 'Could not connect to integration server.');
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_connect_failed export;
+    dcl-s client pointer;
+    
+    client = iv_newHttpClient();
+    
+    monitor;
+        // TODO escape message instead of *off ???
+        assert(not iv_connect(client : 'http://localhost:44444') : 'Connected to some server but should have failed.');
+    on-error;
+        aEqual('CPF9898' : programStatus.exception : 'Unexpected escape message ' + 
+            programStatus.exception + ' - ' + programStatus.exceptionData);
+    endmon;
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_multipleRequests_success export;
+    dcl-s client pointer;
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    
+    client = iv_newHttpClient();
+    
+    iv_connect(client : 'http://localhost:35801/api/hello');
+    
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    iv_http_request(client : 'GET' : 'http://localhost:35801/api/hello');
+    aEqual('Hello World' : outbuffer);
+    
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    iv_http_request(client : 'GET' : 'http://localhost:35801/api/hello?q=me');
+    aEqual('Hello me' : outbuffer);
+    
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    iv_http_request(client : 'GET' : 'http://localhost:35801/api/hello?q=Gandalf');
+    aEqual('Hello Gandalf' : outbuffer);
+    
+    iv_disconnect(client);
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+

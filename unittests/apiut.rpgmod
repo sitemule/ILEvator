@@ -1,0 +1,69 @@
+**FREE
+
+///
+// API : Unit Test
+//
+//
+// @author Mihael Schmidt
+// @date   01.08.2024
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'api.rpginc'
+/include 'simpleList.rpginc'
+/include 'teraspace.rpginc'
+
+
+dcl-s header1Key varchar(100) ccsid(*utf8) inz('content-type');
+dcl-s header1Value varchar(100) ccsid(*utf8) inz('application/json');
+dcl-s header2Key varchar(100) ccsid(*utf8) inz('Accept');
+dcl-s header2Value varchar(100) ccsid(*utf8) inz('text/plain');
+dcl-s header3Key varchar(100) ccsid(*utf8) inz('Content-Type');
+dcl-s header3Value varchar(100) ccsid(*utf8) inz('application/vnd.rpgnextgen.data+v1+json');
+
+dcl-pr tearDown end-pr;
+
+dcl-proc lvpc;
+   dcl-pi *n likeds(LVARPUCHAR_t);
+      string varchar(1024) ccsid(*hex) options(*varsize);
+   end-pi;
+
+   dcl-ds lVarChar likeds(LVARPUCHAR_t) inz;
+
+   lVarChar.length = %len(string);
+   lVarChar.string = %addr(string: *data);
+
+   return lVarChar;
+end-proc;
+
+
+dcl-proc tearDown export;
+    if (teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(teraspace_use()));
+    endif;
+end-proc;
+
+
+dcl-proc test_getExistingHeader export;
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8);
+    
+    pClient = iv_newHttpClient();    
+    
+    client.responseHeaderList = sList_new();
+    sList_pushLVPC(client.responseHeaderList : lvpc(header1Key) : lvpc(header1Value));
+    sList_pushLVPC(client.responseHeaderList : lvpc(header2Key) : lvpc(header2Value));
+    sList_pushLVPC(client.responseHeaderList : lvpc(header3Key) : lvpc(header3Value));
+    
+    header = iv_getHeader(pClient : 'content-type');
+    aEqual('application/vnd.rpgnextgen.data+v1+json' : header);
+    
+    on-exit;
+        iv_free(pClient);
+end-proc;
+
+

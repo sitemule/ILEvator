@@ -102,7 +102,6 @@ VOID sList_free (PSLIST pSlist)
 \* --------------------------------------------------------------------------- */
 PSLISTNODE sList_pushLVPC (PSLIST pSlist , PLVARPUCHAR key , PLVARPUCHAR value)
 {
-   
     SLISTKEYVAL keyandvalue;
     keyandvalue.key   = *key;
     keyandvalue.value = *value;
@@ -132,3 +131,39 @@ void sList_lookupLVPC (PLVARCHAR pRetVal , PSLIST pSlist , PLVARCHAR key)
     return;
 }
 
+
+void sList_replace (PSLIST pSlist, PLVARPUCHAR key , PLVARPUCHAR value) {
+    PSLISTNODE pNode;
+    LVARPUCHAR vkey = {key->Length , key->String};
+
+    if ( ! pSlist ) return;
+
+    for (pNode = pSlist->pHead; pNode; pNode = pNode->pNext) {
+        PSLISTKEYVAL pKeyAndValue = pNode->payloadData;
+        if (lvpcIsEqual(&pKeyAndValue->key, &vkey)) {
+            // TODO do I need to free the old value?
+            
+            pKeyAndValue->value.Length = value->Length;
+            pKeyAndValue->value.String = value->String;
+            return;
+        }
+    }
+    
+    // not found -> add
+    sList_pushLVPC(pSlist, key, value);
+}
+
+
+void sList_freeLVPCs(PSLIST pSlist) {
+    PSLISTNODE pNode;
+
+    if ( ! pSlist ) return;
+
+    for (pNode = pSlist->pHead; pNode; pNode = pNode->pNext) {
+        PSLISTKEYVAL payload = pNode->payloadData;
+        teraspace_free(&(payload->key.String));
+        teraspace_free(&(payload->value.String));
+    }
+    
+    sList_free(pSlist);
+}

@@ -16,8 +16,10 @@ ctl-opt nomain;
 
 
 dcl-pr tearDown extproc(*dclcase) end-pr;
-dcl-pr test_executeWithAdditionalHeadersOnClient end-pr;
-dcl-pr test_executeWithAdditionalHeadersOnRequest end-pr;
+dcl-pr test_executeWithAdditionalHeadersOnClient extproc(*dclcase) end-pr;
+dcl-pr test_executeWithAdditionalHeadersOnRequest extproc(*dclcase) end-pr;
+dcl-pr test_executeCheckingResponseHeader extproc(*dclcase) end-pr;
+dcl-pr test_executeCheckingResponseHeaderIgnoreCase extproc(*dclcase) end-pr;
 
 
 dcl-proc tearDown export;
@@ -73,3 +75,47 @@ dcl-proc test_executeWithAdditionalHeadersOnRequest export;
         iv_free(httpClient);
         iv_freeList(headers);
 end-proc;
+
+
+dcl-proc test_executeCheckingResponseHeader export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_execute(httpClient : 'GET' : 'http://localhost:35801/api/hello?q=Mihael'); 
+    iEqual(IV_HTTP_OK : iv_getStatus(httpClient));
+    
+    header = iv_getHeader(httpClient : 'ILEVATOR_HELLO_QUERY');
+    aEqual('Mihael' : header);
+    
+    header = iv_getHeader(httpClient : 'Content-Type');
+    aEqual('text/plain' : header);
+    
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_executeCheckingResponseHeaderIgnoreCase export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_execute(httpClient : 'GET' : 'http://localhost:35801/api/hello?q=Mihael'); 
+    iEqual(IV_HTTP_OK : iv_getStatus(httpClient));
+    
+    header = iv_getHeader(httpClient : 'ILEvator_Hello_Query');
+    aEqual('Mihael' : header);
+    
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+

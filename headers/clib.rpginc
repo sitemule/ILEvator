@@ -99,6 +99,17 @@ dcl-pr strerror pointer extproc('strerror');
   errno  int(10) value;
 end-pr;
 
+dcl-pr strcasecmp int(10) extproc(*CWIDEN : *dclcase);
+    s1 pointer value;
+    s2 pointer value;
+end-pr;
+
+dcl-pr strncasecmp int(10) extproc(*CWIDEN : *dclcase);
+    s1 pointer value;
+    s2 pointer value;
+    length uns(10) value;
+end-pr;
+
 dcl-pr strlen uns(10) extproc('strlen');
   string pointer value;
 end-pr;

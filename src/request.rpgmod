@@ -112,7 +112,7 @@ dcl-proc iv_request_dispose export;
     teraspace_free(request.content);
   endif;
 
-  deallocateHeaders(request.headers);
+  sList_freeLVPCs(request.headers);
 
   teraspace_free(p_request);
 end-proc;
@@ -629,26 +629,6 @@ dcl-proc iv_request_needsStreaming export;
     else;
         return *off;
     endif;
-end-proc;
-
-
-dcl-proc deallocateHeaders;
-  dcl-pi *n;
-    list pointer;
-  end-pi;
-
-  dcl-ds iterator likeds(SLISTITERATOR_t) inz;
-  dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
-  dcl-ds payload likeds(SLISTKEYVAL_t) based(node.payloadData);
-
-  iterator = sList_setIterator(list);
-
-  dow (sList_foreach(iterator));
-    teraspace_free(payload.key.string);
-    teraspace_free(payload.value.string);
-  enddo;
-
-  sList_free(list);
 end-proc;
 
 

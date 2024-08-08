@@ -5,18 +5,16 @@ ctl-opt nomain thread(*concurrent);
 /include 'api.rpginc'
 /include 'anychar.rpginc'
 /include 'chunked.rpginc'
+/include 'clib.rpginc'
 /include 'debug.rpginc'
 /include 'httpclient.rpginc'
 /include 'message.rpginc'
 /include 'simpleList.rpginc'
 /include 'sockets.rpginc'
 /include 'teraspace.rpginc'
-/include 'clib.rpginc'
-
 
 
 dcl-s listedHttpStatusCodes int(5) dim(41) ctdata;
-
 
 
 dcl-proc iv_newHttpClient export;
@@ -35,6 +33,7 @@ dcl-proc iv_newHttpClient export;
 
     client.sockets =  sockets_new();
     client.headerList = sList_new();
+    client.responseHeaderList = *NULL;
     client.timeout = DEFAULT_TIMEOUT;
     client.retries = DEFAULT_RETRIES;
     client.blockingSockets = *ON;
@@ -69,6 +68,7 @@ dcl-proc iv_free export;
     endif;
     
     iv_freeList(client.headerList);
+    sList_freeLVPCs(client.responseHeaderList);
     
     teraspace_free(client.method);
     teraspace_free(client.url);
@@ -254,8 +254,8 @@ dcl-proc iv_setBlockingSockets export;
     dcl-ds client likeds(ilevator_t) based(pClient);
 
     client.blockingSockets = blockingSockets;
-
 end-proc;
+
 
 dcl-proc iv_execute export;
     dcl-pi *n ind;
@@ -364,27 +364,186 @@ dcl-proc iv_execute export;
 end-proc;
 
 
-dcl-proc connect_using_proxy_tunnel ;
+dcl-proc iv_connect export;
+    dcl-pi *n ind;
+        pClient pointer value;
+        url pointer options(*string:*trim) value;
+    end-pi;
 
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-s  apiStatus int(10) inz(IV_STATUS_RETRY);
+    dcl-s  try int(5);
+    dcl-s  ok like(ENUM);
+    dcl-s  success ind;
+
+    if (client.connected);
+        iv_disconnect(pClient);
+    endif;
+
+    client.url = teraspace_strTrimDup(url);
+   
+    parseUrl(pClient : url);
+   
+    iv_debug('Port: %s' : %str(%addr(client.port):10) );
+    iv_debug('Server: %s' : %str(%addr(client.server):200) );
+    iv_debug('Host: %s' : %str(%addr(client.host):200) );
+
+    if client.proxyTunnel <> *NULL;
+        return connect_using_proxy_tunnel(client);
+    endif;
+
+    for try = 0 to client.retries;
+        ok = sockets_connect(
+            client.sockets :
+            client.server :
+            client.port :
+            client.timeout * 1000:  // from seconds to milliseconds
+            client.blockingSockets
+        );
+        if (ok = TRUE);
+            apiStatus = IV_STATUS_OK;
+            client.connected = *on;
+            leave;
+        else;
+            apiStatus = IV_STATUS_ERROR;
+        endif;
+    endfor;
+
+    return (apiStatus = IV_STATUS_OK);
+end-proc;
+
+
+dcl-proc iv_disconnect export;
+    dcl-pi *n;
+        pClient pointer value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    
+    sockets_close(client.sockets);
+    client.connected = *off;
+end-proc;
+
+
+dcl-proc iv_http_request export;
+    dcl-pi *n ind;
+        pClient pointer value;
+        method pointer options(*string:*trim) value;
+        url pointer options(*string:*trim) value;
+        headers pointer options(*nopass) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-s  apiStatus int(10) inz(IV_STATUS_RETRY);
+    dcl-s  try int(5);
+    dcl-s  ok like(ENUM);
+    dcl-s  success ind; 
+    
+    if (not client.connected);
+        iv_debug('Not connected to server.');
+        return *OFF;
+    endif;
+    
+    if (%parms() >= 4);
+        client.requestHeaderList = headers;
+    endif;
+
+    if (client.method <> *NULL);
+        teraspace_free(client.method);
+    endif;
+    client.method = teraspace_strTrimDup(method);
+    
+    if (client.url <> *NULL);
+        teraspace_free(client.url);
+    endif;
+    client.url = teraspace_strTrimDup(url);
+    
+    parseUrl(pClient : url); 
+    
+    iv_debug('Port: %s' : %str(%addr(client.port):10) );
+    iv_debug('Server: %s' : %str(%addr(client.server):200) );
+    iv_debug('Host: %s' : %str(%addr(client.host):200) );
+    iv_debug('Resource: %s' : %str(%addr(client.resource):200) );
+
+    if (client.proxyTunnel <> *NULL);
+        success = connect_using_proxy_tunnel (client);
+        if not success;
+            return *OFF;
+        endif;
+    endif;
+    
+    for try = 0 to client.retries;
+        apiStatus = sendRequest(pClient);
+        if (apiStatus = IV_STATUS_ERROR);
+            leave; 
+        endif;
+
+        apiStatus = receiveHeader(pClient);
+
+        if (apiStatus = IV_STATUS_ERROR);
+            leave; 
+        endif;
+        if (apiStatus = IV_STATUS_RETRY);
+            iter; 
+        endif;
+        
+        iv_debug('HTTP response status: %s' : %char(client.status));
+
+        // Don't try to get data if it was a HEAD request - it is only the header
+        // or status 204 => no content
+        if (%str(client.method:10) = 'HEAD' or client.status = 204);
+            // No content, don't read any longer
+            apiStatus = IV_STATUS_OK;
+        elseif ( client.status = 405); // Invalid method - no data
+            apiStatus = IV_STATUS_ERROR;
+        elseif (client.responseIsChunked);
+            apiStatus = iv_chunked_receive(pClient);
+        else;
+            apiStatus = receiveData(pClient);
+        endif;
+
+        if (apiStatus = IV_STATUS_OK);
+            leave; 
+        endif;
+        if (apiStatus = IV_STATUS_ERROR);
+            leave; 
+        endif;
+        if (apiStatus = IV_STATUS_RETRY);
+            iter;
+        endif;
+        
+    endfor;
+
+    if (iv_getHeader(pClient : 'Connection') = 'close');
+        iv_disconnect(pClient);
+    endif;
+
+    iv_anychar_finalize(%addr(client.responseHeaderBuffer));
+    iv_anychar_finalize(%addr(client.responseDataBuffer));
+
+    if (client.responseDataFile <> *null);
+        fclose(client.responseDataFile);
+    endif;
+
+    return (apiStatus = IV_STATUS_OK);
+end-proc;
+
+
+dcl-proc connect_using_proxy_tunnel ;
     dcl-pi *n ind;
         client likeds(ilevator_t);
     end-pi;
+    
     dcl-s  try int(5);
     dcl-s  ok like(ENUM);
-
-    dcl-s  apiStatus  int(10) inz(IV_STATUS_RETRY);
-    dcl-s  pProxy     pointer;
-
-    dcl-ds proxy      likeds(ilevator_t) based(pProxy);
+    dcl-s  apiStatus int(10) inz(IV_STATUS_RETRY);
+    dcl-s  pProxy pointer;
+    dcl-ds proxy likeds(ilevator_t) based(pProxy);
 
     pProxy = client.proxyTunnel;
-
     proxy.method = teraspace_strTrimDup('CONNECT');
-    
-    
 
     for try = 0 to proxy.retries;
-
         parseUrl(pProxy : proxy.url); 
 
         iv_debug('Connecting to proxy : %s %s' : %char(proxy.host) : %char(proxy.port));
@@ -425,11 +584,9 @@ dcl-proc connect_using_proxy_tunnel ;
         elseif (apiStatus = IV_STATUS_RETRY);
             iter; 
         endif;
-        
     endfor;
     
-    return *OFF; // This far !! error 
-    
+    return *OFF; // This far => error 
 end-proc;
 
 
@@ -489,6 +646,54 @@ dcl-proc iv_getErrorMessage export;
     dcl-ds client likeds(ilevator_t) based(pClient); 
     
     return client.message;
+end-proc;
+
+
+dcl-proc iv_getHeader export;
+    dcl-pi *n varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8);
+        pClient pointer value;
+        pHeaderName varchar(IV_HEADER_NAME_SIZE:2) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient); 
+    dcl-ds iterator likeds(SLISTITERATOR_t) inz;
+    dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
+    dcl-ds mapEntry likeds(SLISTKEYVAL_t) based(node.payloadData);
+    dcl-s size int(10);
+    dcl-s headerName varchar(IV_HEADER_NAME_SIZE:2);
+    dcl-s headerValue varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*hex);
+    dcl-s tempHeaderAscii varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8);
+    dcl-s tempHeaderEbcdic varchar(IV_HEADER_VALUE_SIZE:2);
+    dcl-s UPPER char(26) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+    dcl-s LOWER char(26) inz('abcdefghijklmnopqrstuvwxyz');
+    
+    headerName = %xlate(UPPER : LOWER : pHeaderName);
+    
+    iterator = sList_setIterator(client.responseHeaderList);
+   
+    dow (sList_foreach(iterator));
+        if (%len(headerName) = mapEntry.key.Length);
+        
+            %len(tempHeaderAscii) = mapEntry.key.Length;
+            memcpy(%addr(tempHeaderAscii : *data) : mapEntry.key.String : mapEntry.key.Length);
+            tempHeaderEbcdic = tempHeaderAscii;
+            tempHeaderEbcdic = %xlate(UPPER : LOWER : tempHeaderEbcdic);
+        
+            if (headerName = tempHeaderEbcdic);
+                size = mapEntry.value.Length;
+                if (mapEntry.value.Length > IV_HEADER_VALUE_SIZE);
+                    size = IV_HEADER_VALUE_SIZE;
+                endif;
+            
+                %len(headerValue) = size;
+                memcpy(%addr(headerValue : *data) : mapEntry.value.String : size);
+                
+                // don't leave, we need the LAST corresponding header
+            endif;
+        endif;
+    enddo;
+    
+    return headerValue;
 end-proc;
 
 

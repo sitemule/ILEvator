@@ -20,6 +20,7 @@ dcl-ds ilevator_t qualified template align(*full);
     
     headerList pointer;
     requestHeaderList pointer;
+    responseHeaderList pointer;
     
     requestDataBuffer likeds(anychar_t);
     responseHeaderBuffer likeds(anychar_t);
@@ -51,6 +52,7 @@ dcl-ds ilevator_t qualified template align(*full);
     bufferTotalLength uns(10);
     bufferEnd pointer;
     proxyTunnel pointer;
+    connected ind;
 end-ds;
 
 dcl-s ENUM int(3) template;

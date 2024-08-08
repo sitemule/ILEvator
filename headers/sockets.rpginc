@@ -20,6 +20,10 @@ dcl-pr sockets_free extproc(*CWIDEN:'sockets_free');
     sockets pointer value;
 end-pr;
 
+dcl-pr sockets_close extproc(*CWIDEN:'sockets_close');
+    sockets pointer value;
+end-pr;
+
 dcl-pr sockets_connect int(3) extproc(*CWIDEN:'sockets_connect');
     sockets  pointer value;
     server pointer options(*string) value;
@@ -28,14 +32,11 @@ dcl-pr sockets_connect int(3) extproc(*CWIDEN:'sockets_connect');
     blockingSockets ind value;
 end-pr;
 
-
 dcl-pr sockets_copy_socket int(3) extproc(*CWIDEN:'sockets_copy_socket');
     toSockets    pointer value;
     fromSockets  pointer value;
     hostName     pointer value options (*string:*trim);
-
 end-pr;
-
 
 dcl-pr sockets_set_secure int(3) extproc(*CWIDEN:'sockets_set_secure');
     sockets  pointer value;
