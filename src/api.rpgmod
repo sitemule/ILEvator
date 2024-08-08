@@ -259,108 +259,25 @@ end-proc;
 
 dcl-proc iv_execute export;
     dcl-pi *n ind;
-        pClient pointer value;
+        client pointer value;
         method pointer options(*string:*trim) value;
         url pointer options(*string:*trim) value;
         headers pointer options(*nopass) value;
     end-pi;
 
-    dcl-ds client likeds(ilevator_t) based(pClient);
-    dcl-s  apiStatus int(10) inz(IV_STATUS_RETRY);
-    dcl-s  try int(5);
-    dcl-s  ok like(ENUM);
-    dcl-s  success ind; 
+    dcl-s success ind;
     
-    if (%parms() >= 4);
-        client.requestHeaderList = headers;
-    endif;
-
-    client.method = teraspace_strTrimDup(method);
-    client.url    = teraspace_strTrimDup(url);
-    
-    parseUrl(pClient : url); 
-    
-    iv_debug('Port: %s' : %str(%addr(client.port):10) );
-    iv_debug('Server: %s' : %str(%addr(client.server):200) );
-    iv_debug('Host: %s' : %str(%addr(client.host):200) );
-    iv_debug('Resource: %s' : %str(%addr(client.resource):200) );
-
-    if client.proxyTunnel <> *NULL;
-        success = connect_using_proxy_tunnel (client);
-        if not success;
-            return *OFF;
-        endif;
-    endif;
-
-    for try = 0 to client.retries;
-
-        // Already connect by proxy 
-        if client.proxyTunnel = *NULL;
-
-            ok = sockets_connect(
-                client.sockets : 
-                client.server : 
-                client.port : 
-                client.timeout * 1000:  // from seconds to milliseconds
-                client.blockingSockets
-            );
-            if (ok = TRUE);
-                apiStatus = IV_STATUS_OK;
-            else;
-                apiStatus = IV_STATUS_ERROR;
-                iter;
-            endif;
-        endif;
-
-        apiStatus = sendRequest(pClient);
-        if (apiStatus = IV_STATUS_ERROR);
-            leave; 
-        endif;
-
-        apiStatus = receiveHeader(pClient);
-
-        if (apiStatus = IV_STATUS_ERROR);
-            leave; 
-        endif;
-        if (apiStatus = IV_STATUS_RETRY);
-            iter; 
-        endif;
-        
-        iv_debug('HTTP response status: %s' : %char(client.status));
-
-        // Don't try to get data if it was a HEAD request - it is only the header
-        // or status 204 => no content
-        if (%str(client.method:10) = 'HEAD' or client.status = 204);
-            // No content, don't read any longer
-            apiStatus = IV_STATUS_OK;
-        elseif ( client.status = 405); // Invalid method - no data
-            apiStatus = IV_STATUS_ERROR;
-        elseif (client.responseIsChunked);
-            apiStatus = iv_chunked_receive(pClient);
+    if (iv_connect(client : url));
+        if (%parms() >= 4);
+            success = iv_http_request(client : method : url : headers);
         else;
-            apiStatus = receiveData(pClient);
+            success = iv_http_request(client : method : url);
         endif;
-
-        if (apiStatus = IV_STATUS_OK);
-            leave; 
-        endif;
-        if (apiStatus = IV_STATUS_ERROR);
-            leave; 
-        endif;
-        if (apiStatus = IV_STATUS_RETRY);
-            iter;
-        endif;
-        
-    endfor;
-
-    iv_anychar_finalize(%addr(client.responseHeaderBuffer));
-    iv_anychar_finalize(%addr(client.responseDataBuffer));
-
-    if (client.responseDataFile <> *null);
-        fclose(client.responseDataFile);
     endif;
+    
+    iv_disconnect(client);
 
-    return (apiStatus = IV_STATUS_OK);
+    return success;
 end-proc;
 
 
@@ -374,7 +291,6 @@ dcl-proc iv_connect export;
     dcl-s  apiStatus int(10) inz(IV_STATUS_RETRY);
     dcl-s  try int(5);
     dcl-s  ok like(ENUM);
-    dcl-s  success ind;
 
     if (client.connected);
         iv_disconnect(pClient);
@@ -388,25 +304,34 @@ dcl-proc iv_connect export;
     iv_debug('Server: %s' : %str(%addr(client.server):200) );
     iv_debug('Host: %s' : %str(%addr(client.host):200) );
 
-    if client.proxyTunnel <> *NULL;
-        return connect_using_proxy_tunnel(client);
+    if (client.proxyTunnel <> *NULL);
+        if (not connect_using_proxy_tunnel(client));
+            return *OFF;
+        endif;
     endif;
 
     for try = 0 to client.retries;
-        ok = sockets_connect(
-            client.sockets :
-            client.server :
-            client.port :
-            client.timeout * 1000:  // from seconds to milliseconds
-            client.blockingSockets
-        );
-        if (ok = TRUE);
-            apiStatus = IV_STATUS_OK;
-            client.connected = *on;
-            leave;
-        else;
-            apiStatus = IV_STATUS_ERROR;
+    
+        // Already connect by proxy 
+        if (client.proxyTunnel = *NULL);
+    
+            ok = sockets_connect(
+                client.sockets :
+                client.server :
+                client.port :
+                client.timeout * 1000:  // from seconds to milliseconds
+                client.blockingSockets
+            );
+            if (ok = TRUE);
+                apiStatus = IV_STATUS_OK;
+                client.connected = *on;
+                leave;
+            else;
+                apiStatus = IV_STATUS_ERROR;
+            endif;
+            
         endif;
+        
     endfor;
 
     return (apiStatus = IV_STATUS_OK);

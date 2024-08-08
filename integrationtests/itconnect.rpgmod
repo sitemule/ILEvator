@@ -19,6 +19,7 @@ dcl-pr test_connect_success end-pr;
 dcl-pr test_connectSuperfluousUrl_success end-pr;
 dcl-pr test_connect_failed end-pr;
 dcl-pr test_multipleRequests_success end-pr;
+dcl-pr test_multipleRequestsDifferentResources_success end-pr;
 dcl-pr tearDown extproc(*dclcase) end-pr;
 
 
@@ -94,5 +95,42 @@ dcl-proc test_multipleRequests_success export;
     
     on-exit;
         iv_free(client);
+end-proc;
+
+
+dcl-proc test_multipleRequestsDifferentResources_success export;
+    dcl-s client pointer;
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s messageBody varchar(IV_BUFFER_SIZE:4);
+    dcl-s headers pointer;
+    
+    client = iv_newHttpClient();
+    
+    iv_connect(client : 'http://localhost:35801');
+    
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    iv_http_request(client : 'GET' : 'http://localhost:35801/api/hello');
+    aEqual('Hello World' : outbuffer);
+    
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    iv_http_request(client : 'OPTIONS' : 'http://localhost:35801/api/entry/success');
+    aEqual('GET,HEAD' : outbuffer); 
+    
+    messageBody = 'Hello ILEvator!';
+    iv_setRequestDataBuffer(client : %addr(messageBody) : %size(messageBody) : IV_VARCHAR4 : IV_CCSID_JOB);
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    iv_http_request(client : 'PATCH' : 'http://localhost:35801/api/entry/success');
+    aEqual('ok' : outbuffer); 
+    
+    headers = iv_buildList('IV_HEADER_TEST' : 'testy');
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    iv_http_request(client : 'GET' : 'http://localhost:35801/api/headers/IV_HEADER_TEST' : headers);
+    aEqual('testy' : outbuffer); 
+    
+    iv_disconnect(client);
+    
+    on-exit;
+        iv_free(client);
+        iv_freeList(headers);
 end-proc;
 
