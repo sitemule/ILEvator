@@ -3,8 +3,8 @@ package ilevator;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
 
 @ApplicationPath("/api")
 public class IlevatorApplication extends Application {
@@ -16,4 +16,3 @@ public class IlevatorApplication extends Application {
 		return props;
 	}
 }
-

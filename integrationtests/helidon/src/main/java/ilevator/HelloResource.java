@@ -1,13 +1,13 @@
 package ilevator;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import org.apache.commons.lang3.StringUtils;
+
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 @Path("hello")
 public class HelloResource {
@@ -18,5 +18,5 @@ public class HelloResource {
 		return Response.ok("Hello " + StringUtils.defaultString(name, "World")).header("ILEVATOR_HELLO_QUERY", name)
 				.build();
 	}
-	
+
 }
