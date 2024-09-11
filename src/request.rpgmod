@@ -704,7 +704,14 @@ dcl-proc buildConnectHeader;
   end-pi;
 
   data = request.method + UTF8_SPACE + request.url.host + UTF8_COLON + %char(request.url.port) + ' HTTP/1.1' + CRLF;
-  data += 'Host: ' + request.url.host + UTF8_COLON + %char(request.url.port) + CRLF;
+
+  // Some http servers (nemhandel.dk) fail, if port number :443 is specified in the HOST header.
+  if (request.url.port = 80 or request.url.port = 443);
+    data += 'Host: ' + request.url.host + CRLF;
+  else;
+    data += 'Host: ' + request.url.host + UTF8_COLON + %char(request.url.port) + CRLF;
+  endif;
+
   data += 'Connection: keep-alive' + CRLF;
 end-proc;
 
@@ -725,7 +732,14 @@ dcl-proc buildNonConnectHeader;
     data += UTF8_QUESTION_MARK + request.url.query;
   endif;
   data += ' HTTP/1.1' + CRLF;
-  data += 'Host: ' + request.url.host + UTF8_COLON + %char(request.url.port) + CRLF;
+
+  // Some http servers (nemhandel.dk) fail, if port number :443 is specified in the HOST header.
+  if (request.url.port = 80 or request.url.port = 443);
+    data += 'Host: ' + request.url.host + CRLF;
+  else;
+    data += 'Host: ' + request.url.host + UTF8_COLON + %char(request.url.port) + CRLF;
+  endif;
+
   data += 'Connection: keep-alive' + CRLF;
 end-proc;
 

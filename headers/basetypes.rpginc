@@ -77,6 +77,6 @@ dcl-c NO_RETRIES 0;
 dcl-s UPPER char(26) ccsid(*utf8) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 dcl-s LOWER char(26) ccsid(*utf8) inz('abcdefghijklmnopqrstuvwxyz');
 
-dcl-c ILEVATOR_VERSION '0.1.0';
+dcl-c ILEVATOR_VERSION '0.1.1';
 
 
