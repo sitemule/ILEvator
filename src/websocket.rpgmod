@@ -207,7 +207,7 @@ dcl-proc iv_ws_disconnect export;
         memcpy(%addr(payload : *data) + 2 : %addr(reason : *data) : %len(reason));
     endif;
     
-    frame = createFrame(p_client : IV_WS_OPCODE_CLOSE : payload);
+    frame = createFrame(p_client : IV_WS_OPCODE_CLOSE : %addr(payload : *data) : %len(payload));
     
     cvthc(%addr(hexBuffer) : %addr(frame : *data) : %len(frame) * 2);
     iv_debug('Close frame: ' + %trimr(hexBuffer));
@@ -222,19 +222,33 @@ end-proc;
 dcl-proc iv_ws_sendText export;
     dcl-pi *n;
         p_client pointer value;
-        payload varchar(IV_BUFFER_SIZE) ccsid(*utf8) const;   
+        payload varchar(IV_BUFFER_SIZE) ccsid(*utf8) value;  
     end-pi;
 
     dcl-ds client likeds(ilevator_t) based(p_client);
     dcl-s frame varchar(IV_WS_MAX_FRAME_SIZE) ccsid(*hex);
     dcl-s rc int(10);
     
-    // TODO fragmentation of message (lookup configured frame size, 0 = single frame)
-    frame = createFrame(p_client : IV_WS_OPCODE_DATA_TEXT : payload);
-    
-    rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
-    if (rc <> %len(frame));
-        iv_debug('Socket did not sent all bytes of text data frame.');
+    if (%len(payload) = 0);
+        frame = createFrame(p_client : IV_WS_OPCODE_DATA_TEXT : %addr(payload : *data) : %len(payload));
+        rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+        if (rc <> %len(frame));
+            iv_debug('Socket did not sent all bytes of text data frame.');
+        endif;
+    elseif (client.wsFrameSize = 0 or %len(payload) <= client.wsFrameSize);
+        frame = createFrame(p_client : IV_WS_OPCODE_DATA_TEXT : %addr(payload : *data) : %len(payload));
+        rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+        if (rc <> %len(frame));
+            iv_debug('Socket did not sent all bytes of text data frame.');
+        endif;
+    else;
+        
+        frame = ''; // TODO
+        
+        rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+        if (rc <> %len(frame));
+            iv_debug('Socket did not sent all bytes of text data frame.');
+        endif;
     endif;
 end-proc;
 
@@ -300,8 +314,11 @@ dcl-proc iv_ws_ping export;
 
     dcl-s frame varchar(IV_WS_MAX_FRAME_SIZE) ccsid(*hex);
     dcl-s rc int(10);
+    dcl-s payload char(26) ccsid(*utf8);
     
-    frame = createFrame(p_client : IV_WS_OPCODE_PING : %char(%timestamp() : *ISO));
+    payload = %char(%timestamp() : *ISO);
+    
+    frame = createFrame(p_client : IV_WS_OPCODE_PING : %addr(payload) : %len(payload));
     
     rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
     if (rc <> %len(frame));
@@ -319,8 +336,11 @@ dcl-proc iv_ws_pong export;
 
     dcl-s frame varchar(IV_WS_MAX_FRAME_SIZE) ccsid(*hex);
     dcl-s rc int(10);
+    dcl-s payload char(26) ccsid(*utf8);
     
-    frame = createFrame(p_client : IV_WS_OPCODE_PONG : %char(%timestamp() : *ISO));
+    payload = %char(%timestamp() : *ISO);
+    
+    frame = createFrame(p_client : IV_WS_OPCODE_PONG : %addr(payload) : %len(payload));
     
     rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
     if (rc <> %len(frame));
@@ -333,7 +353,8 @@ dcl-proc createFrame export;
     dcl-pi *n varchar(IV_WS_MAX_FRAME_SIZE) ccsid(*hex);
         p_client pointer value;
         opcode char(1) ccsid(*hex) const;
-        payload varchar(1000000) ccsid(*hex) value options(*nopass);
+        p_payload pointer value options(*nopass);
+        p_payloadLength uns(10) value options(*nopass);
         p_fin ind const options(*nopass);
     end-pi;
 
@@ -353,11 +374,11 @@ dcl-proc createFrame export;
     dcl-s hexBuffer char(18) inz(*allx'00');
     dcl-s headerLength uns(3);
     
-    if (%parms() >= 2);
-        payloadLength = %len(payload);
+    if (%parms() >= 4);
+        payloadLength = p_payloadLength;
     endif;
     
-    if (%parms() >= 3);
+    if (%parms() >= 5);
         fin = IV_WS_FIN;
     endif;
     
@@ -398,8 +419,8 @@ dcl-proc createFrame export;
     if (payloadLength > 0);
         cptr += 4;
         payloadPointer = cptr;
-        memcpy(cptr : %addr(payload : *data) : %len(payload));
-        mask(maskingKey : payloadPointer : %len(payload));
+        memcpy(cptr : p_payload : payloadLength);
+        mask(maskingKey : payloadPointer : payloadLength);
     endif;
     
     // set buffer length: header (1) + payload length size + masking key (4) + payload

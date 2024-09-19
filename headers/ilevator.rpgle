@@ -1935,7 +1935,7 @@ end-pr;
 
 dcl-pr iv_ws_sendText extproc(*dclcase);
     client pointer value;
-    value varchar(IV_BUFFER_SIZE) ccsid(*utf8) const;
+    value varchar(IV_BUFFER_SIZE) ccsid(*utf8) value;
 end-pr;
 
 dcl-pr iv_ws_sendBinary extproc(*dclcase);
