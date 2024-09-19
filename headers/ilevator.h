@@ -92,6 +92,7 @@ typedef struct _ILEVATOR {
     PUCHAR       bufferEnd;
     struct _ILEVATOR * proxyTunnel;
     LGL          connected;
+    ULONG        wsFrameSize;
 } ILEVATOR, *PILEVATOR;
 
 

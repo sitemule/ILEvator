@@ -10,6 +10,7 @@ import org.glassfish.tyrus.core.coder.ToStringEncoder;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import jakarta.websocket.OnClose;
+import jakarta.websocket.OnMessage;
 import jakarta.websocket.OnOpen;
 import jakarta.websocket.Session;
 import jakarta.websocket.server.ServerEndpoint;
@@ -38,6 +39,12 @@ public class MessageEndpoint {
 	public void onClose(Session session) {
 		sessions.remove(session);
 		logger.info("Session removed " + session.getId());
+	}
+
+    @OnMessage
+	public void receiveMessage(String message) {
+	    logger.info("Received text message: " + message);
+		messageQueue.add(message);
 	}
 
 	private void notifyAllClient() {

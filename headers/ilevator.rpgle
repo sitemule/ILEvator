@@ -1908,9 +1908,59 @@ end-pr;
 
 
 
+//
+// for testing usage
+//
 dcl-pr iv_teraspace_leak int(3) extproc(*dclcase) end-pr;
 
 dcl-pr iv_teraspace_use uns(20) extproc(*dclcase) end-pr;
 
 
 
+//
+// web socket
+//
+
+dcl-pr iv_ws_connect ind extproc(*dclcase);
+    client pointer value;
+    url varchar(IV_URL_SIZE:2) value;
+    subprotocols varchar(100) dim(10) options(*nopass);
+    headers pointer value options(*nopass);
+end-pr;
+
+dcl-pr iv_ws_disconnect extproc(*dclcase);
+    client pointer value;
+    reason varchar(80) ccsid(*utf8) value options(*nopass);
+end-pr;
+
+dcl-pr iv_ws_sendText extproc(*dclcase);
+    client pointer value;
+    value varchar(IV_BUFFER_SIZE) ccsid(*utf8) const;
+end-pr;
+
+dcl-pr iv_ws_sendBinary extproc(*dclcase);
+    client pointer value;
+    value pointer value;
+    length uns(10) value;
+end-pr;
+
+/if defined (RPG_HAS_OVERLOAD)
+dcl-pr iv_ws_send overload(iv_ws_sendText : iv_ws_sendBinary);
+/endif
+
+dcl-pr iv_ws_receive varchar(IV_BUFFER_SIZE) ccsid(*HEX) extproc(*dclcase);
+    client pointer value;
+end-pr;
+
+dcl-pr iv_ws_ping extproc(*dclcase);
+    client pointer value;
+end-pr;
+
+dcl-pr iv_ws_pong extproc(*dclcase);
+    client pointer value;
+end-pr;
+
+dcl-pr iv_ws_setFrameSize extproc(*dclcase);
+    client pointer value;
+    frameSize uns(10) value;
+end-pr;
