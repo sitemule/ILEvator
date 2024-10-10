@@ -92,7 +92,7 @@ dcl-proc test_ws_ping export;
     dcl-s errorMessage varchar(256);
     dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
 
-    httpClient = iv_newHttpClient(); 
+    httpClient = iv_newHttpClient();
     iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
     
     iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
@@ -145,6 +145,7 @@ dcl-proc test_ws_sendText export;
         iv_free(httpClient);
 end-proc;
 
+
 dcl-proc test_ws_sendLongerText export;
     dcl-s httpClient pointer; 
     dcl-s outbuffer varchar(65000:4) ccsid(1208); 
@@ -166,3 +167,24 @@ dcl-proc test_ws_sendLongerText export;
         iv_free(httpClient);
 end-proc;
 
+
+dcl-proc test_ws_sendText_frames export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_setFrameSize(httpClient : 30);    
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    iv_ws_send(httpClient : 'May it be a light to you in dark places, when all other lights go out. - Galadriel');
+    sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
+
+    on-exit;
+        iv_free(httpClient);
+end-proc;

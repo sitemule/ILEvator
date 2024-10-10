@@ -114,6 +114,9 @@ dcl-proc iv_ws_connect export;
     endif;
     
     return connected;
+    
+    on-exit;
+        iv_freeList(headers);
 end-proc;
 
 
@@ -228,7 +231,11 @@ dcl-proc iv_ws_sendText export;
     dcl-ds client likeds(ilevator_t) based(p_client);
     dcl-s frame varchar(IV_WS_MAX_FRAME_SIZE) ccsid(*hex);
     dcl-s rc int(10);
-    
+    dcl-s x int(10);
+    dcl-s frameSize uns(10);
+    dcl-s fin ind inz(*off);
+    dcl-s numberFrames uns(10);
+
     if (%len(payload) = 0);
         frame = createFrame(p_client : IV_WS_OPCODE_DATA_TEXT : %addr(payload : *data) : %len(payload));
         rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
@@ -243,12 +250,27 @@ dcl-proc iv_ws_sendText export;
         endif;
     else;
         
-        frame = ''; // TODO
+        // send text in multiple frames as the text size is bigger than the configured max. frame size
+        dow (%len(payload) > x);
+            if (client.wsFrameSize >= %len(payload) - x);
+                frameSize = %len(payload) - x;
+                fin = *on;
+            else;
+                frameSize = client.wsFrameSize;
+            endif;
         
-        rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
-        if (rc <> %len(frame));
-            iv_debug('Socket did not sent all bytes of text data frame.');
-        endif;
+            frame = createFrame(p_client : IV_WS_OPCODE_DATA_TEXT : %addr(payload : *data) + x : frameSize : fin);
+            x += frameSize;
+            
+            rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+            if (rc <> %len(frame));
+                iv_debug('Socket did not sent all bytes of text data frame.');
+            endif;
+            
+            numberFrames += 1;
+        enddo;
+        
+        iv_debug('Sent %s frames' : %char(numberFrames));
     endif;
 end-proc;
 
