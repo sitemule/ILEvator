@@ -22,6 +22,12 @@ dcl-pr test_ws_disconnect extproc(*dclcase) end-pr;
 dcl-pr test_ws_disconnectWithReason extproc(*dclcase) end-pr;
 dcl-pr test_ws_ping extproc(*dclcase) end-pr;
 dcl-pr test_ws_pong extproc(*dclcase) end-pr;
+dcl-pr test_ws_sendBinary extproc(*dclcase) end-pr;
+dcl-pr test_ws_sendBinary_frames extproc(*dclcase) end-pr;
+dcl-pr test_ws_sendText extproc(*dclcase) end-pr;
+dcl-pr test_ws_sendLongerText extproc(*dclcase) end-pr;
+dcl-pr test_ws_sendText_frames extproc(*dclcase) end-pr;
+dcl-pr test_ws_sendTextPointer extproc(*dclcase) end-pr;
 
 
 dcl-proc tearDown export;
@@ -138,7 +144,30 @@ dcl-proc test_ws_sendText export;
     iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
     iEqual(101 : iv_getStatus(httpClient));
     
-    iv_ws_send(httpClient : 'May it be a light to you in dark places, when all other lights go out. - Galadriel');
+    iv_ws_sendText(httpClient : 'May it be a light to you in dark places, when all other lights go out. - Galadriel');
+    sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
+
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_ws_sendTextPointer export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+    dcl-s message varchar(IV_BUFFER_SIZE) ccsid(*utf8);
+
+    message = 'May it be a light to you in dark places, when all other lights go out. - Galadriel';
+
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    iv_ws_sendText(httpClient : %addr(message : *data) : %len(message));
     sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
 
     on-exit;
@@ -158,9 +187,9 @@ dcl-proc test_ws_sendLongerText export;
     iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
     iEqual(101 : iv_getStatus(httpClient));
     
-    iv_ws_send(httpClient : 'Do not trouble your hearts overmuch with thought of the road tonight. +
-                             Maybe the paths that you each shall tread are already laid before your +
-                             feet, though you do not see them. - Galadriel');
+    iv_ws_sendText(httpClient : 'Do not trouble your hearts overmuch with thought of the road tonight. +
+                                 Maybe the paths that you each shall tread are already laid before your +
+                                 feet, though you do not see them. - Galadriel');
     sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
 
     on-exit;
@@ -182,9 +211,58 @@ dcl-proc test_ws_sendText_frames export;
     iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
     iEqual(101 : iv_getStatus(httpClient));
     
-    iv_ws_send(httpClient : 'May it be a light to you in dark places, when all other lights go out. - Galadriel');
+    iv_ws_sendText(httpClient : 'May it be a light to you in dark places, when all other lights go out. - Galadriel');
     sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
 
     on-exit;
         iv_free(httpClient);
 end-proc;
+
+
+dcl-proc test_ws_sendBinary export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+    dcl-s message varchar(IV_BUFFER_SIZE) ccsid(*hex);
+    
+    message = x'1234567890';
+    
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/uploadws'); 
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    iv_ws_sendBinary(httpClient : %addr(message : *data) : %len(message));
+    sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
+
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_ws_sendBinary_frames export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+    dcl-s message varchar(IV_BUFFER_SIZE) ccsid(*hex);
+    
+    message = x'1234567890';
+    
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_setFrameSize(httpClient : 4);
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/uploadws'); 
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    iv_ws_sendBinary(httpClient : %addr(message : *data) : %len(message));
+    sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
+
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+

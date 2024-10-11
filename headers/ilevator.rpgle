@@ -1933,20 +1933,26 @@ dcl-pr iv_ws_disconnect extproc(*dclcase);
     reason varchar(80) ccsid(*utf8) value options(*nopass);
 end-pr;
 
-dcl-pr iv_ws_sendText extproc(*dclcase);
+dcl-pr iv_ws_sendTextVar extproc(*dclcase);
     client pointer value;
     value varchar(IV_BUFFER_SIZE) ccsid(*utf8) value;
 end-pr;
 
-dcl-pr iv_ws_sendBinary extproc(*dclcase);
+dcl-pr iv_ws_sendTextPointer extproc(*dclcase);
     client pointer value;
     value pointer value;
     length uns(10) value;
 end-pr;
 
 /if defined (RPG_HAS_OVERLOAD)
-dcl-pr iv_ws_send overload(iv_ws_sendText : iv_ws_sendBinary);
+dcl-pr iv_ws_sendText overload(iv_ws_sendTextVar : iv_ws_sendTextPointer);
 /endif
+
+dcl-pr iv_ws_sendBinary extproc(*dclcase);
+    client pointer value;
+    value pointer value;
+    length uns(10) value;
+end-pr;
 
 dcl-pr iv_ws_receive varchar(IV_BUFFER_SIZE) ccsid(*HEX) extproc(*dclcase);
     client pointer value;

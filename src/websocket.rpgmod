@@ -18,6 +18,7 @@ dcl-c IV_WS_OPCODE_PING x'09';
 dcl-c IV_WS_OPCODE_PONG x'0A';
 dcl-c IV_WS_OPCODE_DATA_TEXT x'01';
 dcl-c IV_WS_OPCODE_DATA_BINARY x'02';
+dcl-c IV_WS_OPCODE_FRAGMENT x'00';
 
 
 dcl-c IV_WS_RANDOM_KEY_SIZE 24;
@@ -222,10 +223,21 @@ dcl-proc iv_ws_disconnect export;
 end-proc;
 
 
-dcl-proc iv_ws_sendText export;
+dcl-proc iv_ws_sendTextVar export;
+    dcl-pi *n;
+        client pointer value;
+        payload varchar(IV_BUFFER_SIZE) ccsid(*utf8) value;  
+    end-pi;
+    
+    iv_ws_sendTextPointer(client : %addr(payload : *data) : %len(payload));
+end-proc;
+
+
+dcl-proc iv_ws_sendTextPointer export;
     dcl-pi *n;
         p_client pointer value;
-        payload varchar(IV_BUFFER_SIZE) ccsid(*utf8) value;  
+        value pointer value;
+        length uns(10) value;
     end-pi;
 
     dcl-ds client likeds(ilevator_t) based(p_client);
@@ -235,15 +247,16 @@ dcl-proc iv_ws_sendText export;
     dcl-s frameSize uns(10);
     dcl-s fin ind inz(*off);
     dcl-s numberFrames uns(10);
+    dcl-s opcode char(1) ccsid(*hex);
 
-    if (%len(payload) = 0);
-        frame = createFrame(p_client : IV_WS_OPCODE_DATA_TEXT : %addr(payload : *data) : %len(payload));
+    if (length = 0);
+        frame = createFrame(p_client : IV_WS_OPCODE_DATA_TEXT : value : length);
         rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
         if (rc <> %len(frame));
             iv_debug('Socket did not sent all bytes of text data frame.');
         endif;
-    elseif (client.wsFrameSize = 0 or %len(payload) <= client.wsFrameSize);
-        frame = createFrame(p_client : IV_WS_OPCODE_DATA_TEXT : %addr(payload : *data) : %len(payload));
+    elseif (client.wsFrameSize = 0 or length <= client.wsFrameSize);
+        frame = createFrame(p_client : IV_WS_OPCODE_DATA_TEXT : value : length);
         rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
         if (rc <> %len(frame));
             iv_debug('Socket did not sent all bytes of text data frame.');
@@ -251,15 +264,21 @@ dcl-proc iv_ws_sendText export;
     else;
         
         // send text in multiple frames as the text size is bigger than the configured max. frame size
-        dow (%len(payload) > x);
-            if (client.wsFrameSize >= %len(payload) - x);
-                frameSize = %len(payload) - x;
+        dow (length > x);
+            if (numberFrames = 0);
+                opcode = IV_WS_OPCODE_DATA_TEXT;
+            else;
+                opcode = IV_WS_OPCODE_FRAGMENT;
+            endif;
+            
+            if (client.wsFrameSize >= length - x);
+                frameSize = length - x;
                 fin = *on;
             else;
                 frameSize = client.wsFrameSize;
             endif;
         
-            frame = createFrame(p_client : IV_WS_OPCODE_DATA_TEXT : %addr(payload : *data) + x : frameSize : fin);
+            frame = createFrame(p_client : opcode : value + x : frameSize : fin);
             x += frameSize;
             
             rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
@@ -277,12 +296,62 @@ end-proc;
 
 dcl-proc iv_ws_sendBinary export;
     dcl-pi *n;
-        client pointer value;
+        p_client pointer value;
         value pointer value;
         length uns(10) value;
     end-pi;
 
-    // TODO
+    dcl-ds client likeds(ilevator_t) based(p_client);
+    dcl-s frame varchar(IV_WS_MAX_FRAME_SIZE) ccsid(*hex);
+    dcl-s rc int(10);
+    dcl-s x int(10);
+    dcl-s frameSize uns(10);
+    dcl-s fin ind inz(*off);
+    dcl-s numberFrames uns(10);
+    dcl-s opcode char(1) ccsid(*hex);
+
+    if (length = 0);
+        frame = createFrame(p_client : IV_WS_OPCODE_DATA_BINARY : value : length);
+        rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+        if (rc <> %len(frame));
+            iv_debug('Socket did not sent all bytes of binary data frame.');
+        endif;
+    elseif (client.wsFrameSize = 0 or length <= client.wsFrameSize);
+        frame = createFrame(p_client : IV_WS_OPCODE_DATA_BINARY : value : length);
+        rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+        if (rc <> %len(frame));
+            iv_debug('Socket did not sent all bytes of binary data frame.');
+        endif;
+    else;
+        
+        // send text in multiple frames as the text size is bigger than the configured max. frame size
+        dow (length > x);
+            if (numberFrames = 0);
+                opcode = IV_WS_OPCODE_DATA_BINARY;
+            else;
+                opcode = IV_WS_OPCODE_FRAGMENT;
+            endif;
+        
+            if (client.wsFrameSize >= length - x);
+                frameSize = length - x;
+                fin = *on;
+            else;
+                frameSize = client.wsFrameSize;
+            endif;
+        
+            frame = createFrame(p_client : opcode : value + x : frameSize : fin);
+            x += frameSize;
+            
+            rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+            if (rc <> %len(frame));
+                iv_debug('Socket did not sent all bytes of binary data frame.');
+            endif;
+            
+            numberFrames += 1;
+        enddo;
+        
+        iv_debug('Sent %s frames' : %char(numberFrames));
+    endif;
 end-proc;
 
 
@@ -400,14 +469,14 @@ dcl-proc createFrame export;
         payloadLength = p_payloadLength;
     endif;
     
-    if (%parms() >= 5);
+    if (%parms() >= 5 and p_fin);
         fin = IV_WS_FIN;
     endif;
     
     // control messages are always single frame messages
     if (opcode = IV_WS_OPCODE_PING or opcode = IV_WS_OPCODE_PONG or opcode = IV_WS_OPCODE_CLOSE);
         fin = IV_WS_FIN;
-    elseif (client.wsFrameSize = 0 or payloadLength <= client.wsFrameSize);
+    elseif (client.wsFrameSize = 0 or payloadLength < client.wsFrameSize);
         fin = IV_WS_FIN;
     endif;
     
