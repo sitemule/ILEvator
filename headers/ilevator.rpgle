@@ -1954,8 +1954,14 @@ dcl-pr iv_ws_sendBinary extproc(*dclcase);
     length uns(10) value;
 end-pr;
 
-dcl-pr iv_ws_receive varchar(IV_BUFFER_SIZE) ccsid(*HEX) extproc(*dclcase);
+dcl-pr iv_ws_receiveText varchar(IV_BUFFER_SIZE) ccsid(*UTF8) extproc(*dclcase);
     client pointer value;
+end-pr;
+
+dcl-pr iv_ws_receiveBinary int(10) extproc(*dclcase);
+    client pointer value;
+    buffer pointer value;
+    bufferLength uns(10) value;
 end-pr;
 
 dcl-pr iv_ws_ping extproc(*dclcase);

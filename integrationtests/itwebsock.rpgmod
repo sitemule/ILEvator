@@ -28,6 +28,10 @@ dcl-pr test_ws_sendText extproc(*dclcase) end-pr;
 dcl-pr test_ws_sendLongerText extproc(*dclcase) end-pr;
 dcl-pr test_ws_sendText_frames extproc(*dclcase) end-pr;
 dcl-pr test_ws_sendTextPointer extproc(*dclcase) end-pr;
+dcl-pr test_ws_receiveEchoAsText extproc(*dclcase) end-pr;
+dcl-pr test_ws_receiveEchoAsBinary extproc(*dclcase) end-pr;
+dcl-pr test_ws_receiveEchoWithSmallerBuffer extproc(*dclcase) end-pr;
+dcl-pr test_ws_checkFollowingMessageWithSmallerBuffer extproc(*dclcase) end-pr;
 
 
 dcl-proc tearDown export;
@@ -265,4 +269,133 @@ dcl-proc test_ws_sendBinary_frames export;
     on-exit;
         iv_free(httpClient);
 end-proc;
+
+
+dcl-proc test_ws_receiveEchoAsText export;
+    dcl-s client pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s response varchar(IV_BUFFER_SIZE) ccsid(*utf8);
+    
+    client = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(client : 'ws://localhost:35801/echo'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    iv_ws_sendText(client : 'Hello World!');
+    response = iv_ws_receiveText(client);
+    aEqual('Hello World!' : %char(response));
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_ws_receiveEchoAsBinary export;
+    dcl-s client pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s response varchar(IV_BUFFER_SIZE) ccsid(*utf8);
+    dcl-s rc int(10);
+    
+    client = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(client : 'ws://localhost:35801/echo'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    iv_ws_sendText(client : 'Hello World!');
+    
+    %len(response) = 20;
+    rc = iv_ws_receiveBinary(client : %addr(response : *data) : 20);
+    iEqual(12 : rc);
+    
+    %len(response) = 12;
+    aEqual('Hello World!' : %char(response));
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_ws_receiveEchoWithSmallerBuffer export;
+    dcl-s client pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s response varchar(IV_BUFFER_SIZE) ccsid(*utf8);
+    dcl-s rc int(10);
+    
+    client = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(client : 'ws://localhost:35801/echo'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    iv_ws_sendText(client : 'Hello World!');
+    
+    %len(response) = 7;
+    rc = iv_ws_receiveBinary(client : %addr(response : *data) : 7);
+    iEqual(12 : rc);
+    
+    aEqual('Hello W' : %char(response));
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_ws_checkFollowingMessageWithSmallerBuffer export;
+    dcl-s client pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s response varchar(IV_BUFFER_SIZE) ccsid(*utf8);
+    dcl-s rc int(10);
+    
+    client = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(client : 'ws://localhost:35801/echo'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    iv_ws_sendText(client : 'Hello World!');
+    
+    %len(response) = 7;
+    rc = iv_ws_receiveBinary(client : %addr(response : *data) : 7);
+    iEqual(12 : rc);
+    
+    aEqual('Hello W' : %char(response));
+    
+    iv_ws_sendText(client : '... and again!');
+    %len(response) = IV_BUFFER_SIZE;
+    rc = iv_ws_receiveBinary(client : %addr(response : *data) : IV_BUFFER_SIZE);
+    iEqual(14 : rc);
+    
+    %len(response) = rc;
+    aEqual('... and again!' : %char(response));
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_ws_receiveLongerText export;
+    dcl-s client pointer; 
+    dcl-s response varchar(IV_BUFFER_SIZE) ccsid(*utf8);
+    dcl-s message varchar(IV_BUFFER_SIZE) ccsid(*utf8);
+    
+    message = 'Do not trouble your hearts overmuch with thought of the road tonight. +
+               Maybe the paths that you each shall tread are already laid before your +
+               feet, though you do not see them. - Galadriel';
+    
+    client = iv_newHttpClient(); 
+    
+    iv_ws_connect(client : 'ws://localhost:35801/echo'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    iv_ws_sendText(client : message);
+    response = iv_ws_receiveText(client);
+    
+    assert(message = response : 'The echo from the server is not equal the original message.');
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
 

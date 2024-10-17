@@ -183,7 +183,12 @@ messagefile:
 	system "QSYS/ADDMSGD MSGID(ILV0508) MSGF($(BIN_LIB)/ILEVATOR) MSG('508 - Loop detected') SEV(10)"
 	system "QSYS/ADDMSGD MSGID(ILV0510) MSGF($(BIN_LIB)/ILEVATOR) MSG('510 - Not extended') SEV(10)"
 	system "QSYS/ADDMSGD MSGID(ILV0511) MSGF($(BIN_LIB)/ILEVATOR) MSG('511 - Network authentication required') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0600) MSGF($(BIN_LIB)/ILEVATOR) MSG('Close connection') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0601) MSGF($(BIN_LIB)/ILEVATOR) MSG('Invalid web socket frame received from server: unknown opcode') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0602) MSGF($(BIN_LIB)/ILEVATOR) MSG('Invalid web socket frame received from server: invalid number of bytes for payload length') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0603) MSGF($(BIN_LIB)/ILEVATOR) MSG('Invalid web socket frame received from server: mask bit set by server') SEV(10)"
 	system "QSYS/ADDMSGD MSGID(ILV0999) MSGF($(BIN_LIB)/ILEVATOR) MSG('Not mapped HTTP status code') SEV(10)"
+	
 
 all:
 	@echo Build success!

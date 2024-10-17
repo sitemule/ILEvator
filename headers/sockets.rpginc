@@ -48,6 +48,13 @@ dcl-pr sockets_send int(10) extproc(*dclcase);
     length int(10) value;
 end-pr;
 
+dcl-pr sockets_receive int(10) extproc(*dclcase);
+    sockets pointer value;
+    buffer pointer value;
+    length int(10) value;
+    timeout int(10) value;
+end-pr;
+
 dcl-pr sockets_setTrace extproc(*CWIDEN:'sockets_setTrace');
     sockets  pointer value;
     traceFile  pointer options(*string) value;
