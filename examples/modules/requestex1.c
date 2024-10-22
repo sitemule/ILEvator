@@ -27,7 +27,7 @@ int main() {
   url.Length = strlen(url.String);
   #pragma convert(0)
   
-  request = iv_request_new(method, url, mimeType);
+  request = iv_request_new_packedUrl(method, url, mimeType);
   requestString = iv_request_toString(&request);
   
   length = xlate_translateBuffer(&s[0], requestString.String, requestString.Length, 1208, 0);

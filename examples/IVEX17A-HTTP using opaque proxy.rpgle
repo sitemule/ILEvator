@@ -2,6 +2,8 @@
 
 ///
 // ILEvator Example : Using proxy 
+// ADDENVVAR ENVVAR(ILEVATOR_TRACE_STMF) VALUE('/tmp/comtrace.txt')
+// ADDENVVAR ENVVAR(ILEVATOR_DEBUG) VALUE('1')
 ///
 
 
@@ -17,7 +19,7 @@ dcl-proc main;
     dcl-s buffer varchar(65000:4) ccsid(1208);
     
     httpClient = iv_newHttpClient();
-    iv_setProxyTunnel (httpClient : 'http://fwdprx.workmule.dk:3128');
+    iv_setProxyTunnel (httpClient : 'http://fwdprx.workmule.dk:3128': *ON);
 
     iv_setResponseDataBuffer(
         httpClient : 

@@ -31,6 +31,8 @@ dcl-ds iv_url_t qualified template align(*full);
   query varchar(32767 : 2) inz('');
   proxy varchar(1024 : 2) inz('');
   ipv6 ind inz(*off);
+  origin varchar(32767 : 2) inz('');
+  proxyType uns(5) inz(0); // 0=No proxy, 1=Opaque proxy, 2=Transparent proxy  
 end-ds;
 
 ///

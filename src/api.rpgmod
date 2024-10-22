@@ -12,6 +12,7 @@ ctl-opt nomain thread(*concurrent);
 /include 'simpleList.rpginc'
 /include 'sockets.rpginc'
 /include 'teraspace.rpginc'
+/include 'url.rpginc'
 
 
 dcl-s listedHttpStatusCodes int(5) dim(41) ctdata;
@@ -195,14 +196,23 @@ end-proc;
 dcl-proc iv_setProxyTunnel  export;
     dcl-pi *n;
         pClient pointer value;
-        url pointer options(*string) value;        
+        url     pointer options(*string) value;   
+        opaque  ind     options(*nopass) value;
     end-pi;
     
-    dcl-ds client likeds(ilevator_t) based(pClient);
-    dcl-ds proxy  likeds(ilevator_t) based(client.proxyTunnel);
-    client.proxyTunnel = iv_newHttpClient();
-    proxy.url    = teraspace_strTrimDup(url);
-    
+    dcl-ds client   likeds(ilevator_t) based(pClient);
+    dcl-ds proxy    likeds(ilevator_t) based(client.proxyTunnel);
+    dcl-ds proxyurl likeds(iv_url_t);
+  
+    if %parms >= 2 and opaque;
+        client.useProxy = *ON;
+        proxyurl = iv_url_parse(%str(url));
+        client.server =  %trimr(proxyurl.host) + x'00'; 
+        client.port   =  proxyurl.port;
+    else;
+        client.proxyTunnel = iv_newHttpClient();
+        proxy.url    = teraspace_strTrimDup(url);
+    endif;
 end-proc;
 
 

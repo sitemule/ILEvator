@@ -551,10 +551,12 @@ end-pr;
 //
 // @param Pointer to the HTTP client
 // @param URL of the proxy 
+// @param opaque *ON will let proxy handle certificate and security  ( default: *off => transparent)
 ///
 dcl-pr iv_setProxyTunnel extproc(*dclcase);
     client        pointer value;
     url           pointer options(*string) value;
+    opaque        ind     options(*nopass) value;
 end-pr;
 
 ///
@@ -1409,6 +1411,8 @@ dcl-pr iv_request_new_unpackedUrl pointer extproc(*dclcase);
   port int(10) value;
   path pointer value options(*string);
   query pointer value options(*string);
+  originUrl pointer value options(*string);
+  proxyType uns(5) value;
   mimeType varchar(IV_REQUEST_HEADER_VALUE_SIZE:2) ccsid(*utf8) value options(*nopass);
 end-pr;
 

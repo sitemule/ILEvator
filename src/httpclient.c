@@ -228,16 +228,20 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
     PUCHAR temp;
     URL l_url;
     VARCHAR s;
-    
+
     str2vc(&s, url);
     l_url = iv_url_parse(s);
-    
-    pIv->sockets->asSSL = ( strutil_beginsWith(l_url.protocol.String , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
 
-    strutil_substr(pIv->server , l_url.host.String, l_url.host.Length);
-    pIv->port = l_url.port;
-    sprintf(pIv->host,  "%s" , pIv->server);
-    
+    // If opaque proxy  - server and port already set ; 
+    if (pIv->useProxy != ON) {
+        pIv->sockets->asSSL = ( strutil_beginsWith(l_url.protocol.String , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
+
+        strutil_substr(pIv->server , l_url.host.String, l_url.host.Length);
+        pIv->port = l_url.port;
+        strcpy (pIv->host, pIv->server);
+    }
+
+
     if(l_url.path.Length == 0) {
         strcpy(pIv->resource , "/");
     }
@@ -252,6 +256,8 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
     
     strutil_substr(pIv->user , l_url.username.String, l_url.username.Length);
     strutil_substr(pIv->password, l_url.password.String, l_url.password.Length);
+
+
 }
 /* --------------------------------------------------------------------------- */
 API_STATUS sendRequest (PILEVATOR pIv) 
@@ -263,12 +269,16 @@ API_STATUS sendRequest (PILEVATOR pIv)
     
     str2vc(&method, pIv->method);
 
-    request = iv_request_new(
+    // This is so stupid that we have to do this over and over again... 
+    // TODO !! refactor so we dont lose original structure as we dive 
+    request = iv_request_new_unpackedUrl(
         method, 
         pIv->host,
         pIv->port,
         pIv->resource,
-        ""
+        "",
+        pIv->url,
+        pIv->useProxy == ON ? 1:0
     );
 
     iv_request_addHeaders(request, pIv->headerList);
