@@ -13,7 +13,7 @@ dcl-ds ilevator_t qualified template align(*full);
     url pointer;
     timeout packed(9:3);
     retries int(5);
-    useProxy ind ;
+    proxyType like(ENUM) ; // 0=No proxy, 1=CONNECT transparent, 2=Opaque ))
     responseHeaderHasContentLength ind ;
     responseIsChunked ind ;
     blockingSockets ind;

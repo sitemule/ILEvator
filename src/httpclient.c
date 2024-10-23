@@ -233,7 +233,7 @@ void parseUrl (PILEVATOR pIv, PUCHAR url)
     l_url = iv_url_parse(s);
 
     // If opaque proxy  - server and port already set ; 
-    if (pIv->useProxy != ON) {
+    if (pIv->proxyType != PROXY_TYPE_OPAQUE) {
         pIv->sockets->asSSL = ( strutil_beginsWith(l_url.protocol.String , "https")) ? SECURE_HANDSHAKE_IMEDIATE: PLAIN_SOCKET;
 
         strutil_substr(pIv->server , l_url.host.String, l_url.host.Length);
@@ -278,7 +278,7 @@ API_STATUS sendRequest (PILEVATOR pIv)
         pIv->resource,
         "",
         pIv->url,
-        pIv->useProxy == ON ? 1:0
+        pIv->proxyType
     );
 
     iv_request_addHeaders(request, pIv->headerList);

@@ -1412,7 +1412,7 @@ dcl-pr iv_request_new_unpackedUrl pointer extproc(*dclcase);
   path pointer value options(*string);
   query pointer value options(*string);
   originUrl pointer value options(*string);
-  proxyType uns(5) value;
+  proxyType like(ENUM) value;
   mimeType varchar(IV_REQUEST_HEADER_VALUE_SIZE:2) ccsid(*utf8) value options(*nopass);
 end-pr;
 

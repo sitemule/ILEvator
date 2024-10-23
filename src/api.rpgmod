@@ -205,11 +205,12 @@ dcl-proc iv_setProxyTunnel  export;
     dcl-ds proxyurl likeds(iv_url_t);
   
     if %parms >= 2 and opaque;
-        client.useProxy = *ON;
+        client.proxyType = 2; // 0=No proxy, 1=CONNECT transparent, 2=Opaque ))
         proxyurl = iv_url_parse(%str(url));
         client.server =  %trimr(proxyurl.host) + x'00'; 
         client.port   =  proxyurl.port;
     else;
+        client.proxyType = 1; // 0=No proxy, 1=CONNECT transparent, 2=Opaque ))
         client.proxyTunnel = iv_newHttpClient();
         proxy.url    = teraspace_strTrimDup(url);
     endif;
@@ -269,23 +270,24 @@ end-proc;
 
 dcl-proc iv_execute export;
     dcl-pi *n ind;
-        client pointer value;
+        pClient pointer value;
         method pointer options(*string:*trim) value;
         url pointer options(*string:*trim) value;
         headers pointer options(*nopass) value;
     end-pi;
 
+    dcl-ds client likeds(ilevator_t) based(pClient);
     dcl-s success ind;
     
-    if (iv_connect(client : url));
+    if (iv_connect(pClient : url));
         if (%parms() >= 4);
-            success = iv_http_request(client : method : url : headers);
+            success = iv_http_request(pClient : method : url : headers);
         else;
-            success = iv_http_request(client : method : url);
+            success = iv_http_request(pClient : method : url);
         endif;
     endif;
     
-    iv_disconnect(client);
+    iv_disconnect(pClient);
 
     return success;
 end-proc;
@@ -315,33 +317,26 @@ dcl-proc iv_connect export;
     iv_debug('Host: %s' : %str(%addr(client.host):200) );
 
     if (client.proxyTunnel <> *NULL);
-        if (not connect_using_proxy_tunnel(client));
-            return *OFF;
-        endif;
+        return connect_using_proxy_tunnel(client);
     endif;
 
     for try = 0 to client.retries;
     
-        // Already connect by proxy 
-        if (client.proxyTunnel = *NULL);
-    
-            ok = sockets_connect(
-                client.sockets :
-                client.server :
-                client.port :
-                client.timeout * 1000:  // from seconds to milliseconds
-                client.blockingSockets
-            );
-            if (ok = TRUE);
-                apiStatus = IV_STATUS_OK;
-                client.connected = *on;
-                leave;
-            else;
-                apiStatus = IV_STATUS_ERROR;
-            endif;
-            
+        ok = sockets_connect(
+            client.sockets :
+            client.server :
+            client.port :
+            client.timeout * 1000:  // from seconds to milliseconds
+            client.blockingSockets
+        );
+        if (ok = TRUE);
+            apiStatus = IV_STATUS_OK;
+            client.connected = *on;
+            leave;
+        else;
+            apiStatus = IV_STATUS_ERROR;
         endif;
-        
+                    
     endfor;
 
     return (apiStatus = IV_STATUS_OK);
@@ -369,10 +364,14 @@ dcl-proc iv_http_request export;
     end-pi;
 
     dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-ds proxy  likeds(ilevator_t) based(pProxy);
+    dcl-s  pProxy pointer;
     dcl-s  apiStatus int(10) inz(IV_STATUS_RETRY);
     dcl-s  try int(5);
     dcl-s  ok like(ENUM);
     dcl-s  success ind; 
+    
+    pProxy = client.proxyTunnel;
     
     if (not client.connected);
         iv_debug('Not connected to server.');
@@ -400,7 +399,7 @@ dcl-proc iv_http_request export;
     iv_debug('Host: %s' : %str(%addr(client.host):200) );
     iv_debug('Resource: %s' : %str(%addr(client.resource):200) );
 
-    if (client.proxyTunnel <> *NULL);
+    if (client.proxyTunnel <> *NULL and not proxy.connected  );
         success = connect_using_proxy_tunnel (client);
         if not success;
             return *OFF;
@@ -511,6 +510,7 @@ dcl-proc connect_using_proxy_tunnel ;
             // Inherit the proxy socket on the main client 
             sockets_copy_socket ( client.sockets : proxy.sockets : client.host);
             sockets_set_secure (client.sockets);
+            client.connected = *ON;
             return *ON; // Success
         endif;
 

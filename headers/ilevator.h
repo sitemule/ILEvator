@@ -39,6 +39,14 @@ typedef enum _API_STATUS {
     API_ERROR
 } API_STATUS , *PAPI_STATUS;
 
+#pragma enum     (1)
+typedef enum _PROXY_TYPE {
+    PROXY_TYPE_NO_PROXY = 0, 
+    PROXY_TYPE_CONNECT_TRANSPARENT = 1, 
+    PROXY_TYPE_OPAQUE  = 2 
+} PROXY_TYPE , *PPROXY_TYPE;
+#pragma enum     (pop)
+
 typedef void (* iv_processRequest_t) (PVOID handler, PVOID request);
 
 typedef struct _REQUEST_HANDLER {
@@ -51,14 +59,14 @@ typedef struct _ILEVATOR {
     PUCHAR       url; 
     decimal(9,3) timeOut;
     SHORT        retries;
-    LGL          useProxy;
+    PROXY_TYPE   proxyType ; // 0=No proxy, 1=CONNECT transparent, 2=Opaque ))
     LGL          responseHeaderHasContentLength;
     LGL          responseIsChunked;
     LGL          blockingSockets;
     PSLIST       headerList;
     PSLIST       requestHeaderList;
     PSLIST       responseHeaderList;
-                
+               
     ANYCHAR      requestDataBuffer; 
     ANYCHAR      responseHeaderBuffer; 
     ANYCHAR      responseDataBuffer; 

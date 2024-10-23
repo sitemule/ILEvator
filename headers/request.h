@@ -4,7 +4,7 @@
 #include "ostypes.h"
 #include "varchar.h"
 
-PVOID iv_request_new_unpackedUrl(VARCHAR12 method, PUCHAR host, LONG port, PUCHAR path, PUCHAR query, PUCHAR originalUrl, USHORT  proxyType);
+PVOID iv_request_new_unpackedUrl(VARCHAR12 method, PUCHAR host, LONG port, PUCHAR path, PUCHAR query, PUCHAR originalUrl, PROXY_TYPE proxyType);
 PVOID iv_request_new_packedUrl(VARCHAR12 method, VARCHAR url , VARCHAR mimeType);
 
 // #pragma map(iv_request_new, "")

@@ -41,7 +41,7 @@ dcl-ds iv_request_t qualified template;
   headersStreamed ind inz(*off);
   contentStreamed ind inz(*off);
   originUrl pointer inz(*NULL);
-  proxyType uns(5) inz(0); // 0=No,1=Opaque,2=Transparent
+  proxyType like(ENUM) inz(0); // 0=No,1=Opaque,2=Transparent
 end-ds;
 
 
@@ -77,7 +77,7 @@ dcl-proc iv_request_new_unpackedUrl export;
     path pointer value options(*string);
     query pointer value options(*string);
     originUrl pointer value options(*string);
-    proxyType uns(5) value;
+    proxyType like(ENUM) value;
     acceptMimeType varchar(IV_REQUEST_HEADER_VALUE_SIZE) ccsid(*utf8) value options(*nopass);
   end-pi;
 
