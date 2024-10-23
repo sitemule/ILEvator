@@ -288,9 +288,6 @@ dcl-proc iv_connect export;
     end-pi;
 
     dcl-ds client likeds(ilevator_t) based(pClient);
-    dcl-s  apiStatus int(10) inz(IV_STATUS_RETRY);
-    dcl-s  try int(5);
-    dcl-s  ok like(ENUM);
 
     if (client.connected);
         iv_disconnect(pClient);
@@ -305,36 +302,42 @@ dcl-proc iv_connect export;
     iv_debug('Host: %s' : %str(%addr(client.host):200) );
 
     if (client.proxyTunnel <> *NULL);
-        if (not connect_using_proxy_tunnel(client));
-            return *OFF;
-        endif;
+        return connect_using_proxy_tunnel(client);
+    else;
+        return connect_directly (client);
     endif;
 
+end-proc;
+
+dcl-proc connect_directly export;
+    dcl-pi *n ind;
+        client likeds(ilevator_t);
+    end-pi;
+    dcl-s  apiStatus int(10) inz(IV_STATUS_RETRY);
+    dcl-s  ok like(ENUM);
+    dcl-s  try int(5);
+
     for try = 0 to client.retries;
-    
-        // Already connect by proxy 
-        if (client.proxyTunnel = *NULL);
-    
-            ok = sockets_connect(
-                client.sockets :
-                client.server :
-                client.port :
-                client.timeout * 1000:  // from seconds to milliseconds
-                client.blockingSockets
-            );
-            if (ok = TRUE);
-                apiStatus = IV_STATUS_OK;
-                client.connected = *on;
-                leave;
-            else;
-                apiStatus = IV_STATUS_ERROR;
-            endif;
-            
+
+        ok = sockets_connect(
+            client.sockets :
+            client.server :
+            client.port :
+            client.timeout * 1000:  // from seconds to milliseconds
+            client.blockingSockets
+        );
+        if (ok = TRUE);
+            apiStatus = IV_STATUS_OK;
+            client.connected = *on;
+            leave;
+        else;
+            apiStatus = IV_STATUS_ERROR;
         endif;
-        
+
     endfor;
 
     return (apiStatus = IV_STATUS_OK);
+
 end-proc;
 
 
@@ -359,10 +362,14 @@ dcl-proc iv_http_request export;
     end-pi;
 
     dcl-ds client likeds(ilevator_t) based(pClient);
+    dcl-ds proxy  likeds(ilevator_t) based(pProxy);
     dcl-s  apiStatus int(10) inz(IV_STATUS_RETRY);
     dcl-s  try int(5);
     dcl-s  ok like(ENUM);
     dcl-s  success ind; 
+    dcl-s  pProxy pointer;
+
+    pProxy = client.proxyTunnel;
     
     if (not client.connected);
         iv_debug('Not connected to server.');
@@ -390,12 +397,13 @@ dcl-proc iv_http_request export;
     iv_debug('Host: %s' : %str(%addr(client.host):200) );
     iv_debug('Resource: %s' : %str(%addr(client.resource):200) );
 
-    if (client.proxyTunnel <> *NULL);
-        success = connect_using_proxy_tunnel (client);
-        if not success;
-            return *OFF;
-        endif;
-    endif;
+    // Are done in the _connect
+    // if (client.proxyTunnel <> *NULL ) ;
+    //     success = connect_using_proxy_tunnel (client);
+    //     if not success;
+    //         return *OFF;
+    //     endif;
+    // endif;
     
     for try = 0 to client.retries;
         apiStatus = sendRequest(pClient);
@@ -501,6 +509,7 @@ dcl-proc connect_using_proxy_tunnel ;
             // Inherit the proxy socket on the main client 
             sockets_copy_socket ( client.sockets : proxy.sockets : client.host);
             sockets_set_secure (client.sockets);
+            client.connected = *ON;
             return *ON; // Success
         endif;
 
