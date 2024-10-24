@@ -613,18 +613,20 @@ dcl-proc iv_ws_receiveBinary export;
     
     
     fin = (%bitand(IV_WS_FIN : header.finOpcode) = IV_WS_FIN);
+    returnBufferHeader.opcode = %bitand(header.finOpcode : x'7F'); // 7F = b'01111111' to get rid of the fin bit
+    buffer += %size(returnBufferHeader);
     
-    if (%bitand(IV_WS_OPCODE_CLOSE : header.finOpcode) = IV_WS_OPCODE_CLOSE);
+    if (returnBufferHeader.opcode = IV_WS_OPCODE_CLOSE);
         iv_debug('Closing connection because of CLOSE frame');
         iv_disconnect(p_client);
         return 0;
-    elseif (%bitand(IV_WS_OPCODE_PING : header.finOpcode) = IV_WS_OPCODE_PING);
+    elseif (returnBufferHeader.opcode = IV_WS_OPCODE_PING);
         // ok
-    elseif (%bitand(IV_WS_OPCODE_PONG : header.finOpcode) = IV_WS_OPCODE_PONG);
+    elseif (returnBufferHeader.opcode = IV_WS_OPCODE_PONG);
         // ok
-    elseif (%bitand(IV_WS_OPCODE_DATA_BINARY : header.finOpcode) = IV_WS_OPCODE_DATA_BINARY);
+    elseif (returnBufferHeader.opcode = IV_WS_OPCODE_DATA_BINARY);
         // ok
-    elseif (%bitand(IV_WS_OPCODE_DATA_TEXT : header.finOpcode) = IV_WS_OPCODE_DATA_TEXT);
+    elseif (returnBufferHeader.opcode = IV_WS_OPCODE_DATA_TEXT);
         // ok
     else;
         iv_debug('Closing connection because of unknown opcode received');
@@ -632,8 +634,6 @@ dcl-proc iv_ws_receiveBinary export;
         return -1;
     endif;
     
-    returnBufferHeader.opcode = header.finOpcode;
-    buffer += %size(returnBufferHeader);
     
     if (header.payloadLength < 126);
         // single frame

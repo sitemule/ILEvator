@@ -32,6 +32,7 @@ dcl-pr test_ws_receiveEchoAsText extproc(*dclcase) end-pr;
 dcl-pr test_ws_receiveEchoAsBinary extproc(*dclcase) end-pr;
 dcl-pr test_ws_receiveEchoWithSmallerBuffer extproc(*dclcase) end-pr;
 dcl-pr test_ws_checkFollowingMessageWithSmallerBuffer extproc(*dclcase) end-pr;
+dcl-pr test_ws_receivePong extproc(*dclcase) end-pr;
 
 
 dcl-proc tearDown export;
@@ -113,6 +114,31 @@ dcl-proc test_ws_ping export;
     
     on-exit;
         iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_ws_receivePong export;
+    dcl-s client pointer; 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+    dcl-ds response likeds(iv_ws_message_t) inz;
+    dcl-s msg char(50);
+    dcl-s ts timestamp;
+    
+    client = iv_newHttpClient();
+    
+    iv_ws_connect(client : 'ws://localhost:35801/messagews'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    iv_ws_ping(client);
+    response = iv_ws_receiveText(client);
+    assert(response.opcode = IV_WS_OPCODE_PONG : 'Wrong opcode for PONG response.');
+    
+    msg = response.payload;
+    ts = %timestamp(msg : *ISO);
+    
+    on-exit;
+        iv_free(client);
 end-proc;
 
 
