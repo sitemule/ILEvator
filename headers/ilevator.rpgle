@@ -1921,6 +1921,17 @@ dcl-pr iv_teraspace_use uns(20) extproc(*dclcase) end-pr;
 // web socket
 //
 
+dcl-c IV_WS_OPCODE_CLOSE x'08';
+dcl-c IV_WS_OPCODE_PING x'09';
+dcl-c IV_WS_OPCODE_PONG x'0A';
+dcl-c IV_WS_OPCODE_DATA_TEXT x'01';
+dcl-c IV_WS_OPCODE_DATA_BINARY x'02';
+
+dcl-ds iv_ws_message_t qualified template;
+    opcode char(1);
+    payload varchar(IV_BUFFER_SIZE) ccsid(*UTF8);
+end-ds;
+
 dcl-pr iv_ws_connect ind extproc(*dclcase);
     client pointer value;
     url varchar(IV_URL_SIZE:2) value;
@@ -1954,7 +1965,7 @@ dcl-pr iv_ws_sendBinary extproc(*dclcase);
     length uns(10) value;
 end-pr;
 
-dcl-pr iv_ws_receiveText varchar(IV_BUFFER_SIZE) ccsid(*UTF8) extproc(*dclcase);
+dcl-pr iv_ws_receiveText likeds(iv_ws_message_t) extproc(*dclcase);
     client pointer value;
 end-pr;
 

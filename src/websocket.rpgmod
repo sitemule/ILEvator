@@ -13,11 +13,6 @@ ctl-opt nomain thread(*concurrent);
 /include 'teraspace.rpginc'
 
 dcl-c IV_WS_FIN x'80';
-dcl-c IV_WS_OPCODE_CLOSE x'08';
-dcl-c IV_WS_OPCODE_PING x'09';
-dcl-c IV_WS_OPCODE_PONG x'0A';
-dcl-c IV_WS_OPCODE_DATA_TEXT x'01';
-dcl-c IV_WS_OPCODE_DATA_BINARY x'02';
 dcl-c IV_WS_OPCODE_FRAGMENT x'00';
 
 
@@ -557,34 +552,39 @@ end-proc;
 
 
 dcl-proc iv_ws_receiveText export;
-    dcl-pi *n varchar(IV_BUFFER_SIZE) ccsid(*UTF8);
+    dcl-pi *n likeds(iv_ws_message_t);
         p_client pointer value;
     end-pi;
     
     dcl-ds client likeds(ilevator_t) based(p_client);
-    dcl-s buffer varchar(IV_BUFFER_SIZE) ccsid(*UTF8);
+    dcl-ds message likeds(iv_ws_message_t) inz;
     dcl-s dataLength uns(10);
     
-    %len(buffer) = IV_BUFFER_SIZE;
+    %len(message.payload) = IV_BUFFER_SIZE;
     
-    dataLength = iv_ws_receiveBinary(p_client : %addr(buffer : *data) : IV_BUFFER_SIZE);
-    if (dataLength = -1);
-        %len(buffer) = 0;
+    dataLength = iv_ws_receiveBinary(p_client : %addr(message) : IV_BUFFER_SIZE);
+    if (dataLength <= 0);
+        %len(message.payload) = 0;
     else;
-        %len(buffer) = dataLength;
+        %len(message.payload) = dataLength;
     endif;
     
-    return buffer;
+    return message;
 end-proc;
 
 
 dcl-proc iv_ws_receiveBinary export;
     dcl-pi *n int(10);
         p_client pointer value;
-        buffer pointer value;
+        p_buffer pointer value;
         bufferLength uns(10) value;
     end-pi;
     
+    dcl-ds returnBufferHeader qualified based(p_buffer);
+        opcode char(1);
+        length uns(10);
+    end-ds;
+    dcl-s buffer pointer;
     dcl-s dataLength uns(20);
     dcl-ds client likeds(ilevator_t) based(p_client);
     dcl-s timeout int(10);
@@ -598,6 +598,12 @@ dcl-proc iv_ws_receiveBinary export;
     dcl-s fin ind;
     dcl-s readLength int(10);
     
+    if (bufferLength <= 5);
+        iv_debug('Skipped receiving message because of too small receiving buffer. It needs to have at least 6 bytes.');
+        return 0;
+    endif;
+    
+    buffer = p_buffer;
     
     // just read the first 2 bytes of the message (header)
     rc = sockets_receive(client.sockets : %addr(header) : 2 : timeout);
@@ -613,9 +619,9 @@ dcl-proc iv_ws_receiveBinary export;
         iv_disconnect(p_client);
         return 0;
     elseif (%bitand(IV_WS_OPCODE_PING : header.finOpcode) = IV_WS_OPCODE_PING);
-        // TODO need to send pong
+        // ok
     elseif (%bitand(IV_WS_OPCODE_PONG : header.finOpcode) = IV_WS_OPCODE_PONG);
-        // TODO this frame can be skipped
+        // ok
     elseif (%bitand(IV_WS_OPCODE_DATA_BINARY : header.finOpcode) = IV_WS_OPCODE_DATA_BINARY);
         // ok
     elseif (%bitand(IV_WS_OPCODE_DATA_TEXT : header.finOpcode) = IV_WS_OPCODE_DATA_TEXT);
@@ -626,6 +632,8 @@ dcl-proc iv_ws_receiveBinary export;
         return -1;
     endif;
     
+    returnBufferHeader.opcode = header.finOpcode;
+    buffer += %size(returnBufferHeader);
     
     if (header.payloadLength < 126);
         // single frame
@@ -656,7 +664,7 @@ dcl-proc iv_ws_receiveBinary export;
         return -1;
     endif;
     
-    readLength = %min(bufferLength : dataLength);
+    readLength = %min(bufferLength - 5 : dataLength); // - 5 = return buffer header
     rc = sockets_receive(client.sockets : buffer : readLength : timeout);
     if (rc <> readLength);
         iv_debug('Could not read the expected number of bytes from socket');
@@ -667,6 +675,8 @@ dcl-proc iv_ws_receiveBinary export;
         iv_debug('Need to skip ' + %char(dataLength - readLength) + ' bytes of data');
         skipDataFromServer(client.sockets : dataLength - readLength);
     endif;
+    
+    returnBufferHeader.length = readLength;
     
     return dataLength;
 end-proc;
