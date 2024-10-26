@@ -584,6 +584,7 @@ dcl-proc iv_ws_receiveBinary export;
         opcode char(1);
         length uns(10);
     end-ds;
+    dcl-s opcode char(1) inz(x'00');
     dcl-s buffer pointer;
     dcl-s dataLength uns(20);
     dcl-ds client likeds(ilevator_t) based(p_client);
@@ -597,88 +598,115 @@ dcl-proc iv_ws_receiveBinary export;
     dcl-s payloadLength8 uns(20);
     dcl-s fin ind;
     dcl-s readLength int(10);
+    dcl-s remainingBufferLength uns(10);
     
     if (bufferLength <= 5);
         iv_debug('Skipped receiving message because of too small receiving buffer. It needs to have at least 6 bytes.');
         return 0;
     endif;
     
+    remainingBufferLength = bufferLength - 5; // - 5 = return buffer header
+    
     buffer = p_buffer;
+    returnBufferHeader.opcode = x'00';
+    returnBufferHeader.length = 0;
     
     // just read the first 2 bytes of the message (header)
     rc = sockets_receive(client.sockets : %addr(header) : 2 : timeout);
-    
-    
-    // TODO receive message in multiple frames
-    
-    
-    fin = (%bitand(IV_WS_FIN : header.finOpcode) = IV_WS_FIN);
-    returnBufferHeader.opcode = %bitand(header.finOpcode : x'7F'); // 7F = b'01111111' to get rid of the fin bit
-    buffer += %size(returnBufferHeader);
-    
-    if (returnBufferHeader.opcode = IV_WS_OPCODE_CLOSE);
-        iv_debug('Closing connection because of CLOSE frame');
-        iv_disconnect(p_client);
+    if (rc < 0);
+        iv_debug('Error on reading frame header from socket. Return code: ' + %char(rc));
         return 0;
-    elseif (returnBufferHeader.opcode = IV_WS_OPCODE_PING);
-        // ok
-    elseif (returnBufferHeader.opcode = IV_WS_OPCODE_PONG);
-        // ok
-    elseif (returnBufferHeader.opcode = IV_WS_OPCODE_DATA_BINARY);
-        // ok
-    elseif (returnBufferHeader.opcode = IV_WS_OPCODE_DATA_TEXT);
-        // ok
-    else;
-        iv_debug('Closing connection because of unknown opcode received');
-        iv_disconnect(p_client);
-        return -1;
     endif;
     
-    
-    if (header.payloadLength < 126);
-        // single frame
-        dataLength = header.payloadLength;
-    elseif (header.payloadLength = 126);
-        rc = sockets_receive(client.sockets : %addr(payloadLength2) : 2 : timeout);
-        if (rc <> 2);
-            iv_debug('Closing connection because of invalid number of bytes read from playload length');
-            iv_disconnect(p_client);
-            return -1;
+    dow (not fin and rc > 0);
+        fin = (%bitand(IV_WS_FIN : header.finOpcode) = IV_WS_FIN);
+        opcode = %bitand(header.finOpcode : x'7F'); // 7F = b'01111111' to get rid of the fin bit
+        
+        if (returnBufferHeader.opcode = x'00');
+            returnBufferHeader.opcode = opcode;
+            buffer += %size(returnBufferHeader);
         endif;
-        dataLength = payloadLength2;
-    elseif (header.payloadLength = 127);
-        rc = sockets_receive(client.sockets : %addr(payloadLength8) : 8 : timeout);
-        if (rc <> 8);
-            iv_debug('Closing connection because of invalid number of bytes read from playload length');
+                
+        if (opcode = IV_WS_OPCODE_CLOSE);
+            iv_debug('Closing connection because of CLOSE frame');
             iv_disconnect(p_client);
-            return -1;
-        endif;
-        if (payloadLength8 > 2147483647);
-            dataLength = 2147483647;
+            return 0;
+        elseif (opcode = IV_WS_OPCODE_PING);
+            // ok
+        elseif (opcode = IV_WS_OPCODE_PONG);
+            // ok
+        elseif (opcode = IV_WS_OPCODE_DATA_BINARY);
+            // ok
+        elseif (opcode = IV_WS_OPCODE_DATA_TEXT);
+            // ok
+        elseif (opcode = IV_WS_OPCODE_FRAGMENT);
+            // ok
         else;
-            dataLength = payloadLength8;
+            iv_debug('Closing connection because of unknown opcode received');
+            iv_disconnect(p_client);
+            return -1;
         endif;
-    else;
-        iv_debug('Closing connection because of mask bit set by server');
-        iv_disconnect(p_client);
-        return -1;
-    endif;
+        
+        
+        if (header.payloadLength < 126);
+            // single frame
+            dataLength = header.payloadLength;
+        elseif (header.payloadLength = 126);
+            rc = sockets_receive(client.sockets : %addr(payloadLength2) : 2 : timeout);
+            if (rc <> 2);
+                iv_debug('Closing connection because of invalid number of bytes read from playload length');
+                iv_disconnect(p_client);
+                return -1;
+            endif;
+            dataLength = payloadLength2;
+        elseif (header.payloadLength = 127);
+            rc = sockets_receive(client.sockets : %addr(payloadLength8) : 8 : timeout);
+            if (rc <> 8);
+                iv_debug('Closing connection because of invalid number of bytes read from playload length');
+                iv_disconnect(p_client);
+                return -1;
+            endif;
+            if (payloadLength8 > 2147483647);
+                dataLength = 2147483647;
+            else;
+                dataLength = payloadLength8;
+            endif;
+        else;
+            iv_debug('Closing connection because of mask bit set by server');
+            iv_disconnect(p_client);
+            return -1;
+        endif;
+        
+        readLength = %min(remainingBufferLength : dataLength); 
+        rc = sockets_receive(client.sockets : buffer : readLength : timeout);
+        if (rc <> readLength);
+            iv_debug('Could not read the expected number of bytes from socket');
+        elseif (rc < 0);
+            leave;
+        endif;
+        
+        // if the buffer is smaller than the payload we need to skip data from the socket
+        if (dataLength > rc);
+            iv_debug('Need to skip ' + %char(dataLength - readLength) + ' bytes of data because of too small buffer from caller');
+            skipDataFromServer(client.sockets : dataLength - readLength);
+        endif;
     
-    readLength = %min(bufferLength - 5 : dataLength); // - 5 = return buffer header
-    rc = sockets_receive(client.sockets : buffer : readLength : timeout);
-    if (rc <> readLength);
-        iv_debug('Could not read the expected number of bytes from socket');
-    endif;
+        buffer += rc;
+        remainingBufferLength -= rc;
+        returnBufferHeader.length += rc;
+        
+        
+        if (not fin);
+            // next frame : just read the first 2 bytes of the message (header)
+            rc = sockets_receive(client.sockets : %addr(header) : 2 : timeout);
+            if (rc < 0);
+                iv_debug('Error on reading frame header from socket. Return code: ' + %char(rc));
+                leave;
+            endif;
+        endif;
+    enddo;
     
-    // if the buffer is smaller than the payload we need to skip data from the socket
-    if (dataLength > readLength);
-        iv_debug('Need to skip ' + %char(dataLength - readLength) + ' bytes of data');
-        skipDataFromServer(client.sockets : dataLength - readLength);
-    endif;
-    
-    returnBufferHeader.length = readLength;
-    
-    return dataLength;
+    return returnBufferHeader.length;
 end-proc;
 
 

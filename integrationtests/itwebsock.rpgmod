@@ -33,6 +33,7 @@ dcl-pr test_ws_receiveEchoAsBinary extproc(*dclcase) end-pr;
 dcl-pr test_ws_receiveEchoWithSmallerBuffer extproc(*dclcase) end-pr;
 dcl-pr test_ws_checkFollowingMessageWithSmallerBuffer extproc(*dclcase) end-pr;
 dcl-pr test_ws_receivePong extproc(*dclcase) end-pr;
+dcl-pr test_ws_receiveMultiFrameMessage extproc(*dclcase) end-pr;
 
 
 dcl-proc tearDown export;
@@ -359,7 +360,7 @@ dcl-proc test_ws_receiveEchoWithSmallerBuffer export;
     
     %len(response.payload) = 7;
     rc = iv_ws_receiveBinary(client : %addr(response) : 12);
-    iEqual(12 : rc);
+    iEqual(7 : rc);
     
     aEqual('Hello W' : %char(response.payload));
     
@@ -384,7 +385,7 @@ dcl-proc test_ws_checkFollowingMessageWithSmallerBuffer export;
     
     %len(response.payload) = 7;
     rc = iv_ws_receiveBinary(client : %addr(response) : 12);
-    iEqual(12 : rc);
+    iEqual(7 : rc);
     
     aEqual('Hello W' : %char(response.payload));
     
@@ -423,4 +424,30 @@ dcl-proc test_ws_receiveLongerText export;
         iv_free(client);
 end-proc;
 
+
+dcl-proc test_ws_receiveMultiFrameMessage export;
+    dcl-s client pointer; 
+    dcl-ds response likeds(iv_ws_message_t) inz;
+    dcl-s message varchar(IV_BUFFER_SIZE) ccsid(*utf8);
+    dcl-s expectedMessage varchar(IV_BUFFER_SIZE) ccsid(*utf8);
+    
+    expectedMessage = 'And some things that should not have been forgotten were lost. +
+                       History became legend. Legend became myth. +
+                       And for two and a half thousand years, +
+                       the ring passed out of all knowledge. +
+                       -- Galadriel';
+    
+    client = iv_newHttpClient(); 
+    
+    iv_ws_connect(client : 'ws://localhost:35801/multiframe'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    iv_ws_sendText(client : 'The message sent to the server doesn''t matter.');
+    response = iv_ws_receiveText(client);
+    
+    assert(expectedMessage = response.payload : 'The message from the server is not the expected message. Received: ' + response.payload);
+    
+    on-exit;
+        iv_free(client);
+end-proc;
 
