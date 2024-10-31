@@ -469,7 +469,11 @@ static void configureTlsVersions(PSOCKETS ps) {
 static void enableTls(PSOCKETS ps, LONG tlsVersion, LONG status) {
     LONG rc = gsk_attribute_set_enum(ps->my_env_handle, tlsVersion, status);
     if (rc != GSK_OK) {
-        sockets_setSSLmsg(ps,rc, "Could not set TLS version");
+        char c_tlsVersion[12];
+        sprintf(c_tlsVersion, "%d", tlsVersion);
+        char c_returnCode[12];
+        sprintf(c_returnCode, "%d", rc);
+        iv_debug("Could not set TLS version %s. %s: %s %s", &c_tlsVersion, &c_returnCode, gsk_strerror(rc), errno_to_string(errno));
     }
 }
 
