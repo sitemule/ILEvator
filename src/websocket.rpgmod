@@ -20,6 +20,12 @@ dcl-c IV_WS_RANDOM_KEY_SIZE 24;
 dcl-c IV_WS_MAX_FRAME_SIZE 1048576;
 dcl-s IV_WEBSOCKET_GUID char(36) inz('258EAFA5-E914-47DA-95CA-C5AB0DC85B11') ccsid(*utf8);
 
+dcl-ds worker_data_t qualified template;
+    client pointer;
+    userWorker pointer(*proc);
+    userData pointer;
+end-ds;
+
 
 dcl-proc iv_ws_setFrameSize export;
     dcl-pi *n;
@@ -215,6 +221,8 @@ dcl-proc iv_ws_disconnect export;
     if (rc <> %len(frame));
         iv_debug('Socket did not send all bytes of disconnect frame.');
     endif;
+    
+    iv_disconnect(p_client);
 end-proc;
 
 
@@ -554,15 +562,21 @@ end-proc;
 dcl-proc iv_ws_receiveText export;
     dcl-pi *n likeds(iv_ws_message_t);
         p_client pointer value;
+        p_timeout int(10) value options(*nopass);
     end-pi;
     
     dcl-ds client likeds(ilevator_t) based(p_client);
     dcl-ds message likeds(iv_ws_message_t) inz;
     dcl-s dataLength uns(10);
+    dcl-s timeout int(10);
+    
+    if (%parms() >= 2);
+        timeout = p_timeout;
+    endif;
     
     %len(message.payload) = IV_BUFFER_SIZE;
     
-    dataLength = iv_ws_receiveBinary(p_client : %addr(message) : IV_BUFFER_SIZE);
+    dataLength = iv_ws_receiveBinary(p_client : %addr(message) : IV_BUFFER_SIZE : timeout);
     if (dataLength <= 0);
         %len(message.payload) = 0;
     else;
@@ -578,6 +592,7 @@ dcl-proc iv_ws_receiveBinary export;
         p_client pointer value;
         p_buffer pointer value;
         bufferLength uns(10) value;
+        p_timeout int(10) value options(*nopass);
     end-pi;
     
     dcl-ds returnBufferHeader qualified based(p_buffer);
@@ -599,6 +614,10 @@ dcl-proc iv_ws_receiveBinary export;
     dcl-s fin ind;
     dcl-s readLength int(10);
     dcl-s remainingBufferLength uns(10);
+    
+    if (%parms() >= 4);
+        timeout = p_timeout;
+    endif;
     
     if (bufferLength <= 5);
         iv_debug('Skipped receiving message because of too small receiving buffer. It needs to have at least 6 bytes.');
@@ -654,7 +673,7 @@ dcl-proc iv_ws_receiveBinary export;
         elseif (header.payloadLength = 126);
             rc = sockets_receive(client.sockets : %addr(payloadLength2) : 2 : timeout);
             if (rc <> 2);
-                iv_debug('Closing connection because of invalid number of bytes read from playload length');
+                iv_debug('Closing connection because of invalid number of bytes read from payload length');
                 iv_disconnect(p_client);
                 return -1;
             endif;
@@ -662,7 +681,7 @@ dcl-proc iv_ws_receiveBinary export;
         elseif (header.payloadLength = 127);
             rc = sockets_receive(client.sockets : %addr(payloadLength8) : 8 : timeout);
             if (rc <> 8);
-                iv_debug('Closing connection because of invalid number of bytes read from playload length');
+                iv_debug('Closing connection because of invalid number of bytes read from payload length');
                 iv_disconnect(p_client);
                 return -1;
             endif;
@@ -730,4 +749,64 @@ dcl-proc skipDataFromServer export;
         length -= BLOCK_SIZE;
     enddo;    
 end-proc;
+
+
+dcl-proc iv_ws_onMessage export;
+    dcl-pi *n;
+        p_client pointer value;
+        callback pointer(*proc) value;
+        p_userData pointer value options(*nopass);
+    end-pi;
+
+    dcl-s onMessagePtr pointer(*proc);
+    dcl-pr onMessage extproc(onMessagePtr);
+        client pointer value;
+        userData pointer value;
+        message likeds(iv_ws_message_t);
+    end-pr;
+    
+    dcl-ds client likeds(ilevator_t) based(p_client);
+    dcl-s userData pointer;
+    dcl-ds message likeds(iv_ws_message_t) inz;
+    dcl-s length int(10);
+    
+    client.wsKeepRunning = *on;
+    onMessagePtr = callback;
+    
+    if (%parms() >= 3);
+        userData = p_userData;
+    endif;
+
+    dow (client.wsKeepRunning);
+        %len(message.payload) = IV_BUFFER_SIZE;   
+        
+        length = iv_ws_receiveBinary(p_client : %addr(message) : %size(message));
+        %len(message.payload) = length;
+        
+        if (message.opcode = IV_WS_OPCODE_CLOSE);
+            iv_debug('Received CLOSE, exiting.');
+            leave;
+        elseif (message.opcode = IV_WS_OPCODE_PING);
+            iv_debug('Received PING, sending PONG');
+            iv_ws_pong(p_client);
+        elseif (message.opcode = IV_WS_OPCODE_PONG);
+            iv_debug('Received PONG. ignored');
+            // ignore
+        else;
+            onMessage(p_client : userData : message);
+        endif;
+    enddo;
+end-proc;
+
+
+dcl-proc iv_ws_endMessageReceiving export;
+    dcl-pi *n;
+        p_client pointer value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(p_client);
+    
+    client.wsKeepRunning = *off;
+end-proc;
+
 

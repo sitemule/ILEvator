@@ -28,12 +28,14 @@ dcl-pr test_ws_sendText extproc(*dclcase) end-pr;
 dcl-pr test_ws_sendLongerText extproc(*dclcase) end-pr;
 dcl-pr test_ws_sendText_frames extproc(*dclcase) end-pr;
 dcl-pr test_ws_sendTextPointer extproc(*dclcase) end-pr;
+dcl-pr test_ws_receiveTimeout extproc(*dclcase) end-pr;
 dcl-pr test_ws_receiveEchoAsText extproc(*dclcase) end-pr;
 dcl-pr test_ws_receiveEchoAsBinary extproc(*dclcase) end-pr;
 dcl-pr test_ws_receiveEchoWithSmallerBuffer extproc(*dclcase) end-pr;
 dcl-pr test_ws_checkFollowingMessageWithSmallerBuffer extproc(*dclcase) end-pr;
 dcl-pr test_ws_receivePong extproc(*dclcase) end-pr;
 dcl-pr test_ws_receiveMultiFrameMessage extproc(*dclcase) end-pr;
+dcl-pr test_ws_onMessage extproc(*dclcase) end-pr;
 
 
 dcl-proc tearDown export;
@@ -52,7 +54,7 @@ dcl-proc test_ws_connect export;
     httpClient = iv_newHttpClient(); 
     iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
     
-    iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
+    iv_ws_connect(httpClient : 'ws://localhost:35801/messagews');
     iEqual(101 : iv_getStatus(httpClient));
     
     on-exit;
@@ -318,6 +320,22 @@ dcl-proc test_ws_receiveEchoAsText export;
 end-proc;
 
 
+dcl-proc test_ws_receiveTimeout export;
+    dcl-s client pointer; 
+    dcl-ds response likeds(iv_ws_message_t) inz;
+    
+    client = iv_newHttpClient(); 
+    
+    iv_ws_connect(client : 'ws://localhost:35801/echo'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    response = iv_ws_receiveText(client : 2);
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
 dcl-proc test_ws_receiveEchoAsBinary export;
     dcl-s client pointer; 
     dcl-s outbuffer varchar(65000:4) ccsid(1208); 
@@ -449,5 +467,41 @@ dcl-proc test_ws_receiveMultiFrameMessage export;
     
     on-exit;
         iv_free(client);
+end-proc;
+
+
+dcl-proc test_ws_onMessage export;
+    dcl-s client pointer; 
+    dcl-s errorMessage varchar(256);
+    dcl-s userData varchar(1000) ccsid(*utf8);
+    
+    client = iv_newHttpClient(); 
+    
+    iv_ws_connect(client : 'ws://localhost:35801/echo'); 
+    
+    iv_ws_sendText(client : 'Hello World');
+    
+    iv_ws_onMessage(client : %paddr(echoWorker) : %addr(userData));
+    aEqual('Hello World' : %char(userData));
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc echoWorker export;
+    dcl-pi *n;
+        client pointer value;
+        p_userData pointer value;
+        message likeds(iv_ws_message_t);
+    end-pi;
+    
+    dcl-s userData varchar(1000) ccsid(*utf8) based(p_userData);
+    
+    aEqual(IV_WS_OPCODE_DATA_TEXT : message.opcode);
+    
+    userData = message.payload;
+    
+    iv_ws_endMessageReceiving(client);
 end-proc;
 

@@ -53,7 +53,10 @@ dcl-ds ilevator_t qualified template align(*full);
     bufferEnd pointer;
     proxyTunnel pointer;
     connected ind;
+    
+    // web sockets
     wsFrameSize uns(10);
+    wsKeepRunning ind;
 end-ds;
 
 dcl-s ENUM int(3) template;

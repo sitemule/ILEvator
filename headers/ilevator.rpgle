@@ -1921,17 +1921,47 @@ dcl-pr iv_teraspace_use uns(20) extproc(*dclcase) end-pr;
 // web socket
 //
 
+///
+// Web socket control frame CLOSE
+///
 dcl-c IV_WS_OPCODE_CLOSE x'08';
+///
+// Web socket control frame PING
+///
 dcl-c IV_WS_OPCODE_PING x'09';
+///
+// Web socket control frame PONG
+///
 dcl-c IV_WS_OPCODE_PONG x'0A';
+///
+// Web Socket data frame with text data (UTF-8)
+///
 dcl-c IV_WS_OPCODE_DATA_TEXT x'01';
+///
+// Web Socket data frame with binary data
+///
 dcl-c IV_WS_OPCODE_DATA_BINARY x'02';
 
+///
+// Web socket message template with 1MB payload size.
+// The data structure contains the message opcode and payload.
+///
 dcl-ds iv_ws_message_t qualified template;
     opcode char(1);
     payload varchar(IV_BUFFER_SIZE) ccsid(*UTF8);
 end-ds;
 
+///
+// Connect
+//
+// Sends an opening handshake (HTTP request) to the server.
+//
+// @param Pointer to the HTTP client
+// @param Web socket server URL (protocol: ws)
+// @param Web socket subprotocols (comma seperated list of protocols)
+// @param Additional HTTP headers
+// @return <code>*on</code> = connected else <code>*off</code>
+///
 dcl-pr iv_ws_connect ind extproc(*dclcase);
     client pointer value;
     url varchar(IV_URL_SIZE:2) value;
@@ -1939,16 +1969,43 @@ dcl-pr iv_ws_connect ind extproc(*dclcase);
     headers pointer value options(*nopass);
 end-pr;
 
+///
+// Disconnect
+//
+// Disconnects from the web socket server. After sending the CLOSE frame
+// the socket is closed.
+//
+// @param Pointer to the client
+// @param Reason text
+///
 dcl-pr iv_ws_disconnect extproc(*dclcase);
     client pointer value;
     reason varchar(80) ccsid(*utf8) value options(*nopass);
 end-pr;
 
+///
+// Send text by var
+//
+// Sends the text as a data text message to the web socket server.
+//
+// @param Pointer to the client
+// @param Message text
+///
 dcl-pr iv_ws_sendTextVar extproc(*dclcase);
     client pointer value;
     value varchar(IV_BUFFER_SIZE) ccsid(*utf8) value;
 end-pr;
 
+///
+// Send text by pointer
+//
+// Sends the text as a data text message to the web socket server.
+// Text in text messages are expected to be UTF-8 encoded.
+//
+// @param Pointer to the client
+// @param Pointer to text
+// @param Length of text
+///
 dcl-pr iv_ws_sendTextPointer extproc(*dclcase);
     client pointer value;
     value pointer value;
@@ -1956,34 +2013,149 @@ dcl-pr iv_ws_sendTextPointer extproc(*dclcase);
 end-pr;
 
 /if defined (RPG_HAS_OVERLOAD)
+///
+// Send text
+//
+// Sends the text as a data text message to the web socket server.
+///
 dcl-pr iv_ws_sendText overload(iv_ws_sendTextVar : iv_ws_sendTextPointer);
 /endif
 
+///
+// Send binary data
+//
+// Sends the passed data to the web socket server as binary data.
+//
+// @param Pointer to the client
+// @param Pointer to data
+// @param Length of data
+///
 dcl-pr iv_ws_sendBinary extproc(*dclcase);
     client pointer value;
     value pointer value;
     length uns(10) value;
 end-pr;
 
+///
+// Receive text message
+//
+// Receive messages as text from the web socket server. The message data is
+// expected to be UTF-8 encoded. By default the call will wait till the server
+// sends data. A timeout (in seconds) can be passed.
+// 
+// @param Pointer to client
+// @param Timeout in seconds
+// @return Message
+///
 dcl-pr iv_ws_receiveText likeds(iv_ws_message_t) extproc(*dclcase);
     client pointer value;
+    timeout int(10) value options(*nopass);
 end-pr;
 
+///
+// Receive binary message
+//
+// Receive message as binary data from the web socket server. By default the 
+// call will wait till the server sends data. A timeout (in seconds) can be 
+// passed.
+//
+// @param Pointer to client
+// @param Pointer to buffer
+// @param Buffer length
+// @param Timeout in seconds
+// @return Number of bytes returned
+// 
+// @info Any overflowing data is skipped and discarded in case the message
+//       payload is larger than the passed buffer.
+///
 dcl-pr iv_ws_receiveBinary int(10) extproc(*dclcase);
     client pointer value;
     buffer pointer value;
     bufferLength uns(10) value;
+    timeout int(10) value options(*nopass);
 end-pr;
 
+///
+// Ping
+// 
+// Sends a PING control frame to the web socket server. A timestamp in ISO
+// format will be sent as the message payload.
+//
+// @param Pointer to the client
+///
 dcl-pr iv_ws_ping extproc(*dclcase);
     client pointer value;
 end-pr;
 
+///
+// Pong
+// 
+// Sends a PONG control frame to the web socket server. A timestamp in ISO
+// format will be sent as the message payload.
+//
+// @param Pointer to the client
+///
 dcl-pr iv_ws_pong extproc(*dclcase);
     client pointer value;
 end-pr;
 
+///
+// Set frame size
+//
+// A message doesn't have to be sent in one frame but can be fragmented and 
+// sent in multiple frames. The passed frameSize is the maximum number of 
+// bytes sent as a single frame.
+// 
+// @param Pointer to client
+// @param Frame size in bytes (0 = no limit (default), a message is sent in one frame)
+//
+// @info This setting is only used when sending frames. The size of received 
+// frames is set by the web socket server.
+///
 dcl-pr iv_ws_setFrameSize extproc(*dclcase);
     client pointer value;
     frameSize uns(10) value;
+end-pr;
+
+///
+// Receive messages by callback
+//
+// Start receiving message from the web socket server. Each data message is 
+// passed to the callback procedure. Control frames are handles by ILEvator
+// and won't get passed to the callback procedures.
+// <br/><br/>
+// PING control frames are automatically answered with a PONG control frame.
+// <br/><br/>
+// The receiving will stop when a CLOSE control frame is sent.
+// <br/><br/>
+// The callback procedure must implement the following interface
+// <code>
+// dcl-pi *n;
+//    client pointer value;
+//    userData pointer value;
+//    message likeds(iv_ws_message_t);
+// end-pi;
+// </code>
+// 
+// @param Pointer to client
+// @param Procedure pointer to callback procedure
+// @param Pointer to user data which will be passed to the callback procedure
+//        with each received message
+///
+dcl-pr iv_ws_onMessage extproc(*dclcase);
+    client pointer value;
+    callback pointer(*proc) value;
+    userData pointer value options(*nopass);
+end-pr;
+
+///
+// End receiving messages
+// 
+// If messages are received by a call of <code>iv_ws_onMessage</code> this will
+// signal the client to end receiving messages.
+// 
+// @param Pointer to client
+///
+dcl-pr iv_ws_endMessageReceiving extproc(*dclcase);
+    client pointer value;
 end-pr;

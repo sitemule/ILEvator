@@ -25,7 +25,7 @@ DEFINE=RPG_HAS_OVERLOAD
 #-------------------------------------------------------------------------------
 
 
-OBJECTS = ITGET ITPOST ITDELETE ITEXEC ITHEAD ITMULTI ITOPTIONS ITPUT ITPATCH ITREQHDLR ITCONNECT
+OBJECTS = ITGET ITPOST ITDELETE ITEXEC ITHEAD ITMULTI ITOPTIONS ITPUT ITPATCH ITREQHDLR ITCONNECT ITWEBSOCK
 SRVPGMS = $(RU_LIB)/RUTESTCASE $(ILEVATOR_LIB)/ILEVATOR
 
 # system and application include folder
@@ -112,7 +112,7 @@ ITWEBSOCK:
 	system -i "CHGATR OBJ('itwebsock.rpgmod') ATR(*CCSID) VALUE(1252)"
 	system -i "CRTRPGMOD MODULE($(BIN_LIB)/ITWEBSOCK) SRCSTMF('itwebsock.rpgmod') $(RCFLAGS)"
 	system -i "CRTSRVPGM $(BIN_LIB)/ITWEBSOCK MODULE(($(BIN_LIB)/ITWEBSOCK)) $(BINDFLAGS)"
-
+	
 clean:
 	-system -i "DLTMOD $(BIN_LIB)/ITGET"
 	-system -i "DLTMOD $(BIN_LIB)/ITPOST"
@@ -126,6 +126,7 @@ clean:
 	-system -i "DLTMOD $(BIN_LIB)/ITREQHDLR"
 	-system -i "DLTMOD $(BIN_LIB)/ITTUNNEL"
 	-system -i "DLTMOD $(BIN_LIB)/ITCONNECT"
+	-system -i "DLTMOD $(BIN_LIB)/ITWEBSOCK"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITGET"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITPOST"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITDELETE"
@@ -138,6 +139,7 @@ clean:
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITREQHDLR"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITTUNNEL"
 	-system -i "DLTSRVPGM $(BIN_LIB)/ITCONNECT"
+	-system -i "DLTSRVPGM $(BIN_LIB)/ITWEBSOCK"
 	$(MAKE) -C ileastic/ clean
 
 .PHONY:
