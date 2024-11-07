@@ -1,0 +1,66 @@
+**FREE
+
+ctl-opt nomain thread(*concurrent);
+
+
+/include 'base64.rpginc'
+/include 'crypto.rpginc'
+
+
+dcl-ds qusec_t qualified template;
+  bytesProvided int(10);
+  bytesAvailable int(10);
+  exceptionId char(7);
+  reserved char(1);
+  data char(48);
+end-ds;
+
+dcl-ds algd0500_t qualified template;
+  algorithm int(10);
+end-ds;
+
+dcl-c ALGORITHM_MD5 1;
+dcl-c ALGORITHM_SHA1 2;
+dcl-c ALGORITHM_SHA256 3;
+dcl-c ALGORITHM_SHA384 4;
+dcl-c ALGORITHM_SHA512 5;
+
+dcl-pr sys_calculateHash extproc('Qc3CalculateHash');
+  input pointer value;
+  inputLength int(10) const;
+  inputDataFormat char(8) const;
+  algorithm char(65535) const;
+  algorithmFormat char(8) const;
+  cryptoServiceProvier char(1) const;
+  cryptoDeviceName char(10) const;
+  hash pointer value;
+  errorCode likeds(qusec_t);
+end-pr;
+
+
+dcl-proc iv_crypto_sha1 export;
+    dcl-pi *n char(20) ccsid(*hex);
+        input pointer value;
+        inputLength int(10) value;
+    end-pi;
+    
+    dcl-ds algorithm likeds(algd0500_t);
+    dcl-ds errorCode likeds(qusec_t) inz;
+    dcl-s hash char(20) ccsid(*hex);
+    
+    algorithm.algorithm = ALGORITHM_SHA1;
+    
+    sys_calculateHash(
+        input :
+        inputLength :
+        'DATA0100' :
+        algorithm :
+        'ALGD0500' :
+        '0' :
+        *blank :
+        %addr(hash) :
+        errorCode
+    );
+    
+    return hash;
+end-proc;

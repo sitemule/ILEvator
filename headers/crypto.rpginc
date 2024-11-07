@@ -1,0 +1,11 @@
+**FREE
+
+/if not defined (ILEVATOR_CRYPTO)
+/define ILEVATOR_CRYPTO
+
+dcl-pr iv_crypto_sha1 char(20) ccsid(*hex) extproc(*dclcase);
+    input pointer value;
+    inputLength int(10) value;
+end-pr;
+
+/endif

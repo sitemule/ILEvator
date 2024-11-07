@@ -43,8 +43,7 @@ CCFLAGS2=OUTPUT(*print) OPTION(*NOSHOWINC *STDLOGMSG) OPTIMIZE(10) ENUM(*INT) TE
 # remove all default suffix rules
 .SUFFIXES:
 
-MODULES=$(BIN_LIB)/ANYCHAR $(BIN_LIB)/API $(BIN_LIB)/BASE64 $(BIN_LIB)/BASICAUTH $(BIN_LIB)/BEARER $(BIN_LIB)/CHUNKED $(BIN_LIB)/DEBUG $(BIN_LIB)/ENCODE $(BIN_LIB)/FORM $(BIN_LIB)/HTTPCLIENT $(BIN_LIB)/INIT $(BIN_LIB)/JOBLOG $(BIN_LIB)/MESSAGE $(BIN_LIB)/MIME $(BIN_LIB)/MULTIPART $(BIN_LIB)/REQUEST $(BIN_LIB)/SIMPLELIST $(BIN_LIB)/SOCKETS $(BIN_LIB)/STREAM $(BIN_LIB)/STRUTIL $(BIN_LIB)/TERASPACE $(BIN_LIB)/URL $(BIN_LIB)/VARCHAR  $(BIN_LIB)/XLATE
-
+MODULES=$(BIN_LIB)/ANYCHAR $(BIN_LIB)/API $(BIN_LIB)/BASE64 $(BIN_LIB)/BASICAUTH $(BIN_LIB)/BEARER $(BIN_LIB)/CHUNKED $(BIN_LIB)/CRYPTO $(BIN_LIB)/DEBUG $(BIN_LIB)/ENCODE $(BIN_LIB)/FORM $(BIN_LIB)/HTTPCLIENT $(BIN_LIB)/INIT $(BIN_LIB)/JOBLOG $(BIN_LIB)/MESSAGE $(BIN_LIB)/MIME $(BIN_LIB)/MULTIPART $(BIN_LIB)/REQUEST $(BIN_LIB)/SIMPLELIST $(BIN_LIB)/SOCKETS $(BIN_LIB)/STREAM $(BIN_LIB)/STRUTIL $(BIN_LIB)/TERASPACE $(BIN_LIB)/URL $(BIN_LIB)/VARCHAR $(BIN_LIB)/WEBSOCKET $(BIN_LIB)/XLATE
 
 # Dependency list
 
@@ -53,9 +52,9 @@ all:  $(BIN_LIB).lib ext compile hdr messagefile ilevator.bnddir modules.bnddir
 ext: .PHONY
 	$(MAKE) -C ext/ $*
 
-modules: anychar.c api.rpgmod basicauth.rpgmod bearer.rpgmod chunked.c debug.rpgmod \
+modules: anychar.c api.rpgmod basicauth.rpgmod bearer.rpgmod chunked.c crypto.rpgmod debug.rpgmod \
          encode.rpgmod form.rpgmod httpclient.c init.cpp joblog.c mime.rpgmod \
-         multipart.rpgmod request.rpgmod sockets.c url.rpgmod
+         multipart.rpgmod request.rpgmod sockets.c url.rpgmod websocket.rpgmod
 
 compile: setHeaderCcsid modules ilevator.srvpgm
 
@@ -110,6 +109,7 @@ modules.bnddir:
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/BASE64 *MODULE))"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/BASICAUTH *MODULE))"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/BEARER *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/CRYPTO *MODULE))"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/CHUNKED *MODULE))"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/DEBUG *MODULE))"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/ENCODE *MODULE))"
@@ -127,6 +127,7 @@ modules.bnddir:
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/TERASPACE *MODULE))"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/URL *MODULE))"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/VARCHAR *MODULE))"
+	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/WEBSOCKET *MODULE))"
 	-system -q "ADDBNDDIRE BNDDIR($(BIN_LIB)/MODULES) OBJ(($(BIN_LIB)/XLATE *MODULE))"
 
 setHeaderCcsid:
@@ -182,7 +183,12 @@ messagefile:
 	system "QSYS/ADDMSGD MSGID(ILV0508) MSGF($(BIN_LIB)/ILEVATOR) MSG('508 - Loop detected') SEV(10)"
 	system "QSYS/ADDMSGD MSGID(ILV0510) MSGF($(BIN_LIB)/ILEVATOR) MSG('510 - Not extended') SEV(10)"
 	system "QSYS/ADDMSGD MSGID(ILV0511) MSGF($(BIN_LIB)/ILEVATOR) MSG('511 - Network authentication required') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0600) MSGF($(BIN_LIB)/ILEVATOR) MSG('Close connection') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0601) MSGF($(BIN_LIB)/ILEVATOR) MSG('Invalid web socket frame received from server: unknown opcode') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0602) MSGF($(BIN_LIB)/ILEVATOR) MSG('Invalid web socket frame received from server: invalid number of bytes for payload length') SEV(10)"
+	system "QSYS/ADDMSGD MSGID(ILV0603) MSGF($(BIN_LIB)/ILEVATOR) MSG('Invalid web socket frame received from server: mask bit set by server') SEV(10)"
 	system "QSYS/ADDMSGD MSGID(ILV0999) MSGF($(BIN_LIB)/ILEVATOR) MSG('Not mapped HTTP status code') SEV(10)"
+	
 
 all:
 	@echo Build success!
@@ -193,6 +199,7 @@ clean:
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/BASICAUTH) OBJTYPE(*MODULE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/BEARER) OBJTYPE(*MODULE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/CHUNKED) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/CRYPTO) OBJTYPE(*MODULE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/DEBUG) OBJTYPE(*MODULE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/ENCODE) OBJTYPE(*MODULE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/FORM) OBJTYPE(*MODULE)"
@@ -204,6 +211,7 @@ clean:
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/REQUEST) OBJTYPE(*MODULE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/SOCKETS) OBJTYPE(*MODULE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/URL) OBJTYPE(*MODULE)"
+	-system -q "DLTOBJ OBJ($(BIN_LIB)/WEBSOCKET) OBJTYPE(*MODULE)"
 	-system -q "DLTOBJ OBJ($(BIN_LIB)/ILEVATOR) OBJTYPE(*SRVPGM)"
 
 purge: clean

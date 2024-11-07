@@ -1,0 +1,812 @@
+**FREE
+
+ctl-opt nomain thread(*concurrent);
+
+/include 'api.rpginc'
+/include 'base64.rpginc'
+/include 'clib.rpginc'
+/include 'crypto.rpginc'
+/include 'debug.rpginc'
+/include 'message.rpginc'
+/include 'simpleList.rpginc'
+/include 'sockets.rpginc'
+/include 'teraspace.rpginc'
+
+dcl-c IV_WS_FIN x'80';
+dcl-c IV_WS_OPCODE_FRAGMENT x'00';
+
+
+dcl-c IV_WS_RANDOM_KEY_SIZE 24;
+dcl-c IV_WS_MAX_FRAME_SIZE 1048576;
+dcl-s IV_WEBSOCKET_GUID char(36) inz('258EAFA5-E914-47DA-95CA-C5AB0DC85B11') ccsid(*utf8);
+
+dcl-ds worker_data_t qualified template;
+    client pointer;
+    userWorker pointer(*proc);
+    userData pointer;
+end-ds;
+
+
+dcl-proc iv_ws_setFrameSize export;
+    dcl-pi *n;
+        p_client pointer value;
+        frameSize uns(10) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(p_client);
+    
+    client.wsFrameSize = frameSize;
+end-proc;
+
+
+dcl-proc iv_ws_connect export;
+    dcl-pi *n ind;
+        client pointer value;
+        url varchar(IV_URL_SIZE:2) value;
+        p_subprotocols varchar(100) dim(10) options(*nopass);
+        p_headers pointer value options(*nopass);
+    end-pi;
+    
+    dcl-s connected ind inz(*off);
+    dcl-s buffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
+    dcl-s rc ind inz(*off);
+    dcl-s l_subprotocols varchar(100) dim(10);
+    dcl-s subprotocols varchar(1000);
+    dcl-s i int(10);
+    dcl-s headers pointer;
+    dcl-s randomKey varchar(IV_WS_RANDOM_KEY_SIZE) ccsid(*utf8);
+    dcl-ds iterator likeds(SLISTITERATOR_t);
+    dcl-ds node likeds(SLISTNODE_t) based(iterator.pThis);
+    dcl-ds nodePayload likeds(SLISTKEYVAL_t) based(node.payloadData);
+    dcl-s headerName varchar(IV_HEADER_NAME_SIZE) ccsid(*utf8);
+    dcl-s headerValue varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+  
+    if (%parms() >= 3);
+        l_subprotocols = p_subprotocols;
+    endif;  
+  
+    randomKey = generateRandomKey();
+    
+    iv_setResponseDataBuffer(client : %addr(buffer) : IV_BUFFER_SIZE : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    headers = iv_buildList(
+        'Sec-WebSocket-Version' : '13' :
+        'Sec-WebSocket-Key' : randomKey :
+        'Upgrade' : 'websocket' :
+        'Connection' : 'Upgrade'
+    );
+    
+    for i = 1 to %elem(l_subprotocols);
+        if (%len(subprotocols) > 0);
+            subprotocols += ',';
+        endif;
+        
+        if (l_subprotocols(i) <> *blank);
+            subprotocols += l_subprotocols(i);
+        endif;
+    endfor;
+    
+    if (%len(subprotocols) > 0);
+        iv_addHeaderToList(headers : 'Sec-WebSocket-Protocol' : subprotocols);
+    endif;
+    
+    if (%parms() >= 4);
+        iterator = sList_setIterator(p_headers);
+        dow (sList_foreach(iterator));
+            headerName = %str(nodePayload.key.string : nodePayload.key.length);
+            if (headerName = 'Sec-WebSocket-Key'); // TODO check case insensitive
+                iter;
+            endif;
+            
+            headerValue = %str(nodePayload.value.string : nodePayload.value.length);
+            addHeader(headers : headerName : headerValue);
+        enddo;
+    endif;
+    
+    
+    if (iv_connect(client : url));
+        if (iv_http_request(client : 'GET' : url : headers));
+            if (isWebSocketUpgradeSuccessful(client : randomKey : l_subprotocols));
+                iv_debug('HTTP upgrade request successful. Web socket connected.');
+                connected = *on;
+            endif;
+        else;
+            iv_debug('HTTP upgrade request failed.');
+        endif;
+    endif;
+    
+    return connected;
+    
+    on-exit;
+        iv_freeList(headers);
+end-proc;
+
+
+dcl-proc isWebSocketUpgradeSuccessful;
+    dcl-pi *n ind;
+        client pointer;
+        secWebSocketKey varchar(IV_WS_RANDOM_KEY_SIZE) ccsid(*utf8) value;
+        subprotocols varchar(100) dim(10);
+    end-pi;
+
+    dcl-s headerValue varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+    dcl-s hash char(20) ccsid(*hex);
+    dcl-s encoded char(28) ccsid(*utf8);
+    dcl-s hashInput char(60) ccsid(*utf8);
+    
+    if (iv_getStatus(client) <> 101);
+        iv_debug('Web socket handshake aborted because of returned HTTP status ' + %char(iv_getStatus(client)));
+        return *off;
+    endif;
+    
+    headerValue = iv_getHeader(client : 'Upgrade');
+    if (headerValue <> 'websocket');  // TODO needs to be case insensitive
+        iv_debug('Web socket handshake aborted because of returned HTTP header "Upgrade" with value ' + %char(headerValue));
+        return *off;
+    endif;
+    
+    headerValue = iv_getHeader(client : 'Connection');
+    if (headerValue <> 'Upgrade'); // TODO needs to be case insensitive
+        return *off;
+    endif;
+
+    headerValue = iv_getHeader(client : 'Sec-WebSocket-Version');
+    if (headerValue <> *blank and headerValue <> '13');
+        iv_debug('Web socket handshake aborted because of invalid protocol version with value ' + %char(headerValue));
+        return *off;
+    endif;
+
+    if (subprotocols(1) <> *blank);
+        headerValue = iv_getHeader(client : 'Sec-WebSocket-Protocol');
+        if (headerValue = *blank);
+            iv_debug('Web socket handshake aborted because of missing Sec-WebSocket-Protocol header in response.');
+            return *off;
+        elseif (%lookup(%char(headerValue) : subprotocols) = 0);
+            iv_debug('Web socket handshake aborted because requested Sec-WebSocket-Protocol -
+                      was not returned by server. Server returned ' + %char(headerValue));
+            return *off;
+        endif;
+    endif;
+    
+    // check Sec-WebSocket-Accept header for sha-1 hash of Sec-Websocket-Key value
+    headerValue = iv_getHeader(client : 'Sec-WebSocket-Accept');
+    if (headerValue = *blank);
+        iv_debug('Web socket handshake aborted because of missing Sec-WebSocket-Accept header in response.');
+        return *off;
+    else;
+        hashInput = secWebSocketKey + IV_WEBSOCKET_GUID;
+        hash = iv_crypto_sha1(%addr(hashInput) : %len(hashInput));
+        base64_encodeBuffer(%addr(encoded) : %addr(hash) : %len(hash));
+        
+        if (encoded <> headerValue);
+            iv_debug('Web socket handshake aborted because of not matching Sec-WebSocket-Accept header value.');
+            iv_debug(%char('Sent Sec-WebSocket-Key: ' + secWebSocketKey));
+            iv_debug(%char('Expected: ' + encoded + '. Received: ' + headerValue));
+            return *off;
+        endif;
+    endif;
+    
+    return *on;
+end-proc;
+
+
+dcl-proc iv_ws_disconnect export;
+    dcl-pi *n;
+        p_client pointer value;
+        reason varchar(80) ccsid(*utf8) value options(*nopass);
+    end-pi;
+    
+    dcl-ds client likeds(ilevator_t) based(p_client);
+    dcl-s frame varchar(IV_WS_MAX_FRAME_SIZE) ccsid(*hex);
+    dcl-s rc int(10);
+    dcl-s hexBuffer char(200);
+    dcl-s payload varchar(82) ccsid(*hex);
+    dcl-s reasonCode uns(5) based(reasonCodePtr);
+    
+    %len(payload) = 2;
+    reasonCodePtr = %addr(payload : *data);
+    reasonCode = 1000;
+    
+    if (%parms() >= 2);
+        %len(payload) = 2 + %len(reason);
+        memcpy(%addr(payload : *data) + 2 : %addr(reason : *data) : %len(reason));
+    endif;
+    
+    frame = createFrame(p_client : IV_WS_OPCODE_CLOSE : %addr(payload : *data) : %len(payload));
+    
+    cvthc(%addr(hexBuffer) : %addr(frame : *data) : %len(frame) * 2);
+    iv_debug('Close frame: ' + %trimr(hexBuffer));
+    
+    rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+    if (rc <> %len(frame));
+        iv_debug('Socket did not send all bytes of disconnect frame.');
+    endif;
+    
+    iv_disconnect(p_client);
+end-proc;
+
+
+dcl-proc iv_ws_sendTextVar export;
+    dcl-pi *n;
+        client pointer value;
+        payload varchar(IV_BUFFER_SIZE) ccsid(*utf8) value;  
+    end-pi;
+    
+    iv_ws_sendTextPointer(client : %addr(payload : *data) : %len(payload));
+end-proc;
+
+
+dcl-proc iv_ws_sendTextPointer export;
+    dcl-pi *n;
+        p_client pointer value;
+        value pointer value;
+        length uns(10) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(p_client);
+    dcl-s frame varchar(IV_WS_MAX_FRAME_SIZE) ccsid(*hex);
+    dcl-s rc int(10);
+    dcl-s x int(10);
+    dcl-s frameSize uns(10);
+    dcl-s fin ind inz(*off);
+    dcl-s numberFrames uns(10);
+    dcl-s opcode char(1) ccsid(*hex);
+
+    if (length = 0);
+        frame = createFrame(p_client : IV_WS_OPCODE_DATA_TEXT : value : length);
+        rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+        if (rc <> %len(frame));
+            iv_debug('Socket did not sent all bytes of text data frame.');
+        endif;
+    elseif (client.wsFrameSize = 0 or length <= client.wsFrameSize);
+        frame = createFrame(p_client : IV_WS_OPCODE_DATA_TEXT : value : length);
+        rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+        if (rc <> %len(frame));
+            iv_debug('Socket did not send all bytes of text data frame.');
+        endif;
+    else;
+        
+        // send text in multiple frames as the text size is bigger than the configured max. frame size
+        dow (length > x);
+            if (numberFrames = 0);
+                opcode = IV_WS_OPCODE_DATA_TEXT;
+            else;
+                opcode = IV_WS_OPCODE_FRAGMENT;
+            endif;
+            
+            if (client.wsFrameSize >= length - x);
+                frameSize = length - x;
+                fin = *on;
+            else;
+                frameSize = client.wsFrameSize;
+            endif;
+        
+            frame = createFrame(p_client : opcode : value + x : frameSize : fin);
+            x += frameSize;
+            
+            rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+            if (rc <> %len(frame));
+                iv_debug('Socket did not send all bytes of text data frame.');
+            endif;
+            
+            numberFrames += 1;
+        enddo;
+        
+        iv_debug('Sent %s frames' : %char(numberFrames));
+    endif;
+end-proc;
+
+
+dcl-proc iv_ws_sendBinary export;
+    dcl-pi *n;
+        p_client pointer value;
+        value pointer value;
+        length uns(10) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(p_client);
+    dcl-s frame varchar(IV_WS_MAX_FRAME_SIZE) ccsid(*hex);
+    dcl-s rc int(10);
+    dcl-s x int(10);
+    dcl-s frameSize uns(10);
+    dcl-s fin ind inz(*off);
+    dcl-s numberFrames uns(10);
+    dcl-s opcode char(1) ccsid(*hex);
+
+    if (length = 0);
+        frame = createFrame(p_client : IV_WS_OPCODE_DATA_BINARY : value : length);
+        rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+        if (rc <> %len(frame));
+            iv_debug('Socket did not send all bytes of binary data frame.');
+        endif;
+    elseif (client.wsFrameSize = 0 or length <= client.wsFrameSize);
+        frame = createFrame(p_client : IV_WS_OPCODE_DATA_BINARY : value : length);
+        rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+        if (rc <> %len(frame));
+            iv_debug('Socket did not send all bytes of binary data frame.');
+        endif;
+    else;
+        
+        // send text in multiple frames as the text size is bigger than the configured max. frame size
+        dow (length > x);
+            if (numberFrames = 0);
+                opcode = IV_WS_OPCODE_DATA_BINARY;
+            else;
+                opcode = IV_WS_OPCODE_FRAGMENT;
+            endif;
+        
+            if (client.wsFrameSize >= length - x);
+                frameSize = length - x;
+                fin = *on;
+            else;
+                frameSize = client.wsFrameSize;
+            endif;
+        
+            frame = createFrame(p_client : opcode : value + x : frameSize : fin);
+            x += frameSize;
+            
+            rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+            if (rc <> %len(frame));
+                iv_debug('Socket did not send all bytes of binary data frame.');
+            endif;
+            
+            numberFrames += 1;
+        enddo;
+        
+        iv_debug('Sent %s frames' : %char(numberFrames));
+    endif;
+end-proc;
+
+
+dcl-proc generateRandomKey export;
+    dcl-pi *n char(IV_WS_RANDOM_KEY_SIZE) ccsid(*utf8) end-pi;
+
+    dcl-s chars char(62) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') ccsid(*utf8);
+    dcl-s c char(1) ccsid(*utf8) based(cptr);
+    dcl-s unencoded char(16) ccsid(*utf8);
+    dcl-s encoded char(24) ccsid(*utf8);
+    dcl-s i int(10);
+    dcl-s seed int(10);
+    dcl-s randomNumber float(8);
+    dcl-s encodingResult int(20);
+    
+    for i = 1 to %len(unencoded);
+        CEERAN0(seed : randomNumber : *omit);
+        cptr = %addr(chars) + %int(randomNumber * 62.0);
+        %subst(unencoded : i : 1) = c;
+    endfor;
+    
+    encodingResult = base64_encodeBuffer(%addr(encoded) : %addr(unencoded) : %len(unencoded));
+    if (encodingResult <> IV_WS_RANDOM_KEY_SIZE);
+        iv_debug('Insufficient characters encoded for Sec-Websocket-Key value. ' + 
+            %char(encodingResult) + ' of ' + %char(IV_WS_RANDOM_KEY_SIZE)); 
+    endif;
+    
+    return encoded;
+end-proc;
+
+
+dcl-proc iv_ws_ping export;
+    dcl-pi *n;
+        p_client pointer value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(p_client);
+
+    dcl-s frame varchar(IV_WS_MAX_FRAME_SIZE) ccsid(*hex);
+    dcl-s rc int(10);
+    dcl-s payload char(26) ccsid(*utf8);
+    
+    payload = %char(%timestamp() : *ISO);
+    
+    frame = createFrame(p_client : IV_WS_OPCODE_PING : %addr(payload) : %len(payload));
+    
+    rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+    if (rc <> %len(frame));
+        iv_debug('Socket did not send all bytes of ping frame.');
+    endif;
+end-proc;
+
+
+dcl-proc iv_ws_pong export;
+    dcl-pi *n;
+        p_client pointer value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(p_client);
+
+    dcl-s frame varchar(IV_WS_MAX_FRAME_SIZE) ccsid(*hex);
+    dcl-s rc int(10);
+    dcl-s payload char(26) ccsid(*utf8);
+    
+    payload = %char(%timestamp() : *ISO);
+    
+    frame = createFrame(p_client : IV_WS_OPCODE_PONG : %addr(payload) : %len(payload));
+    
+    rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
+    if (rc <> %len(frame));
+        iv_debug('Socket did not send all bytes of pong frame.');
+    endif;      
+end-proc;
+
+
+dcl-proc createFrame export;
+    dcl-pi *n varchar(IV_WS_MAX_FRAME_SIZE) ccsid(*hex);
+        p_client pointer value;
+        opcode char(1) ccsid(*hex) const;
+        p_payload pointer value options(*nopass);
+        p_payloadLength uns(10) value options(*nopass);
+        p_fin ind const options(*nopass);
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(p_client);
+    dcl-c MASKED_BIT 128;
+    dcl-s buffer varchar(IV_WS_MAX_FRAME_SIZE) ccsid(*hex) inz(*allx'00');
+    dcl-s c char(1) ccsid(*hex) based(cptr);
+    dcl-s number uns(3) based(cptr);
+    dcl-s numberShort uns(5) based(cptr);
+    dcl-s numberLong uns(20) based(cptr);
+    dcl-s maskingKeyOverlayed char(4) ccsid(*hex) based(cptr);
+    dcl-s maskingKey char(4) ccsid(*hex);
+    dcl-s payloadPointer pointer;
+    dcl-s payloadLength uns(10);
+    dcl-s fin char(1) ccsid(*hex) inz(x'00');
+    dcl-s payloadLengthSize uns(3);
+    dcl-s hexBuffer char(18) inz(*allx'00');
+    dcl-s headerLength uns(3);
+    
+    if (%parms() >= 4);
+        payloadLength = p_payloadLength;
+    endif;
+    
+    if (%parms() >= 5 and p_fin);
+        fin = IV_WS_FIN;
+    endif;
+    
+    // control messages are always single frame messages
+    if (opcode = IV_WS_OPCODE_PING or opcode = IV_WS_OPCODE_PONG or opcode = IV_WS_OPCODE_CLOSE);
+        fin = IV_WS_FIN;
+    elseif (client.wsFrameSize = 0 or payloadLength < client.wsFrameSize);
+        fin = IV_WS_FIN;
+    endif;
+    
+    %len(buffer) = IV_WS_MAX_FRAME_SIZE;
+    
+    cptr = %addr(buffer : *data);
+    c = %bitor(fin : opcode);
+
+    cptr += 1;
+    if (payloadLength < 126);
+        payloadLengthSize = 1;
+        number = MASKED_BIT + payloadLength;
+        cptr += 1;
+    elseif (payloadLength < 65536);
+        payloadLengthSize = 3;
+        number = MASKED_BIT + 126;
+        cptr += 1;
+        numberShort = payloadLength;
+        cptr += 2;
+    else;
+        payloadLengthSize = 9;
+        number = MASKED_BIT + 127;
+        cptr += 1;
+        numberLong = payloadLength;
+        cptr += 8;
+    endif;
+    
+    maskingKey = generateMaskingKey();
+    maskingKeyOverlayed = maskingKey;
+    
+    if (payloadLength > 0);
+        cptr += 4;
+        payloadPointer = cptr;
+        memcpy(cptr : p_payload : payloadLength);
+        mask(maskingKey : payloadPointer : payloadLength);
+    endif;
+    
+    // set buffer length: header (1) + payload length size + masking key (4) + payload
+    headerLength = 1 + payloadLengthSize + 4;
+    %len(buffer) = headerLength + payloadLength;
+    
+    cvthc(%addr(hexBuffer) : %addr(buffer : *data) : headerLength * 2);
+    iv_debug('Frame header: ' + hexBuffer);
+    
+    return buffer;
+end-proc;
+
+
+dcl-proc generateMaskingKey export;
+    dcl-pi *n char(4) ccsid(*hex) end-pi;
+
+    dcl-s maskingKey char(4) ccsid(*hex);
+    dcl-s number uns(3) based(ptr);
+    dcl-s i int(10);
+    dcl-s seed int(10);
+    dcl-s randomNumber float(8);
+    
+    for i = 0 to 3;
+        ptr = %addr(maskingKey) + i;
+        CEERAN0(seed : randomNumber : *omit);
+        number = %uns(randomNumber * 255.0);
+    endfor;
+    
+    return maskingKey;
+end-proc;
+
+
+dcl-proc mask export;
+    dcl-pi *n;
+        key char(4) ccsid(*hex) value;
+        value pointer;
+        length uns(10) const;
+    end-pi;
+
+    dcl-s i uns(10);
+    dcl-s keyPtr pointer;
+    dcl-s keyByte char(1) ccsid(*hex) based(keyBytePtr);
+    dcl-s v char(1) ccsid(*hex) based(valuePtr);
+    
+    keyPtr = %addr(key);
+    valuePtr = value;
+    
+    for i = 0 to length-1;
+        keyBytePtr = keyPtr + %rem(i : 4);
+        
+        v = %bitxor(v : keyByte);
+        
+        valuePtr += 1;
+    endfor;
+end-proc;
+
+
+dcl-proc iv_ws_receiveText export;
+    dcl-pi *n likeds(iv_ws_message_t);
+        p_client pointer value;
+        p_timeout int(10) value options(*nopass);
+    end-pi;
+    
+    dcl-ds client likeds(ilevator_t) based(p_client);
+    dcl-ds message likeds(iv_ws_message_t) inz;
+    dcl-s dataLength uns(10);
+    dcl-s timeout int(10);
+    
+    if (%parms() >= 2);
+        timeout = p_timeout;
+    endif;
+    
+    %len(message.payload) = IV_BUFFER_SIZE;
+    
+    dataLength = iv_ws_receiveBinary(p_client : %addr(message) : IV_BUFFER_SIZE : timeout);
+    if (dataLength <= 0);
+        %len(message.payload) = 0;
+    else;
+        %len(message.payload) = dataLength;
+    endif;
+    
+    return message;
+end-proc;
+
+
+dcl-proc iv_ws_receiveBinary export;
+    dcl-pi *n int(10);
+        p_client pointer value;
+        p_buffer pointer value;
+        bufferLength uns(10) value;
+        p_timeout int(10) value options(*nopass);
+    end-pi;
+    
+    dcl-ds returnBufferHeader qualified based(p_buffer);
+        opcode char(1);
+        length uns(10);
+    end-ds;
+    dcl-s opcode char(1) inz(x'00');
+    dcl-s buffer pointer;
+    dcl-s dataLength uns(20);
+    dcl-ds client likeds(ilevator_t) based(p_client);
+    dcl-s timeout int(10);
+    dcl-s rc int(10);
+    dcl-ds header qualified;
+        finOpcode char(1) ccsid(*hex);
+        payloadLength uns(3);
+    end-ds;
+    dcl-s payloadLength2 uns(5);
+    dcl-s payloadLength8 uns(20);
+    dcl-s fin ind;
+    dcl-s readLength int(10);
+    dcl-s remainingBufferLength uns(10);
+    
+    if (%parms() >= 4);
+        timeout = p_timeout;
+    endif;
+    
+    if (bufferLength <= 5);
+        iv_debug('Skipped receiving message because of too small receiving buffer. It needs to have at least 6 bytes.');
+        return 0;
+    endif;
+    
+    remainingBufferLength = bufferLength - 5; // - 5 = return buffer header
+    
+    buffer = p_buffer;
+    returnBufferHeader.opcode = x'00';
+    returnBufferHeader.length = 0;
+    
+    // just read the first 2 bytes of the message (header)
+    rc = sockets_receive(client.sockets : %addr(header) : 2 : timeout);
+    if (rc < 0);
+        iv_debug('Error on reading frame header from socket. Return code: ' + %char(rc));
+        return 0;
+    endif;
+    
+    dow (not fin and rc > 0);
+        fin = (%bitand(IV_WS_FIN : header.finOpcode) = IV_WS_FIN);
+        opcode = %bitand(header.finOpcode : x'7F'); // 7F = b'01111111' to get rid of the fin bit
+        
+        if (returnBufferHeader.opcode = x'00');
+            returnBufferHeader.opcode = opcode;
+            buffer += %size(returnBufferHeader);
+        endif;
+                
+        if (opcode = IV_WS_OPCODE_CLOSE);
+            iv_debug('Closing connection because of CLOSE frame');
+            iv_disconnect(p_client);
+            return 0;
+        elseif (opcode = IV_WS_OPCODE_PING);
+            // ok
+        elseif (opcode = IV_WS_OPCODE_PONG);
+            // ok
+        elseif (opcode = IV_WS_OPCODE_DATA_BINARY);
+            // ok
+        elseif (opcode = IV_WS_OPCODE_DATA_TEXT);
+            // ok
+        elseif (opcode = IV_WS_OPCODE_FRAGMENT);
+            // ok
+        else;
+            iv_debug('Closing connection because of unknown opcode received');
+            iv_disconnect(p_client);
+            return -1;
+        endif;
+        
+        
+        if (header.payloadLength < 126);
+            // single frame
+            dataLength = header.payloadLength;
+        elseif (header.payloadLength = 126);
+            rc = sockets_receive(client.sockets : %addr(payloadLength2) : 2 : timeout);
+            if (rc <> 2);
+                iv_debug('Closing connection because of invalid number of bytes read from payload length');
+                iv_disconnect(p_client);
+                return -1;
+            endif;
+            dataLength = payloadLength2;
+        elseif (header.payloadLength = 127);
+            rc = sockets_receive(client.sockets : %addr(payloadLength8) : 8 : timeout);
+            if (rc <> 8);
+                iv_debug('Closing connection because of invalid number of bytes read from payload length');
+                iv_disconnect(p_client);
+                return -1;
+            endif;
+            if (payloadLength8 > 2147483647);
+                dataLength = 2147483647;
+            else;
+                dataLength = payloadLength8;
+            endif;
+        else;
+            iv_debug('Closing connection because of mask bit set by server');
+            iv_disconnect(p_client);
+            return -1;
+        endif;
+        
+        readLength = %min(remainingBufferLength : dataLength); 
+        rc = sockets_receive(client.sockets : buffer : readLength : timeout);
+        if (rc <> readLength);
+            iv_debug('Could not read the expected number of bytes from socket');
+        elseif (rc < 0);
+            leave;
+        endif;
+        
+        // if the buffer is smaller than the payload we need to skip data from the socket
+        if (dataLength > rc);
+            iv_debug('Need to skip ' + %char(dataLength - readLength) + ' bytes of data because of too small buffer from caller');
+            skipDataFromServer(client.sockets : dataLength - readLength);
+        endif;
+    
+        buffer += rc;
+        remainingBufferLength -= rc;
+        returnBufferHeader.length += rc;
+        
+        
+        if (not fin);
+            // next frame : just read the first 2 bytes of the message (header)
+            rc = sockets_receive(client.sockets : %addr(header) : 2 : timeout);
+            if (rc < 0);
+                iv_debug('Error on reading frame header from socket. Return code: ' + %char(rc));
+                leave;
+            endif;
+        endif;
+    enddo;
+    
+    return returnBufferHeader.length;
+end-proc;
+
+
+dcl-proc skipDataFromServer export;
+    dcl-pi *n;
+        sockets pointer value;
+        length uns(10) value;
+    end-pi;
+
+    dcl-c BLOCK_SIZE 4096;
+    dcl-s rc int(10);
+    dcl-s timeout int(10);
+    dcl-s buffer char(BLOCK_SIZE);
+    
+    dow (length > 0);
+        rc = sockets_receive(sockets : %addr(buffer) : %min(length : BLOCK_SIZE) : timeout);
+        if (rc <> BLOCK_SIZE);
+            leave;
+        endif;
+        
+        length -= BLOCK_SIZE;
+    enddo;    
+end-proc;
+
+
+dcl-proc iv_ws_onMessage export;
+    dcl-pi *n;
+        p_client pointer value;
+        callback pointer(*proc) value;
+        p_userData pointer value options(*nopass);
+    end-pi;
+
+    dcl-s onMessagePtr pointer(*proc);
+    dcl-pr onMessage extproc(onMessagePtr);
+        client pointer value;
+        userData pointer value;
+        message likeds(iv_ws_message_t);
+    end-pr;
+    
+    dcl-ds client likeds(ilevator_t) based(p_client);
+    dcl-s userData pointer;
+    dcl-ds message likeds(iv_ws_message_t) inz;
+    dcl-s length int(10);
+    
+    client.wsKeepRunning = *on;
+    onMessagePtr = callback;
+    
+    if (%parms() >= 3);
+        userData = p_userData;
+    endif;
+
+    dow (client.wsKeepRunning);
+        %len(message.payload) = IV_BUFFER_SIZE;   
+        
+        length = iv_ws_receiveBinary(p_client : %addr(message) : %size(message));
+        %len(message.payload) = length;
+        
+        if (message.opcode = IV_WS_OPCODE_CLOSE);
+            iv_debug('Received CLOSE, exiting.');
+            leave;
+        elseif (message.opcode = IV_WS_OPCODE_PING);
+            iv_debug('Received PING, sending PONG');
+            iv_ws_pong(p_client);
+        elseif (message.opcode = IV_WS_OPCODE_PONG);
+            iv_debug('Received PONG. ignored');
+            // ignore
+        else;
+            onMessage(p_client : userData : message);
+        endif;
+    enddo;
+end-proc;
+
+
+dcl-proc iv_ws_endMessageReceiving export;
+    dcl-pi *n;
+        p_client pointer value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(p_client);
+    
+    client.wsKeepRunning = *off;
+end-proc;
+
+

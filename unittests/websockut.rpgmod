@@ -1,0 +1,110 @@
+**FREE
+
+///
+// Web Socket : Unit Test
+//
+//
+// @author Mihael Schmidt
+// @date   29.08.2024
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'api.rpginc'
+/include 'clib.rpginc'
+/include 'teraspace.rpginc'
+
+dcl-c IV_WS_RANDOM_KEY_SIZE 50;
+
+dcl-pr tearDown end-pr;
+dcl-pr test_maskingOnlyStatusCode extproc(*dclcase) end-pr;
+dcl-pr test_maskingOnlyStatusCodeAndReason extproc(*dclcase) end-pr;
+
+dcl-proc tearDown export;
+    if (teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(teraspace_use()));
+    endif;
+end-proc;
+
+
+dcl-proc test_generateSecWebsocketKey export;
+    dcl-pr generateRandomKey char(IV_WS_RANDOM_KEY_SIZE) ccsid(*utf8) end-pr;
+
+    dcl-s key char(IV_WS_RANDOM_KEY_SIZE) ccsid(*utf8);
+    dcl-s msg char(50);
+    
+    key = generateRandomKey();
+    msg = key;
+    dsply msg;
+end-proc;
+
+
+dcl-proc test_maskingOnlyStatusCode export;
+    dcl-pr mask;
+        key char(4) ccsid(*hex) value;
+        value pointer;
+        length uns(10) const;
+    end-pr;
+    
+    dcl-s statusCode uns(5) inz(1000);
+    dcl-s c2 char(2) ccsid(*hex);
+    dcl-s cptr pointer;
+    dcl-s maskKey char(4) ccsid(*hex);
+    
+    maskKey = 'ab12';
+    memcpy(%addr(c2) : %addr(statusCode) : 2);
+    cptr = %addr(c2);
+    mask(maskKey : cptr : 2);
+    
+    // statusCode 1000 = 03E8
+    // maskKey ab12 = 8182F1F2
+    // masked statusCode = 826A
+    // 
+    // First Byte:
+    // Payload Byte 1: 03 (binary 00000011)
+    // Mask Key Byte 1: 81 (binary 10000001)
+    // XOR Operation: 00000011 XOR 10000001 = 10000010 (in hexadecimal: 82)
+    // 
+    // Second Byte:
+    // Payload Byte 2: E8 (binary 11101000)
+    // Mask Key Byte 2: 82 (binary 10000010)
+    // XOR Operation: 11101000 XOR 10000010 = 01101010 (in hexadecimal: 6A)
+    
+    assert(c2 = x'826A' : 'Masking gone wrong.');
+end-proc;
+
+
+dcl-proc test_maskingOnlyStatusCodeAndReason export;
+    dcl-pr mask;
+        key char(4) ccsid(*hex) value;
+        value pointer;
+        length uns(10) const;
+    end-pr;
+    
+    dcl-s statusCode uns(5) inz(1000);
+    dcl-s reason varchar(10) ccsid(*utf8);
+    dcl-s c10 char(10) ccsid(*hex);
+    dcl-s cptr pointer;
+    dcl-s maskKey char(4) ccsid(*hex);
+    
+    maskKey = 'ab12';
+    reason = 'ending';
+    memcpy(%addr(c10) : %addr(statusCode) : 2);
+    memcpy(%addr(c10)+2 : %addr(reason : *data) : 6);
+    
+    cptr = %addr(c10);
+    mask(maskKey : cptr : 8);
+    
+    // statusCode 1000 = 03E8
+    // reason = 656E64696E67
+    // ------------------------
+    // payload = 03E8656E64696E67
+    // maskKey ab12 = 8182F1F2
+    // masked payload = 82 6A 94 9C E5 EB 9F 95
+    // 
+    
+    assert(c10 = x'826A949CE5EB9F95' : 'Masking gone wrong.');
+end-proc;

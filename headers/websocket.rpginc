@@ -1,0 +1,7 @@
+**FREE
+
+/if not defined (ILEVATOR_WEBSOCKET)
+
+/define ILEVATOR_WEBSOCKET
+
+/endif

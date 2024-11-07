@@ -18,14 +18,14 @@ mvn -Djava.net.preferIPv4Stack=true clean package
 
 ## Run
 
-The integration backend is started with a simple Java command. Java 11 is needed.
+The integration backend is started with a simple Java command. Java 17 is needed.
 The Java version can be checked on the shell with the command `java -version`.
-Java 11 is available on IBM i via yum or as a licensed product.
+Java 17 is available on IBM i as a licensed product.
 
 The application is started with the command:
 
 ```
-java -Djava.net.preferIPv4Stack=true -cp ./:target/ilevator-helidon-integration.jar:target/libs/* io.helidon.microprofile.cdi.Main
+java -Djava.net.preferIPv4Stack=true -cp ./:target/ilevator-helidon-integration.jar:target/libs/* -Djava.util.logging.config.file=src/main/resources/logging.properties io.helidon.microprofile.cdi.Main
 
 ```
 
@@ -46,4 +46,22 @@ It can also be specified by using an environment variable:
 export ILEVATOR_UPLOAD_DIR=/my/custom/upload/dir
 
 java -Djava.net.preferIPv4Stack=true -cp ./:target/ilevator-helidon-integration.jar:target/libs/* io.helidon.microprofile.cdi.Main
+```
+
+
+### Web Socket Debugging
+
+For debugging the Web Socket feature it is best to tune the log levels in logging.properties file 
+located in `src/main/resources`. Add the following line (if not yet included):
+
+
+```
+org.glassfish.tyrus.level=FINEST
+```
+
+You also need to specify that you want to use this logging.properties file. This can be done by setting
+the Java system property `java.util.logging.config.file` on the java command.
+
+```
+java -Djava.net.preferIPv4Stack=true -cp ./:target/ilevator-helidon-integration.jar:target/libs/* -Djava.util.logging.config.file=src/main/resources/logging.properties io.helidon.microprofile.cdi.Main
 ```

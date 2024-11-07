@@ -1,0 +1,43 @@
+**FREE
+
+///
+// Cryptography : Unit Test
+//
+// @author Mihael Schmidt
+// @date   06.09.2024
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'base64.rpginc'
+/include 'crypto.rpginc'
+/include 'teraspace.rpginc'
+
+dcl-pr tearDown extproc(*dclcase) end-pr;
+dcl-pr test_sha1 end-pr;
+
+
+dcl-proc tearDown export;
+    if (teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(teraspace_use()));
+    endif;
+end-proc;
+
+
+dcl-proc test_sha1 export;
+  dcl-s input varchar(100) ccsid(*utf8);
+  dcl-s hash char(20) ccsid(*hex);
+  dcl-s output char(28) ccsid(*utf8);
+  dcl-s encoded char(28) ccsid(*utf8);
+  
+  input = 'dGhlIHNhbXBsZSBub25jZQ==258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+  output = 's3pPLMBiTxaQ9kYGzzhZRbK+xOo=';
+    
+  hash = iv_crypto_sha1(%addr(input : *data) : %len(input));
+  base64_encodeBuffer(%addr(encoded) : %addr(hash) : %len(hash));
+  
+  aEqual(output : encoded);
+end-proc;

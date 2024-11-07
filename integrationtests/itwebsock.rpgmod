@@ -1,0 +1,507 @@
+**FREE
+
+///
+// Integration Test Web Socket
+//
+// This module tests the web socket feature with integration test backend.
+///
+
+
+ctl-opt nomain;
+
+
+/include 'assert.rpginc'
+/include 'clib.rpginc'
+/include 'ilevator.rpgle'
+/include 'psds.rpginc'
+
+
+dcl-pr tearDown extproc(*dclcase) end-pr;
+dcl-pr test_ws_connect extproc(*dclcase) end-pr;
+dcl-pr test_ws_disconnect extproc(*dclcase) end-pr;
+dcl-pr test_ws_disconnectWithReason extproc(*dclcase) end-pr;
+dcl-pr test_ws_ping extproc(*dclcase) end-pr;
+dcl-pr test_ws_pong extproc(*dclcase) end-pr;
+dcl-pr test_ws_sendBinary extproc(*dclcase) end-pr;
+dcl-pr test_ws_sendBinary_frames extproc(*dclcase) end-pr;
+dcl-pr test_ws_sendText extproc(*dclcase) end-pr;
+dcl-pr test_ws_sendLongerText extproc(*dclcase) end-pr;
+dcl-pr test_ws_sendText_frames extproc(*dclcase) end-pr;
+dcl-pr test_ws_sendTextPointer extproc(*dclcase) end-pr;
+dcl-pr test_ws_receiveTimeout extproc(*dclcase) end-pr;
+dcl-pr test_ws_receiveEchoAsText extproc(*dclcase) end-pr;
+dcl-pr test_ws_receiveEchoAsBinary extproc(*dclcase) end-pr;
+dcl-pr test_ws_receiveEchoWithSmallerBuffer extproc(*dclcase) end-pr;
+dcl-pr test_ws_checkFollowingMessageWithSmallerBuffer extproc(*dclcase) end-pr;
+dcl-pr test_ws_receivePong extproc(*dclcase) end-pr;
+dcl-pr test_ws_receiveMultiFrameMessage extproc(*dclcase) end-pr;
+dcl-pr test_ws_onMessage extproc(*dclcase) end-pr;
+
+
+dcl-proc tearDown export;
+    if (iv_teraspace_leak() = 1);
+        dsply %trimr('Leaking memory: ' + %char(iv_teraspace_use()));
+    endif;
+end-proc;
+
+
+dcl-proc test_ws_connect export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/messagews');
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_ws_disconnect export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    iv_ws_disconnect(httpClient);
+    
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_ws_disconnectWithReason export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    iv_ws_disconnect(httpClient : 'leaving the matrix');
+    
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_ws_ping export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+
+    httpClient = iv_newHttpClient();
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    iv_ws_ping(httpClient);
+    sleep(1); // wait for pong before closing the connection
+    
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_ws_receivePong export;
+    dcl-s client pointer; 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+    dcl-ds response likeds(iv_ws_message_t) inz;
+    dcl-s msg char(50);
+    dcl-s ts timestamp;
+    
+    client = iv_newHttpClient();
+    
+    iv_ws_connect(client : 'ws://localhost:35801/messagews'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    iv_ws_ping(client);
+    response = iv_ws_receiveText(client);
+    assert(response.opcode = IV_WS_OPCODE_PONG : 'Wrong opcode for PONG response.');
+    
+    msg = response.payload;
+    ts = %timestamp(msg : *ISO);
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_ws_pong export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    iv_ws_pong(httpClient);
+    sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
+    
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_ws_sendText export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    iv_ws_sendText(httpClient : 'May it be a light to you in dark places, when all other lights go out. - Galadriel');
+    sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
+
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_ws_sendTextPointer export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+    dcl-s message varchar(IV_BUFFER_SIZE) ccsid(*utf8);
+
+    message = 'May it be a light to you in dark places, when all other lights go out. - Galadriel';
+
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    iv_ws_sendText(httpClient : %addr(message : *data) : %len(message));
+    sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
+
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_ws_sendLongerText export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    iv_ws_sendText(httpClient : 'Do not trouble your hearts overmuch with thought of the road tonight. +
+                                 Maybe the paths that you each shall tread are already laid before your +
+                                 feet, though you do not see them. - Galadriel');
+    sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
+
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_ws_sendText_frames export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_setFrameSize(httpClient : 30);    
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    iv_ws_sendText(httpClient : 'May it be a light to you in dark places, when all other lights go out. - Galadriel');
+    sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
+
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_ws_sendBinary export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+    dcl-s message varchar(IV_BUFFER_SIZE) ccsid(*hex);
+    
+    message = x'1234567890';
+    
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/uploadws'); 
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    iv_ws_sendBinary(httpClient : %addr(message : *data) : %len(message));
+    sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
+
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_ws_sendBinary_frames export;
+    dcl-s httpClient pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-s errorMessage varchar(256);
+    dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
+    dcl-s message varchar(IV_BUFFER_SIZE) ccsid(*hex);
+    
+    message = x'1234567890';
+    
+    httpClient = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_setFrameSize(httpClient : 4);
+    
+    iv_ws_connect(httpClient : 'ws://localhost:35801/uploadws'); 
+    iEqual(101 : iv_getStatus(httpClient));
+    
+    iv_ws_sendBinary(httpClient : %addr(message : *data) : %len(message));
+    sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
+
+    on-exit;
+        iv_free(httpClient);
+end-proc;
+
+
+dcl-proc test_ws_receiveEchoAsText export;
+    dcl-s client pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-ds response likeds(iv_ws_message_t) inz;
+    
+    client = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(client : 'ws://localhost:35801/echo'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    iv_ws_sendText(client : 'Hello World!');
+    response = iv_ws_receiveText(client);
+    aEqual('Hello World!' : %char(response.payload));
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_ws_receiveTimeout export;
+    dcl-s client pointer; 
+    dcl-ds response likeds(iv_ws_message_t) inz;
+    
+    client = iv_newHttpClient(); 
+    
+    iv_ws_connect(client : 'ws://localhost:35801/echo'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    response = iv_ws_receiveText(client : 2);
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_ws_receiveEchoAsBinary export;
+    dcl-s client pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-ds response likeds(iv_ws_message_t) inz;
+    dcl-s rc int(10);
+    
+    client = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(client : 'ws://localhost:35801/echo'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    iv_ws_sendText(client : 'Hello World!');
+    
+    %len(response.payload) = 20;
+    rc = iv_ws_receiveBinary(client : %addr(response) : 25);
+    iEqual(12 : rc);
+    
+    %len(response.payload) = rc;
+    aEqual('Hello World!' : %char(response.payload));
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_ws_receiveEchoWithSmallerBuffer export;
+    dcl-s client pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-ds response likeds(iv_ws_message_t) inz;
+    dcl-s rc int(10);
+    
+    client = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(client : 'ws://localhost:35801/echo'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    iv_ws_sendText(client : 'Hello World!');
+    
+    %len(response.payload) = 7;
+    rc = iv_ws_receiveBinary(client : %addr(response) : 12);
+    iEqual(7 : rc);
+    
+    aEqual('Hello W' : %char(response.payload));
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_ws_checkFollowingMessageWithSmallerBuffer export;
+    dcl-s client pointer; 
+    dcl-s outbuffer varchar(65000:4) ccsid(1208); 
+    dcl-ds response likeds(iv_ws_message_t) inz;
+    dcl-s rc int(10);
+    
+    client = iv_newHttpClient(); 
+    iv_setResponseDataBuffer(client : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR4 : IV_CCSID_UTF8);
+    
+    iv_ws_connect(client : 'ws://localhost:35801/echo'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    iv_ws_sendText(client : 'Hello World!');
+    
+    %len(response.payload) = 7;
+    rc = iv_ws_receiveBinary(client : %addr(response) : 12);
+    iEqual(7 : rc);
+    
+    aEqual('Hello W' : %char(response.payload));
+    
+    iv_ws_sendText(client : '... and again!');
+    %len(response.payload) = IV_BUFFER_SIZE;
+    rc = iv_ws_receiveBinary(client : %addr(response) : IV_BUFFER_SIZE+1);
+    iEqual(14 : rc);
+    
+    aEqual('... and again!' : %char(response.payload));
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_ws_receiveLongerText export;
+    dcl-s client pointer; 
+    dcl-ds response likeds(iv_ws_message_t) inz;
+    dcl-s message varchar(IV_BUFFER_SIZE) ccsid(*utf8);
+    
+    message = 'Do not trouble your hearts overmuch with thought of the road tonight. +
+               Maybe the paths that you each shall tread are already laid before your +
+               feet, though you do not see them. - Galadriel';
+    
+    client = iv_newHttpClient(); 
+    
+    iv_ws_connect(client : 'ws://localhost:35801/echo'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    iv_ws_sendText(client : message);
+    response = iv_ws_receiveText(client);
+    
+    assert(message = response.payload : 'The echo from the server is not equal the original message.');
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_ws_receiveMultiFrameMessage export;
+    dcl-s client pointer; 
+    dcl-ds response likeds(iv_ws_message_t) inz;
+    dcl-s message varchar(IV_BUFFER_SIZE) ccsid(*utf8);
+    dcl-s expectedMessage varchar(IV_BUFFER_SIZE) ccsid(*utf8);
+    
+    expectedMessage = 'And some things that should not have been forgotten were lost. +
+                       History became legend. Legend became myth. +
+                       And for two and a half thousand years, +
+                       the ring passed out of all knowledge. +
+                       -- Galadriel';
+    
+    client = iv_newHttpClient(); 
+    
+    iv_ws_connect(client : 'ws://localhost:35801/multiframe'); 
+    iEqual(101 : iv_getStatus(client));
+    
+    iv_ws_sendText(client : 'The message sent to the server doesn''t matter.');
+    response = iv_ws_receiveText(client);
+    
+    assert(expectedMessage = response.payload : 'The message from the server is not the expected message. Received: ' + response.payload);
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_ws_onMessage export;
+    dcl-s client pointer; 
+    dcl-s errorMessage varchar(256);
+    dcl-s userData varchar(1000) ccsid(*utf8);
+    
+    client = iv_newHttpClient(); 
+    
+    iv_ws_connect(client : 'ws://localhost:35801/echo'); 
+    
+    iv_ws_sendText(client : 'Hello World');
+    
+    iv_ws_onMessage(client : %paddr(echoWorker) : %addr(userData));
+    aEqual('Hello World' : %char(userData));
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc echoWorker export;
+    dcl-pi *n;
+        client pointer value;
+        p_userData pointer value;
+        message likeds(iv_ws_message_t);
+    end-pi;
+    
+    dcl-s userData varchar(1000) ccsid(*utf8) based(p_userData);
+    
+    aEqual(IV_WS_OPCODE_DATA_TEXT : message.opcode);
+    
+    userData = message.payload;
+    
+    iv_ws_endMessageReceiving(client);
+end-proc;
+

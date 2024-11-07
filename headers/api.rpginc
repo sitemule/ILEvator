@@ -1,3 +1,11 @@
-**free
+**FREE
+
 /include 'basetypes.rpginc'
 /include 'ilevator.rpgle'
+
+
+dcl-pr addHeader extproc(*dclcase);
+    list pointer value;
+    headerName varchar(IV_HEADER_NAME_SIZE:2) ccsid(*utf8) value;
+    headerValue varchar(IV_HEADER_VALUE_SIZE:2) ccsid(*utf8) value;
+end-pr;

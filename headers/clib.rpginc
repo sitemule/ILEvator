@@ -114,13 +114,16 @@ dcl-pr strlen uns(10) extproc('strlen');
   string pointer value;
 end-pr;
 
-Dcl-PR tmpnamIFS pointer extproc('_C_IFS_tmpnam');
-  buffer         char(39)   options(*omit);
-End-PR;
+dcl-pr tmpnamIFS pointer extproc('_C_IFS_tmpnam');
+    buffer char(39) options(*omit);
+end-pr;
 
-Dcl-PR system Int(10) extproc('system');
-  command        pointer    value options(*string);
-End-PR;
+dcl-pr system int(10) extproc('system');
+    command pointer value options(*string);
+end-pr;
 
+dcl-pr sleep extproc(*dclcase);
+    seconds uns(10) value;
+end-pr;
 
 /endif

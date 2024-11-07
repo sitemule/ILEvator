@@ -4,8 +4,10 @@ ctl-opt nomain thread(*concurrent);
 
 /include 'api.rpginc'
 /include 'anychar.rpginc'
+/include 'base64.rpginc'
 /include 'chunked.rpginc'
 /include 'clib.rpginc'
+/include 'crypto.rpginc'
 /include 'debug.rpginc'
 /include 'httpclient.rpginc'
 /include 'message.rpginc'
@@ -13,9 +15,7 @@ ctl-opt nomain thread(*concurrent);
 /include 'sockets.rpginc'
 /include 'teraspace.rpginc'
 
-
 dcl-s listedHttpStatusCodes int(5) dim(41) ctdata;
-
 
 dcl-proc iv_newHttpClient export;
     dcl-pi *n pointer end-pi;
@@ -427,7 +427,9 @@ dcl-proc iv_http_request export;
         if (%str(client.method:10) = 'HEAD' or client.status = 204);
             // No content, don't read any longer
             apiStatus = IV_STATUS_OK;
-        elseif ( client.status = 405); // Invalid method - no data
+        elseif (client.status = 101);
+            apiStatus = IV_STATUS_OK;
+        elseif (client.status = 405); // Invalid method - no data
             apiStatus = IV_STATUS_ERROR;
         elseif (client.responseIsChunked);
             apiStatus = iv_chunked_receive(pClient);
@@ -761,7 +763,7 @@ on-exit;
 end-proc;
 
 
-dcl-proc sendStatusCodeEscapeMessage;
+dcl-proc sendStatusCodeEscapeMessage export;
     dcl-pi *n;
         client pointer value;
         returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
@@ -771,7 +773,7 @@ dcl-proc sendStatusCodeEscapeMessage;
 end-proc;
 
 
-dcl-proc sendStatusCodeInfoMessage;
+dcl-proc sendStatusCodeInfoMessage export;
     dcl-pi *n;
         client pointer value;
         returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
@@ -781,7 +783,7 @@ dcl-proc sendStatusCodeInfoMessage;
 end-proc;
 
 
-dcl-proc sendStatusCodeMessage;
+dcl-proc sendStatusCodeMessage export;
     dcl-pi *n;
         client pointer value;
         returnBuffer varchar(IV_BUFFER_SIZE:4) ccsid(1208);
@@ -812,7 +814,7 @@ dcl-proc sendStatusCodeMessage;
 end-proc;
 
 
-dcl-proc isSuccessfulRequest;
+dcl-proc isSuccessfulRequest export;
     dcl-pi *n ind;
         client pointer value;
     end-pi;
