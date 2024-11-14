@@ -10,6 +10,7 @@
 <li><a href="form.html">Form</a></li>
 <li><a href="request.html">Request</a></li>
 <li><a href="multipart.html">Multipart</a></li>
+<li><a href="websocket.html">Web Socket</a></li>
 </ol>
 </div>
 <div class="iledocs-toc-gap">&nbsp;</div>
@@ -389,6 +390,26 @@ will be split to a length of 80 characters.</td>
 
 <tr>
 <td class="iledocs-table-key-column"><b>IV_VARCHAR4</b></td><td>Buffer type VARCHAR with a 4 byte size field</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_WS_OPCODE_CLOSE</b></td><td>Web socket control frame CLOSE</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_WS_OPCODE_DATA_BINARY</b></td><td>Web Socket data frame with binary data</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_WS_OPCODE_DATA_TEXT</b></td><td>Web Socket data frame with text data (UTF-8)</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_WS_OPCODE_PING</b></td><td>Web socket control frame PING</td>
+</tr>
+
+<tr>
+<td class="iledocs-table-key-column"><b>IV_WS_OPCODE_PONG</b></td><td>Web socket control frame PONG</td>
 </tr>
 
 </table>

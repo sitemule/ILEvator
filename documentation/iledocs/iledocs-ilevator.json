@@ -56,6 +56,20 @@
                 "IV_MULTIPART_ENCODING_BASE64"
             ],
             "order" : 6
+        },
+        {
+            "id" : "websocket",
+            "name" : "Web Socket",
+            "startsWith" : "iv_ws_",
+            "symbols" : [
+                "IV_WS_OPCODE_CLOSE",
+                "IV_WS_OPCODE_PING",
+                "IV_WS_OPCODE_PONG",
+                "IV_WS_OPCODE_DATA_TEXT",
+                "IV_WS_OPCODE_DATA_BINARY"
+            ],
+            "order" : 7
         }
     ]
 }
+

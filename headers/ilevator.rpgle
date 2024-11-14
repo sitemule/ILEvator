@@ -1954,7 +1954,11 @@ end-ds;
 ///
 // Connect
 //
-// Sends an opening handshake (HTTP request) to the server.
+// Sends an opening handshake (HTTP request) to the server for a protocol
+// upgrade to the web socket protocol.
+// <br/><br/>
+// The reason for an unsuccessful connect is available in the job log
+// when the application is started in debug mode.
 //
 // @param Pointer to the HTTP client
 // @param Web socket server URL (protocol: ws)
@@ -1972,8 +1976,8 @@ end-pr;
 ///
 // Disconnect
 //
-// Disconnects from the web socket server. After sending the CLOSE frame
-// the socket is closed.
+// Disconnects from the web socket server. The socket will be automatically 
+// closed after sending the CLOSE frame.
 //
 // @param Pointer to the client
 // @param Reason text
@@ -1986,7 +1990,7 @@ end-pr;
 ///
 // Send text by var
 //
-// Sends the text as a data text message to the web socket server.
+// Sends the passed text as a text message to the web socket server.
 //
 // @param Pointer to the client
 // @param Message text
@@ -1999,8 +2003,8 @@ end-pr;
 ///
 // Send text by pointer
 //
-// Sends the text as a data text message to the web socket server.
-// Text in text messages are expected to be UTF-8 encoded.
+// Sends the passed buffer as text message to the web socket server.
+// Characters in text messages are expected to be UTF-8 encoded.
 //
 // @param Pointer to the client
 // @param Pointer to text
@@ -2016,7 +2020,7 @@ end-pr;
 ///
 // Send text
 //
-// Sends the text as a data text message to the web socket server.
+// Sends the passed text as a text message to the web socket server.
 ///
 dcl-pr iv_ws_sendText overload(iv_ws_sendTextVar : iv_ws_sendTextPointer);
 /endif
@@ -2039,7 +2043,7 @@ end-pr;
 ///
 // Receive text message
 //
-// Receive messages as text from the web socket server. The message data is
+// Receives a message as text from the web socket server. The message data is
 // expected to be UTF-8 encoded. By default the call will wait till the server
 // sends data. A timeout (in seconds) can be passed.
 // 
@@ -2055,7 +2059,7 @@ end-pr;
 ///
 // Receive binary message
 //
-// Receive message as binary data from the web socket server. By default the 
+// Receives a message as binary data from the web socket server. By default the 
 // call will wait till the server sends data. A timeout (in seconds) can be 
 // passed.
 //
@@ -2090,8 +2094,7 @@ end-pr;
 ///
 // Pong
 // 
-// Sends a PONG control frame to the web socket server. A timestamp in ISO
-// format will be sent as the message payload.
+// Sends a PONG control frame to the web socket server. 
 //
 // @param Pointer to the client
 ///
@@ -2121,21 +2124,23 @@ end-pr;
 // Receive messages by callback
 //
 // Start receiving message from the web socket server. Each data message is 
-// passed to the callback procedure. Control frames are handles by ILEvator
+// passed to the callback procedure. Control frames are handled by ILEvator
 // and won't get passed to the callback procedures.
 // <br/><br/>
 // PING control frames are automatically answered with a PONG control frame.
 // <br/><br/>
-// The receiving will stop when a CLOSE control frame is sent.
+// The receiving will stop when a CLOSE control frame is sent or the procedure
+// <code>iv_ws_endMessageReceiving</code> has been called.
 // <br/><br/>
-// The callback procedure must implement the following interface
-// <code>
+// The callback procedure must implement the following interface:
+// 
+// <pre>
 // dcl-pi *n;
 //    client pointer value;
 //    userData pointer value;
 //    message likeds(iv_ws_message_t);
 // end-pi;
-// </code>
+// </pre>
 // 
 // @param Pointer to client
 // @param Procedure pointer to callback procedure
