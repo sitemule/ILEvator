@@ -26,3 +26,6 @@ Here is a short list of examples provided by the project. You can find the examp
 - [GET request to Float Rates](https://github.com/sitemule/ILEvator/blob/main/examples/IVEX20-Flowrates.rpgle)
 - [Specifying TLS version](https://github.com/sitemule/ILEvator/blob/main/examples/IVEX21-HTTPS%20Request%20with%20specific%20TLS%20version.rpgle)
 - [HTTPS GET request to VAX 360](https://github.com/sitemule/ILEvator/blob/main/examples/IVEX22-HTTPS%20GET%20request%20to%20VAX360.rpgle)
+- [SNI - Server Name Indication](https://github.com/sitemule/ILEvator/blob/main/examples/IVEX23-HTTPS%20SNI%20Server%20Name%20Indication.rpgle)
+- [HTTP request with blocking sockets](https://github.com/sitemule/ILEvator/blob/main/examples/IVEX25-HTTP%20GET%20blocking%20sockets.rpgle)
+- [Consecutive HTTP requests](https://github.com/sitemule/ILEvator/blob/main/examples/IVEX27-Consecutive%20HTTP%20requests.rpgle)
