@@ -163,8 +163,25 @@ the browser and the server. But there are some cases where you want to stream da
 process to the server or receive streaming data from the server.
 
 Message streaming server which support the WebSocket protocol are
+
 - [Apache Kafka](https://kafka.apache.org)
 - [Apache Pulsar](https://pulsar.apache.org)
+- [Apache Artemis](https://activemq.apache.org/components/artemis/)
 
 Another use case is where ports in an environment are restricted to HTTP(S) but an application specific
 protocol (not HTTP) over sockets is needed.
+
+### Apache Artemis
+
+> One of the advantages of using Netty for IO layer, is that Web Sockets are supported out of the
+> box. So, there's no need for the separate ws transport like in ActiveMQ, the tcp (Netty) acceptor 
+> in Artemis will detect Web Socket clients and handle them accordingly. 
+> -- ActiveMQ Artemis Migration Guide
+
+So any protocol can be used in combination with the WebSocket protocol. It just needs to be declared 
+in the `protocols` attribute of the acceptor entry so that Artemis knows what protocol to use when
+when receiving or sending the message.
+
+``` 
+<acceptor name="mqttOverWebSocket">tcp://0.0.0.0:61613?protocols=MQTT</acceptor>
+```
