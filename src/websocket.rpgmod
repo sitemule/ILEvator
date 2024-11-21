@@ -567,8 +567,8 @@ dcl-proc iv_ws_receiveText export;
     
     dcl-ds client likeds(ilevator_t) based(p_client);
     dcl-ds message likeds(iv_ws_message_t) inz;
-    dcl-s dataLength uns(10);
-    dcl-s timeout int(10);
+    dcl-s dataLength int(10);
+    dcl-s timeout int(10) inz(-1);
     
     if (%parms() >= 2);
         timeout = p_timeout;
@@ -603,7 +603,7 @@ dcl-proc iv_ws_receiveBinary export;
     dcl-s buffer pointer;
     dcl-s dataLength uns(20);
     dcl-ds client likeds(ilevator_t) based(p_client);
-    dcl-s timeout int(10);
+    dcl-s timeout int(10) inz(-1);
     dcl-s rc int(10);
     dcl-ds header qualified;
         finOpcode char(1) ccsid(*hex);
@@ -634,7 +634,7 @@ dcl-proc iv_ws_receiveBinary export;
     rc = sockets_receive(client.sockets : %addr(header) : 2 : timeout);
     if (rc < 0);
         iv_debug('Error on reading frame header from socket. Return code: ' + %char(rc));
-        return 0;
+        return rc;
     endif;
     
     dow (not fin and rc > 0);
@@ -737,7 +737,7 @@ dcl-proc skipDataFromServer export;
 
     dcl-c BLOCK_SIZE 4096;
     dcl-s rc int(10);
-    dcl-s timeout int(10);
+    dcl-s timeout int(10) inz(-1);
     dcl-s buffer char(BLOCK_SIZE);
     
     dow (length > 0);
@@ -781,6 +781,11 @@ dcl-proc iv_ws_onMessage export;
         %len(message.payload) = IV_BUFFER_SIZE;   
         
         length = iv_ws_receiveBinary(p_client : %addr(message) : %size(message));
+        if (length < 0);
+            iv_debug('Ending reactive processing of WebSocket messages due to error');
+            leave;
+        endif;
+        
         %len(message.payload) = length;
         
         if (message.opcode = IV_WS_OPCODE_CLOSE);
