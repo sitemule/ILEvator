@@ -94,7 +94,8 @@ dcl-proc iv_ws_connect export;
         iterator = sList_setIterator(p_headers);
         dow (sList_foreach(iterator));
             headerName = %str(nodePayload.key.string : nodePayload.key.length);
-            if (headerName = 'Sec-WebSocket-Key'); // TODO check case insensitive
+            headerName = %xlate(UPPER : LOWER : headerName);
+            if (headerName = 'sec-websocket-key');
                 iter;
             endif;
             
@@ -140,13 +141,16 @@ dcl-proc isWebSocketUpgradeSuccessful;
     endif;
     
     headerValue = iv_getHeader(client : 'Upgrade');
-    if (headerValue <> 'websocket');  // TODO needs to be case insensitive
+    headerValue = %xlate(UPPER : LOWER : headerValue);
+    if (headerValue <> 'websocket');
         iv_debug('Web socket handshake aborted because of returned HTTP header "Upgrade" with value ' + %char(headerValue));
         return *off;
     endif;
     
     headerValue = iv_getHeader(client : 'Connection');
-    if (headerValue <> 'Upgrade'); // TODO needs to be case insensitive
+    headerValue = %xlate(UPPER : LOWER : headerValue);
+    if (headerValue <> 'upgrade');
+        iv_debug('Web socket handshake aborted because of invalid "Connection" HTTP header. HTTP header value: ' + %char(headerValue));
         return *off;
     endif;
 
