@@ -2103,6 +2103,7 @@ end-pr;
 // Sends a PONG control frame to the web socket server. 
 //
 // @param Pointer to the client
+// @param Message payload (should be the message from the PING frame)
 ///
 dcl-pr iv_ws_pong extproc(*dclcase);
     client pointer value;

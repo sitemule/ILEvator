@@ -127,8 +127,6 @@ dcl-proc test_ws_receivePong export;
     dcl-s errorMessage varchar(256);
     dcl-s header varchar(IV_HEADER_VALUE_SIZE) ccsid(*utf8);
     dcl-ds response likeds(iv_ws_message_t) inz;
-    dcl-s msg char(50);
-    dcl-s ts timestamp;
     
     client = iv_newHttpClient();
     
