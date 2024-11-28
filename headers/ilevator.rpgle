@@ -1922,28 +1922,28 @@ dcl-pr iv_teraspace_use uns(20) extproc(*dclcase) end-pr;
 //
 
 ///
-// Web socket control frame CLOSE
+// WebSocket control frame CLOSE
 ///
 dcl-c IV_WS_OPCODE_CLOSE x'08';
 ///
-// Web socket control frame PING
+// WebSocket control frame PING
 ///
 dcl-c IV_WS_OPCODE_PING x'09';
 ///
-// Web socket control frame PONG
+// WebSocket control frame PONG
 ///
 dcl-c IV_WS_OPCODE_PONG x'0A';
 ///
-// Web Socket data frame with text data (UTF-8)
+// WebSocket data frame with text data (UTF-8)
 ///
 dcl-c IV_WS_OPCODE_DATA_TEXT x'01';
 ///
-// Web Socket data frame with binary data
+// WebSocket data frame with binary data
 ///
 dcl-c IV_WS_OPCODE_DATA_BINARY x'02';
 
 ///
-// Web socket message template with 1MB payload size.
+// WebSocket message template with 1MB payload size.
 // The data structure contains the message opcode and payload.
 ///
 dcl-ds iv_ws_message_t qualified template;
@@ -1952,24 +1952,30 @@ dcl-ds iv_ws_message_t qualified template;
 end-ds;
 
 ///
+// Template for an array of WebSocket subprotocols.
+///
+dcl-s iv_ws_subprotocols_t varchar(100) ccsid(*utf8) dim(10) template;
+
+
+///
 // Connect
 //
 // Sends an opening handshake (HTTP request) to the server for a protocol
-// upgrade to the web socket protocol.
+// upgrade to the WebSocket protocol.
 // <br/><br/>
 // The reason for an unsuccessful connect is available in the job log
 // when the application is started in debug mode.
 //
 // @param Pointer to the HTTP client
-// @param Web socket server URL (protocol: ws)
-// @param Web socket subprotocols (comma seperated list of protocols)
+// @param WebSocket server URL (protocol: ws)
+// @param WebSocket subprotocols
 // @param Additional HTTP headers
 // @return <code>*on</code> = connected else <code>*off</code>
 ///
 dcl-pr iv_ws_connect ind extproc(*dclcase);
     client pointer value;
     url varchar(IV_URL_SIZE:2) value;
-    subprotocols varchar(100) dim(10) options(*nopass);
+    subprotocols like(iv_ws_subprotocols_t) dim(10) options(*nopass);
     headers pointer value options(*nopass);
 end-pr;
 
@@ -2100,6 +2106,7 @@ end-pr;
 ///
 dcl-pr iv_ws_pong extproc(*dclcase);
     client pointer value;
+    payload varchar(100) ccsid(*utf8) value;
 end-pr;
 
 ///

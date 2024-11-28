@@ -43,7 +43,7 @@ dcl-proc iv_ws_connect export;
     dcl-pi *n ind;
         client pointer value;
         url varchar(IV_URL_SIZE:2) value;
-        p_subprotocols varchar(100) dim(10) options(*nopass);
+        p_subprotocols like(iv_ws_subprotocols_t) dim(10) options(*nopass);
         p_headers pointer value options(*nopass);
     end-pi;
     
@@ -77,12 +77,14 @@ dcl-proc iv_ws_connect export;
     );
     
     for i = 1 to %elem(l_subprotocols);
-        if (%len(subprotocols) > 0);
+        if (l_subprotocols(i) <> *blank and %len(subprotocols) > 0);
             subprotocols += ',';
         endif;
         
         if (l_subprotocols(i) <> *blank);
             subprotocols += l_subprotocols(i);
+        else;
+            leave;
         endif;
     endfor;
     
@@ -415,17 +417,15 @@ end-proc;
 dcl-proc iv_ws_pong export;
     dcl-pi *n;
         p_client pointer value;
+        payload varchar(100) ccsid(*utf8) value;
     end-pi;
 
     dcl-ds client likeds(ilevator_t) based(p_client);
 
     dcl-s frame varchar(IV_WS_MAX_FRAME_SIZE) ccsid(*hex);
     dcl-s rc int(10);
-    dcl-s payload char(26) ccsid(*utf8);
     
-    payload = %char(%timestamp() : *ISO);
-    
-    frame = createFrame(p_client : IV_WS_OPCODE_PONG : %addr(payload) : %len(payload));
+    frame = createFrame(p_client : IV_WS_OPCODE_PONG : %addr(payload : *data) : %len(payload));
     
     rc = sockets_send(client.sockets : %addr(frame : *data) : %len(frame));
     if (rc <> %len(frame));
@@ -797,7 +797,7 @@ dcl-proc iv_ws_onMessage export;
             leave;
         elseif (message.opcode = IV_WS_OPCODE_PING);
             iv_debug('Received PING, sending PONG');
-            iv_ws_pong(p_client);
+            iv_ws_pong(p_client : message.payload);
         elseif (message.opcode = IV_WS_OPCODE_PONG);
             iv_debug('Received PONG. ignored');
             // ignore

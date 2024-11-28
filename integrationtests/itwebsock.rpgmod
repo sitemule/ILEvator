@@ -36,6 +36,8 @@ dcl-pr test_ws_checkFollowingMessageWithSmallerBuffer extproc(*dclcase) end-pr;
 dcl-pr test_ws_receivePong extproc(*dclcase) end-pr;
 dcl-pr test_ws_receiveMultiFrameMessage extproc(*dclcase) end-pr;
 dcl-pr test_ws_onMessage extproc(*dclcase) end-pr;
+dcl-pr test_ws_subprotocolMatched extproc(*dclcase) end-pr;
+dcl-pr test_ws_subprotocolNotMatched extproc(*dclcase) end-pr;
 
 
 dcl-proc tearDown export;
@@ -137,9 +139,6 @@ dcl-proc test_ws_receivePong export;
     response = iv_ws_receiveText(client);
     assert(response.opcode = IV_WS_OPCODE_PONG : 'Wrong opcode for PONG response.');
     
-    msg = response.payload;
-    ts = %timestamp(msg : *ISO);
-    
     on-exit;
         iv_free(client);
 end-proc;
@@ -157,7 +156,7 @@ dcl-proc test_ws_pong export;
     iv_ws_connect(httpClient : 'ws://localhost:35801/messagews'); 
     iEqual(101 : iv_getStatus(httpClient));
     
-    iv_ws_pong(httpClient);
+    iv_ws_pong(httpClient : 'This should have been the payload from the ping message.');
     sleep(1);  // TODO check: no need to wait as there is no answer to an unsolicited pong
     
     on-exit;
@@ -504,4 +503,45 @@ dcl-proc echoWorker export;
     
     iv_ws_endMessageReceiving(client);
 end-proc;
+
+
+dcl-proc test_ws_subprotocolMatched export;
+    dcl-s client pointer; 
+    dcl-s subprotocols like(iv_ws_subprotocols_t) dim(10);
+    dcl-ds response likeds(iv_ws_message_t) inz;
+    dcl-s connected ind;
+    
+    client = iv_newHttpClient(); 
+    
+    subprotocols(1) = 'chat.rpgnext.gen.com';
+    
+    connected = iv_ws_connect(client : 'ws://localhost:35801/chat' : subprotocols); 
+    assert(connected : 'The WebSocket client could not connect with subprotocol chat.rpgnextgen.com . +
+                        Check server for connection error.');
+    
+    iv_ws_sendText(client : 'May it be a light to you in dark places, when all other lights go out. - Galadriel');
+    response = iv_ws_receiveText(client : 0);     
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
+
+dcl-proc test_ws_subprotocolNotMatched export;
+    dcl-s client pointer; 
+    dcl-s subprotocols like(iv_ws_subprotocols_t) dim(10);
+    dcl-ds response likeds(iv_ws_message_t) inz;
+    dcl-s connected ind;
+    
+    client = iv_newHttpClient(); 
+    
+    subprotocols(1) = 'chat_v2.rpgnext.gen.com';
+    
+    connected = iv_ws_connect(client : 'ws://localhost:35801/chat' : subprotocols); 
+    assert(not connected : 'The WebSocket client connected but subprotocols didn''t match.');
+    
+    on-exit;
+        iv_free(client);
+end-proc;
+
 
