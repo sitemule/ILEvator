@@ -740,6 +740,9 @@ dcl-proc buildNonConnectHeader;
     data += 'Host: ' + request.url.host + UTF8_COLON + %char(request.url.port) + CRLF;
   endif;
 
-  data += 'Connection: keep-alive' + CRLF;
+  // need to be able to have a user provided Connection HTTP header , f. e. websocket Upgrade
+  if (iv_request_getHeader(%addr(request) : 'Connection') = *blank);
+    data += 'Connection: keep-alive' + CRLF;
+  endif;
 end-proc;
 
