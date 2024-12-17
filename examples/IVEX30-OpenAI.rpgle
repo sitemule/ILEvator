@@ -44,7 +44,7 @@ dcl-proc do_request;
              + '"Oversæt: Collection til dansk og returner kun oversættelsen."}]}';
 
     httpClient = iv_newHttpClient(); 
-    iv_setRequestDataBuffer (httpClient : %addr(inbuffer)  : %size(inbuffer) : IV_VARCHAR2 :IV_CCSID_UTF8 );
+    iv_setRequestDataBuffer (httpClient : %addr(inbuffer)  : %size(inbuffer)  : IV_VARCHAR2 :IV_CCSID_UTF8 );
     iv_setResponseDataBuffer(httpClient : %addr(outbuffer) : %size(outbuffer) : IV_VARCHAR2 :IV_CCSID_UTF8 );
     iv_setCertificate(httpClient : '/prj/ilevator/ilevator.kdb' : 'ilevator');
     
