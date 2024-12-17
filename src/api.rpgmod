@@ -603,6 +603,10 @@ dcl-proc iv_getHeader export;
     dcl-s UPPER char(26) inz('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
     dcl-s LOWER char(26) inz('abcdefghijklmnopqrstuvwxyz');
     
+    if client.responseHeaderList = *NULL;
+        return '';
+    endif;
+
     headerName = %xlate(UPPER : LOWER : pHeaderName);
     
     iterator = sList_setIterator(client.responseHeaderList);
