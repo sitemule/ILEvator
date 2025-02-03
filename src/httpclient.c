@@ -279,8 +279,12 @@ API_STATUS sendRequest (PILEVATOR pIv)
             iv_request_setBinaryBody(request, pIv->requestDataBuffer.data, pIv->requestDataBuffer.length);
         else
             iv_request_setTextBodyBytes(request, pIv->requestDataBuffer.data, pIv->requestDataBuffer.length, pIv->requestDataBuffer.xlate);
+    } else if (pIv->requestDataFile) {
+        VARCHAR1024 file;
+        str2vc (&file ,pIv->requestDataFile);
+        iv_request_setFile (request , &file );
     }
-    
+
     if (pIv->authProvider)
         pIv->authProvider->processRequest(pIv->authProvider, request);
     

@@ -60,6 +60,7 @@ typedef struct _ILEVATOR {
     PSLIST       responseHeaderList;
                 
     ANYCHAR      requestDataBuffer; 
+    PUCHAR       requestDataFile;
     ANYCHAR      responseHeaderBuffer; 
     ANYCHAR      responseDataBuffer; 
     FILE *       responseDataFile;

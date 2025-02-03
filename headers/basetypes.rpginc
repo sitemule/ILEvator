@@ -23,6 +23,7 @@ dcl-ds ilevator_t qualified template align(*full);
     responseHeaderList pointer;
     
     requestDataBuffer likeds(anychar_t);
+    requestDataFile pointer;
     responseHeaderBuffer likeds(anychar_t);
     responseDataBuffer likeds(anychar_t);
     responseDataFile pointer;

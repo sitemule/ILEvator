@@ -72,6 +72,7 @@ dcl-proc iv_free export;
     
     teraspace_free(client.method);
     teraspace_free(client.url);
+    teraspace_free(client.requestDataFile);
     sockets_free(client.sockets);
     sList_free(client.headerList);
     teraspace_free(client.authProvider);
@@ -232,6 +233,16 @@ dcl-proc iv_setResponseFile export;
 	endif;
 end-proc;
 
+dcl-proc iv_setRequestFile export;
+    dcl-pi *n;
+        pClient       pointer value;
+        fileName      pointer options(*string) value;
+    end-pi;
+
+    dcl-ds client likeds(ilevator_t) based(pClient);
+    client.requestDataFile = teraspace_strTrimDup(fileName);
+
+end-proc; 
 
 dcl-proc iv_setCommTrace export;
     dcl-pi *n;

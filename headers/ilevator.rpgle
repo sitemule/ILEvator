@@ -1046,6 +1046,19 @@ dcl-pr iv_setRequestHandler extproc(*dclcase);
 end-pr;
 
 ///
+// Set request file 
+//
+// Load the payload with data from a IFS stream file
+//
+// @param Pointer to the HTTP client 
+// @param String containing the file name
+///
+dcl-pr iv_setRequestFile  extproc(*dclcase);
+    client pointer value;
+    fileName  pointer value options(*string);
+end-pr;
+
+///
 // Connect to server
 //
 // Creates the socket connection to the passed server.
