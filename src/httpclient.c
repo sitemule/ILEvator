@@ -291,7 +291,8 @@ API_STATUS sendRequest (PILEVATOR pIv)
     if (pIv->requestHandler)
         pIv->requestHandler->processRequest(pIv->requestHandler, request);
     
-    if (iv_request_needsStreaming(request) == ON) {
+    if (iv_request_needsStreaming(request) == ON
+    &&  pIv->requestDataFile == NULL) { // TODO - Streaming is only for multipart for now.
         // TODO handle errors
         streamRequest(pIv, request);
         iv_request_dispose(&request);
