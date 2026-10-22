@@ -4,3 +4,5 @@ mmap*
 examples/errorlist.txt
 **/node_modules
 error.txt
+.claude/rules/blueprint-mcp.instructions.md
+.github/instructions/blueprint-mcp.instructions.md
