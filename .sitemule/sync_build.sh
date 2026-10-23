@@ -6,17 +6,21 @@
 # Config (in .env or as environment variables):
 #   I_HOST       SSH hostname or alias for the IBM i
 #   DELPOY_PATH  Deployment path on the IBM i  (e.g. /prj/ILEvator)
+#   RSYNC_EXCLUDE  Optional: more paths rsync must not send, separated by blanks
 #   SKIP_RSYNC   Set to "true" to force-skip rsync (auto-detected for network mounts)
 #
-# DIR=<folder> runs gmake in that folder of the project (examples, issues, ...).
+# MAKEDIR=<folder> runs gmake in that folder of the project (examples, issues, ...).
 # When the build writes error.txt (the makefiles' "current" / "example" targets send the
 # compiler output there), it is shown afterwards, so VS Code's problem matcher sees it.
 #
 # Examples:
 #   .sitemule/sync_build.sh all
 #   .sitemule/sync_build.sh current SRC=src/ilevator.c OUTPUT=*PRINT
-#   .sitemule/sync_build.sh compile DIR=examples "SRC=IVEX01-Simple GET request.rpgle"
+#   .sitemule/sync_build.sh compile MAKEDIR=examples "SRC=IVEX01-Simple GET request.rpgle"
 #   .sitemule/sync_build.sh sync-only
+#
+# Master copy: .sitemule/sync_build.sh in the sitemule workspace - the same file in every
+# project that builds this way; project settings go in its .env.
 
 # Load .env if present (does not override already-exported vars)
 if [ -f ".env" ]; then
@@ -32,13 +36,13 @@ fi
 MAKE_TARGET="${1:-all}"
 shift 1 || true
 
-# The remaining args are make variables; DIR= is ours. Quote each one for the remote
+# The remaining args are make variables; MAKEDIR= is ours. Quote each one for the remote
 # shell - file names may contain blanks.
 BUILD_DIR="$DELPOY_PATH"
 MAKE_VARS=""
 for arg in "$@"; do
     case "$arg" in
-        DIR=*) BUILD_DIR="$DELPOY_PATH/${arg#DIR=}" ;;
+        MAKEDIR=*) BUILD_DIR="$DELPOY_PATH/${arg#MAKEDIR=}" ;;
         *)     MAKE_VARS="$MAKE_VARS $(printf '%q' "$arg")" ;;
     esac
 done
@@ -81,7 +85,7 @@ else
         --exclude '.claude/' \
         --exclude '.github/' \
         --exclude 'error.txt' \
-        --exclude 'examples/errorlist.txt' \
+        $(for x in $RSYNC_EXCLUDE; do printf -- "--exclude %s " "$x"; done) \
         --rsync-path="/QOpenSys/pkgs/bin/rsync" \
         --omit-dir-times \
         --no-perms \

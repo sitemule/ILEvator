@@ -37,7 +37,7 @@ Edit in a clone on your PC and let `.sitemule/sync_build.sh` copy it to the IBM 
 ```
 .sitemule/sync_build.sh all                                   # the service program
 .sitemule/sync_build.sh current SRC=src/anychar.c             # one module + UPDSRVPGM
-.sitemule/sync_build.sh compile DIR=examples "SRC=IVEX01-Simple GET request.rpgle"
+.sitemule/sync_build.sh compile MAKEDIR=examples "SRC=IVEX01-Simple GET request.rpgle"
 .sitemule/sync_build.sh all BIN_LIB=MYLIB                     # into another library
 ```
 

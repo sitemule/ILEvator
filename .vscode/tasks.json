@@ -34,7 +34,7 @@
         {
             "label": "Compile all example files",
             "type": "shell",
-            "command": ".sitemule/sync_build.sh all DIR=examples",
+            "command": ".sitemule/sync_build.sh all MAKEDIR=examples",
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared", "clear": true },
             "problemMatcher": []
@@ -42,7 +42,7 @@
         {
             "label": "Compile current example file",
             "type": "shell",
-            "command": ".sitemule/sync_build.sh compile DIR=examples \"SRC=${fileBasename}\"",
+            "command": ".sitemule/sync_build.sh compile MAKEDIR=examples \"SRC=${fileBasename}\"",
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared", "clear": true },
             // ./IVEX01.rpgle:22,1,*RNF7030 30 The name or indicator A is not defined.
@@ -61,7 +61,7 @@
         {
             "label": "Compile current issue file",
             "type": "shell",
-            "command": ".sitemule/sync_build.sh compile DIR=issues \"SRC=${fileBasename}\"",
+            "command": ".sitemule/sync_build.sh compile MAKEDIR=issues \"SRC=${fileBasename}\"",
             "group": "build",
             "presentation": { "reveal": "always", "panel": "shared", "clear": true },
             "problemMatcher": {
