@@ -29,6 +29,20 @@ This will create:
 * `ILEVATOR/ILEVATOR` binding directory, with the `ILEVATOR` object on it.
 
 
+### Develop from a local clone
+
+Edit in a clone on your PC and let `.sitemule/sync_build.sh` copy it to the IBM i and run
+`gmake` there (set `I_HOST` and `DELPOY_PATH` in `.env`). The VS Code tasks use it.
+
+```
+.sitemule/sync_build.sh all                                   # the service program
+.sitemule/sync_build.sh current SRC=src/anychar.c             # one module + UPDSRVPGM
+.sitemule/sync_build.sh compile DIR=examples "SRC=IVEX01-Simple GET request.rpgle"
+.sitemule/sync_build.sh all BIN_LIB=MYLIB                     # into another library
+```
+
+Each sync leaves `GIT-MANAGED.md` in the IBM i folder: it is a copy of the repo, so edit here, not there.
+
 ### Build the distribution.
 
 When you have made the project in library ILEVATOR, you can create the release as a savefile

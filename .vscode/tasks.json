@@ -1,109 +1,103 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
-    // NOTE: Change all references to point to you IBMi
-    
+    // Builds run on the IBM i: .sitemule/sync_build.sh rsyncs this folder to DELPOY_PATH
+    // (.env) and runs gmake there - as in ILEastic.
+    // See https://go.microsoft.com/fwlink/?LinkId=733558 for the tasks.json format.
     "version": "2.0.0",
     "tasks": [
         {
             "label": "Compile current file (and update ILEvator service program)",
-            "command": "ssh -t my_ibm_i 'PATH=/QOpenSys/pkgs/bin:$PATH;cd /prj/ILEvator/;gmake current OUTPUT=*PRINT SRC=${relativeFile}'",
             "type": "shell",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "options": {
-                "cwd": "${workspaceRoot}",
-            },
-            // Use the standard less compilation problem matcher.
+            "command": ".sitemule/sync_build.sh current \"SRC=${relativeFile}\" \"OUTPUT=*PRINT\"",
+            "group": { "kind": "build", "isDefault": true },
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+            // src/ilevator.c, 241.2: CZM0045(30) Undeclared identifier a.
             "problemMatcher": {
                 "owner": "c",
-                "fileLocation": ["relative", "${workspaceRoot}"],
+                "fileLocation": ["relative", "${workspaceFolder}"],
                 "pattern": {
-                    //"regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
-                    // src/ilevator.c, 241.2: CZM0045(30) Undeclared identifier a.
-                    
-                    //"regexp": "ILEvator/(.*), (\\d+)\\.(\\d+):\\s+(.*)$",
                     "regexp": "(.*), (\\d+)\\.(\\d+):\\s+(.*)$",
                     "file": 1,
                     "line": 2,
                     "column": 3,
-                    // "severity": 4,
                     "message": 4
                 }
             }
         },
         {
             "label": "Compile Service program ILEvator",
-            "command": "ssh my_ibm_i 'PATH=/QOpenSys/pkgs/bin:$PATH;cd /prj/ILEvator/;gmake all'",
             "type": "shell",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "problemMatcher": [
-                // "$gcc"
-            ]
+            "command": ".sitemule/sync_build.sh all",
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+            "problemMatcher": []
         },
         {
             "label": "Compile all example files",
-            "command": "ssh -t my_ibm_i 'PATH=/QOpenSys/pkgs/bin:$PATH;cd /prj/ILEvator/examples/;gmake '",
             "type": "shell",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "problemMatcher": [
-                // "$gcc"
-            ],
-            
+            "command": ".sitemule/sync_build.sh all DIR=examples",
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+            "problemMatcher": []
         },
-        // NOTE: OBJECT are overridden by the command line, so OBJECT will be "this" files 
         {
             "label": "Compile current example file",
-            "command": "ssh -t my_ibm_i 'PATH=/QOpenSys/pkgs/bin:$PATH;cd /prj/ILEvator/examples/;gmake compile SRC=\"${fileBasename}\"' ",
             "type": "shell",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
+            "command": ".sitemule/sync_build.sh compile DIR=examples \"SRC=${fileBasename}\"",
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+            // ./IVEX01.rpgle:22,1,*RNF7030 30 The name or indicator A is not defined.
             "problemMatcher": {
-                "owner": "c",
-                "fileLocation": ["relative", "${workspaceRoot}/examples"],
+                "owner": "rpg",
+                "fileLocation": ["relative", "${workspaceFolder}/examples"],
                 "pattern": {
-                    // FileName: *RNF7030 30    399 000022  The name or indicator A is not defined.
                     "regexp": "^\\./(.*):(\\d+),(\\d+),(.*)$",
                     "file": 1,
                     "line": 2,
                     "column": 3,
-                    // "severity": 4,
                     "message": 4
                 }
-            }       
+            }
         },
-        // NOTE: OBJECT are overridden by the command line, so OBJECT will be "this" files 
         {
-            "label": "Compile current issue  file",
-            "command": "ssh -t my_ibm_i 'PATH=/QOpenSys/pkgs/bin:$PATH;cd /prj/ILEvator/issues/;gmake compile SRC=\"${fileBasename}\"' ",
+            "label": "Compile current issue file",
             "type": "shell",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
+            "command": ".sitemule/sync_build.sh compile DIR=issues \"SRC=${fileBasename}\"",
+            "group": "build",
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true },
             "problemMatcher": {
-                "owner": "c",
-                "fileLocation": ["relative", "${workspaceRoot}/issues"],
+                "owner": "rpg",
+                "fileLocation": ["relative", "${workspaceFolder}/issues"],
                 "pattern": {
-                    // FileName: *RNF7030 30    399 000022  The name or indicator A is not defined.
                     "regexp": "^\\./(.*):(\\d+),(\\d+),(.*)$",
                     "file": 1,
                     "line": 2,
                     "column": 3,
-                    // "severity": 4,
                     "message": 4
                 }
-            }       
+            }
+        },
+        {
+            "label": "Run unit tests",
+            "type": "shell",
+            "command": ".sitemule/sync_build.sh unittests",
+            "group": "test",
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run integration tests",
+            "type": "shell",
+            "command": ".sitemule/sync_build.sh itests",
+            "group": "test",
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+            "problemMatcher": []
+        },
+        {
+            "label": "Sync only (no build)",
+            "type": "shell",
+            "command": ".sitemule/sync_build.sh sync-only",
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+            "problemMatcher": []
         }
     ]
 }
