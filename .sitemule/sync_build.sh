@@ -19,7 +19,7 @@
 #   .sitemule/sync_build.sh compile MAKEDIR=examples "SRC=IVEX01-Simple GET request.rpgle"
 #   .sitemule/sync_build.sh sync-only
 #
-# Master copy: .sitemule/sync_build.sh in the sitemule workspace - the same file in every
+# Master copy: .sitemule/sync_build.sh in the sitemule-factory repo - the same file in every
 # project that builds this way; project settings go in its .env.
 
 # Load .env if present (does not override already-exported vars)
