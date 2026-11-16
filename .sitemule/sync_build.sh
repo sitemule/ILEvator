@@ -5,7 +5,7 @@
 #
 # Config (in .env or as environment variables):
 #   I_HOST       SSH hostname or alias for the IBM i
-#   DELPOY_PATH  Deployment path on the IBM i  (e.g. /prj/ILEvator)
+#   DEPLOY_PATH  Deployment path on the IBM i  (e.g. /prj/ILEvator)
 #   RSYNC_EXCLUDE  Optional: more paths rsync must not send, separated by blanks
 #   SKIP_RSYNC   Set to "true" to force-skip rsync (auto-detected for network mounts)
 #
@@ -31,18 +31,20 @@ if [ -f ".env" ]; then
 fi
 
 : "${I_HOST:?I_HOST is not set. Add it to .env or export it before running.}"
-: "${DELPOY_PATH:?DELPOY_PATH is not set. Add it to .env or export it before running.}"
+# DELPOY_PATH: the old misspelling, still read so existing .env files keep working
+DEPLOY_PATH="${DEPLOY_PATH:-$DELPOY_PATH}"
+: "${DEPLOY_PATH:?DEPLOY_PATH is not set. Add it to .env or export it before running.}"
 
 MAKE_TARGET="${1:-all}"
 shift 1 || true
 
 # The remaining args are make variables; MAKEDIR= is ours. Quote each one for the remote
 # shell - file names may contain blanks.
-BUILD_DIR="$DELPOY_PATH"
+BUILD_DIR="$DEPLOY_PATH"
 MAKE_VARS=""
 for arg in "$@"; do
     case "$arg" in
-        MAKEDIR=*) BUILD_DIR="$DELPOY_PATH/${arg#MAKEDIR=}" ;;
+        MAKEDIR=*) BUILD_DIR="$DEPLOY_PATH/${arg#MAKEDIR=}" ;;
         *)     MAKE_VARS="$MAKE_VARS $(printf '%q' "$arg")" ;;
     esac
 done
@@ -73,7 +75,7 @@ fi
 if [ "$SKIP_RSYNC" = "true" ]; then
     echo ">>> Working from IFS share — skipping rsync."
 else
-    echo ">>> Syncing to $I_HOST:$DELPOY_PATH ..."
+    echo ">>> Syncing to $I_HOST:$DEPLOY_PATH ..."
     rsync -az \
         --inplace \
         --ignore-errors \
@@ -90,9 +92,9 @@ else
         --omit-dir-times \
         --no-perms \
         "./" \
-        "$I_HOST:$DELPOY_PATH" || echo ">>> rsync finished with warnings (continuing to build)"
+        "$I_HOST:$DEPLOY_PATH" || echo ">>> rsync finished with warnings (continuing to build)"
     # Leave a note on the IFS: this folder is a copy of the git repo, edits here are lost
-    .sitemule/git_managed_note.sh "$I_HOST" "$DELPOY_PATH"
+    .sitemule/git_managed_note.sh "$I_HOST" "$DEPLOY_PATH"
 fi
 
 # ---------------------------------------------------------------

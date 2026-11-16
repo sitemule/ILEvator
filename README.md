@@ -32,7 +32,7 @@ This will create:
 ### Develop from a local clone
 
 Edit in a clone on your PC and let `.sitemule/sync_build.sh` copy it to the IBM i and run
-`gmake` there (set `I_HOST` and `DELPOY_PATH` in `.env`). The VS Code tasks use it.
+`gmake` there (set `I_HOST` and `DEPLOY_PATH` in `.env`). The VS Code tasks use it.
 
 ```
 .sitemule/sync_build.sh all                                   # the service program

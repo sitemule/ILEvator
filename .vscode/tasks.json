@@ -1,5 +1,5 @@
 {
-    // Builds run on the IBM i: .sitemule/sync_build.sh rsyncs this folder to DELPOY_PATH
+    // Builds run on the IBM i: .sitemule/sync_build.sh rsyncs this folder to DEPLOY_PATH
     // (.env) and runs gmake there - as in ILEastic.
     // See https://go.microsoft.com/fwlink/?LinkId=733558 for the tasks.json format.
     "version": "2.0.0",
