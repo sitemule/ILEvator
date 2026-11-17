@@ -790,7 +790,8 @@ LONG sockets_receive (PSOCKETS ps, PUCHAR Buf, LONG Len, LONG timeOut)
         amtRead = rc;
     }
 
-    Buf[amtRead] = '\0';
+    // Terminate only inside the caller's buffer: Len is all the room it has
+    if (amtRead >= 0 && amtRead < Len) Buf[amtRead] = '\0';
 
     if (ps->trace) {
         fwrite(Buf , 1 , amtRead , ps->trace);

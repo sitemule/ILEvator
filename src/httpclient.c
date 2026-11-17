@@ -124,12 +124,17 @@ VOID parseHttpParm(PILEVATOR pIv, PUCHAR Parm , PUCHAR Value)
     }
     
     if (strutil_beginsWithAscii (Parm , "location"))  {
-        // pIv->location holds 256 bytes: a longer redirect is not followed
+        // pIv->location holds 256 bytes: a longer redirect is not followed.
+        // Translated into room of its own first - the job CCSID result may be
+        // longer than the input (mixed DBCS)
         PUCHAR loc = strutil_firstnonblankAscii(Value);
+        UCHAR  temp [4 * sizeof(pIv->location)];
+        *pIv->location = '\0';
         if (strlen(loc) < sizeof(pIv->location)) {
-            xlate_translateString(pIv->location , loc , 1252 , 0);
-        } else {
-            *pIv->location = '\0';
+            xlate_translateString(temp , loc , 1252 , 0);
+            if (strlen(temp) < sizeof(pIv->location)) {
+                strcpy (pIv->location , temp);
+            }
         }
     }
     
@@ -153,7 +158,11 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
 
     pIv->contentData = contentData;
     pIv->headLen = pIv->contentData - buf;
-    *pIv->location = '\0'; // only a Location from this response counts
+    // Only what this response says counts - not an earlier one (a redirect or 100)
+    *pIv->location = '\0';
+    pIv->responseHeaderHasContentLength = OFF;
+    pIv->responseIsChunked = OFF;
+    pIv->contentLength = 0;
 
     // Retrive the HTTP responce
     start = strstr(buf , "HTTP");
@@ -186,13 +195,15 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
     while(*end) {
         start = end;
         // set up next loop
-        while (*start < ' ') {
+        // (never past the terminator after the header block)
+        while (*start && *start < ' ') {
             start ++;
         }
+        if (*start == '\0') break;
 
-        // Do interpretation
+        // Do interpretation - the colon on this line only
         end = findEOL(start);
-        p  = strchr(start ,':');
+        p  = memchr(start ,':', end - start);
         // The colon must be on this line - and the name and value must fit
         // (a longer header is still kept in responseHeaderList below)
         if (p && end && p < end) {
@@ -360,15 +371,16 @@ API_STATUS receiveHeader(PILEVATOR pIv)
     for (;;) { // repeat until a header is received
 
         LONG bufferRemain = pIv->bufferSize - pIv->bufferTotalLength;
-         // Protocol error
-        if  (bufferRemain < 0) {  
+        // Room for at least one byte and the terminator - otherwise the header
+        // does not fit in the buffer
+        if  (bufferRemain <= 1) {
             sockets_close(pIv->sockets);
-            message_info("Buffer overrun ");
+            message_info("Response header too large");
             return API_ERROR;
         }
 
-        // Append to the current buffer
-        len = sockets_receive (pIv->sockets, pIv->bufferEnd, bufferRemain , pIv->timeOut * 1000);
+        // Append to the current buffer - leave room for the terminator
+        len = sockets_receive (pIv->sockets, pIv->bufferEnd, bufferRemain - 1 , pIv->timeOut * 1000);
         
         // timeout
         if  (len == SOCK_TIMEOUT) {  

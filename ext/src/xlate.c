@@ -96,6 +96,7 @@ ULONG xlate_translateDescriptor(iconv_t cd, PUCHAR outBuf, PUCHAR inBuf , ULONG 
 PUCHAR xlate_translateString (PUCHAR out, PUCHAR in,  LONG fromCCSID,  LONG toCCSID)
 {
    int length = xlate_translateBuffer(out, in , strlen(in)  , fromCCSID, toCCSID);
+   if (length < 0) length = 0; // conversion not possible: an empty string
    out[length] = '\0';
    return out;
 }
