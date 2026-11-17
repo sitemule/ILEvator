@@ -124,7 +124,13 @@ VOID parseHttpParm(PILEVATOR pIv, PUCHAR Parm , PUCHAR Value)
     }
     
     if (strutil_beginsWithAscii (Parm , "location"))  {
-        xlate_translateString(pIv->location , strutil_firstnonblankAscii(Value) , 1252 , 0);
+        // pIv->location holds 256 bytes: a longer redirect is not followed
+        PUCHAR loc = strutil_firstnonblankAscii(Value);
+        if (strlen(loc) < sizeof(pIv->location)) {
+            xlate_translateString(pIv->location , loc , 1252 , 0);
+        } else {
+            *pIv->location = '\0';
+        }
     }
     
     // Unpack: "Content-Type: text/html; charset=windows-1252"
@@ -147,6 +153,7 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
 
     pIv->contentData = contentData;
     pIv->headLen = pIv->contentData - buf;
+    *pIv->location = '\0'; // only a Location from this response counts
 
     // Retrive the HTTP responce
     start = strstr(buf , "HTTP");
@@ -154,14 +161,18 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
         return SOCK_ERROR; /* No response */
     }
 
-    // Find the status code
-    s1 = strchr(start ,' ');
+    // Find the status code - within the status line only
+    end = findEOL(start);
+    s1 = memchr(start ,' ', end - start);
     if (s1) {
         s1++;
-        s2 = strchr(s1 ,' ');
-        if (s2) {
+        s2 = memchr(s1 ,' ', end - s1);
+        if (s2 == NULL) s2 = end; // "HTTP/1.1 200" without a reason phrase
+        if (s2 - s1 < 26) {
             UCHAR temp [26];
-            strncpy(temp , s1  , s2-s1);
+            memset(temp , ' ' , sizeof(temp)); // strutil_a2i reads 15 bytes
+            memcpy(temp , s1  , s2-s1);
+            temp[s2-s1] = '\0';
             pIv->status = strutil_a2i(temp);
         }
     }
@@ -182,12 +193,16 @@ SHORT parseResponse(PILEVATOR pIv, PUCHAR buf, PUCHAR contentData)
         // Do interpretation
         end = findEOL(start);
         p  = strchr(start ,':');
-        if (p && end) {
+        // The colon must be on this line - and the name and value must fit
+        // (a longer header is still kept in responseHeaderList below)
+        if (p && end && p < end) {
             UCHAR  parmName[256];
             UCHAR  parmValue[65535];
-            strutil_substr(parmName , start , p - start);
-            strutil_substr(parmValue, p +1  , end - p - 1 );
-            parseHttpParm(pIv , parmName, parmValue);
+            if (p - start < sizeof(parmName) && end - p - 1 < sizeof(parmValue)) {
+                strutil_substr(parmName , start , p - start);
+                strutil_substr(parmValue, p +1  , end - p - 1 );
+                parseHttpParm(pIv , parmName, parmValue);
+            }
             
             headerKey.Length = p - start;
             headerKey.String = start;
@@ -385,9 +400,10 @@ API_STATUS receiveHeader(PILEVATOR pIv)
                     return API_ERROR;
                 }
 
-                if (pIv->status == 301     // Temporary moved
-                ||  pIv->status == 302     // Permanent moved
-                ||  pIv->status == 307) {  // Temporary moved
+                if ((pIv->status == 301     // Temporary moved
+                ||   pIv->status == 302     // Permanent moved
+                ||   pIv->status == 307)    // Temporary moved
+                &&  *pIv->location != '\0') { // no Location: the caller gets the 3xx
 
                     parseUrl (
                         pIv,
@@ -395,7 +411,9 @@ API_STATUS receiveHeader(PILEVATOR pIv)
                     ); 
 
                     // MEGA HACK !! The parsurl is called twice ( WHY WHY WHY !!!) and brigs back the original url 
-                    strcpy (pIv->url , pIv->location);
+                    // pIv->url was allocated for the original url - the new one may be longer
+                    teraspace_free((PVOID *) &pIv->url);
+                    pIv->url = teraspace_strdup(pIv->location);
 
                     // talking to the final end point OR negotiating with the proxy -> close socket
                     if (pIv->proxyTunnel == NULL) sockets_close(pIv->sockets);
